@@ -4,7 +4,7 @@
     maple-mono.NF
     noto-fonts
     noto-fonts-cjk-sans
-    gabarito
+    google-fonts
     nerd-fonts.jetbrains-mono
   ];
 }

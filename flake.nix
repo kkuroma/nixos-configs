@@ -40,12 +40,13 @@
             extraSpecialArgs = {
               inherit inputs;
               niriParts = [
+                ./config/niri/appearance.kdl
                 ./config/niri/spawn.kdl
                 ./config/niri/keybinds.kdl
                 ./hosts/zaphkiel/niri-outputs.kdl
               ];
             };
-            users.kuroma = import ./home/kuroma.nix;
+            users.kuroma = { imports = [ ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; };
           };
         }
       ];

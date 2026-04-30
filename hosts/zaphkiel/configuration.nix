@@ -13,6 +13,8 @@
     ../../modules/niri.nix
     ../../modules/nix.nix
     ../../modules/nvidia.nix
+    ../../modules/apps.nix
+    ../../modules/fonts.nix
     ../../modules/packages.nix
     ../../modules/printing.nix
     ../../modules/ssh.nix

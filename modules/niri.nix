@@ -19,9 +19,16 @@
     };
   };
 
+  environment.variables = {
+    XCURSOR_THEME = "breeze_cursors";
+    XCURSOR_SIZE = "24";
+  };
+
   environment.systemPackages = [
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     pkgs.xwayland-satellite
     pkgs.wl-clipboard
+    pkgs.papirus-icon-theme
+    pkgs.kdePackages.breeze
   ];
 }

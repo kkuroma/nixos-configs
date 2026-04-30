@@ -4,23 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository purpose
 
-Personal NixOS flake config. Layout is split three ways:
+Personal NixOS flake config for multiple machines. Layout:
 
-- `flake.nix` — per-host declarations only. Each host references its own `hosts/<name>/configuration.nix`.
-- `modules/` — topic-scoped NixOS modules (`audio`, `bluetooth`, `boot`, `docker`, `locale`, `networking`, `niri`, `nix`, `nvidia`, `packages`, `printing`, `ssh`, `users`). There is **no `modules/default.nix` aggregator** — each host imports the specific modules it needs by path, so future hosts can opt in/out per-machine.
-- `hosts/<name>/` — per-host bits: `configuration.nix` (explicitly imports each `../../modules/<name>.nix` it wants + sets host-specific values like `networking.hostName` and `system.stateVersion`), `disko.nix`, and `hardware-configuration.nix`.
+- `flake.nix` — per-host `nixosConfigurations` declarations only. Wires inputs, `specialArgs`, home-manager, and the `niriParts` list for each host.
+- `modules/` — topic-scoped NixOS system modules. **No `modules/default.nix` aggregator** — each host's `configuration.nix` explicitly imports the modules it wants by path, so future hosts can opt in/out freely.
+- `hosts/<name>/` — per-host files: `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix` (host-specific home-manager config), `niri-outputs.kdl` (monitor layout + per-output niri layout overrides).
+- `home/` — shared home-manager modules: `kuroma.nix` (identity, GTK theming, imports `niri.nix`), `niri.nix` (assembles `~/.config/niri/config.kdl` from `niriParts`).
+- `config/niri/` — global KDL fragments: `appearance.kdl` (cursor theme/size), `spawn.kdl` (startup processes), `keybinds.kdl` (all keybinds).
 
-Currently one host: `zaphkiel` (x86_64-linux). `hardware-configuration.nix` is a `{ }` stub committed to git — it is regenerated per-machine by `nixos-generate-config` during install and should not be hand-edited.
+Currently one host: `zaphkiel` (x86_64-linux desktop).
 
-When adding a new piece of system config, decide first: is it host-agnostic (→ new file in `modules/`, then add the import line to each host's `configuration.nix` that wants it) or host-specific (→ edit that host's `configuration.nix` directly). Hostname, `stateVersion`, and disk identity stay in the host directory; everything else defaults to a module.
+## Adding config — decision rules
+
+- **Host-agnostic system config** → new file in `modules/`, add its import to each host's `configuration.nix` that wants it.
+- **Host-specific system config** → edit `hosts/<name>/configuration.nix` directly (hostname, stateVersion, disk identity) or add a module import only that host uses.
+- **Shared home-manager config** → edit `home/kuroma.nix` or add a new file under `home/` and import it there.
+- **Host-specific home-manager config** → edit `hosts/<name>/home.nix`. This is imported alongside `home/kuroma.nix` in `flake.nix`. Use this for anything hardware-tied: kanshi monitor profiles, host-specific services.
+- **Niri config that applies to all hosts** → add a KDL file under `config/niri/` and add it to the `niriParts` list in `flake.nix` for each relevant host.
+- **Host-specific niri config** → edit `hosts/<name>/niri-outputs.kdl` (monitor layout, per-output layout overrides). Already included in every host's `niriParts`.
 
 ## Common commands
 
-Rebuild on the running system after editing config:
+Rebuild (system + home-manager together — one command does both):
 ```
-sudo nixos-rebuild switch --flake .#zaphkiel
+sudo nixos-rebuild switch --flake ~/nixos-configs#zaphkiel
 ```
-Variants: `boot` (apply on next boot), `test` (no bootloader entry), `build` (build only, useful for CI-style checks).
+Variants: `boot` (apply on next boot), `test` (no bootloader entry), `build` (build only).
 
 Validate without applying:
 ```
@@ -28,24 +37,68 @@ nix flake check
 nix build .#nixosConfigurations.zaphkiel.config.system.build.toplevel
 ```
 
-Update inputs (`nixpkgs`, `disko`):
+Update inputs:
 ```
 nix flake update            # all inputs
 nix flake update nixpkgs    # one input
 ```
 
-Initial install on a fresh machine (destroys the target disk — see `hosts/zaphkiel/disko.nix` for the device id):
+Initial install on a fresh machine:
 ```
 sudo nix --experimental-features 'nix-command flakes' run github:nix-community/disko/latest -- --mode destroy,format,mount ./hosts/zaphkiel/disko.nix
-sudo nixos-generate-config --no-filesystems --root /mnt   # writes /mnt/etc/nixos/hardware-configuration.nix; copy it over hosts/zaphkiel/hardware-configuration.nix
+sudo nixos-generate-config --no-filesystems --root /mnt
+# copy /mnt/etc/nixos/hardware-configuration.nix → hosts/zaphkiel/hardware-configuration.nix
 sudo nixos-install --flake .#zaphkiel
 ```
 
 ## Architecture notes
 
-- **Disk layout (`hosts/zaphkiel/disko.nix`)**: GPT with a 1G ESP and a LUKS container filling the rest. Inside LUKS is a single Btrfs filesystem with subvolumes `root`, `home`, `nix`, `persist`, and `swap` (64G swapfile). `compress=zstd,noatime` everywhere. UUIDs and the NVMe `by-id` path are pinned in this file — changing hardware means editing them here.
-- **Boot (`modules/boot.nix`)**: GRUB with `enableCryptodisk = true` + EFI (`canTouchEfiVariables`). Required because `/` lives in LUKS. Currently host-agnostic; if a future host doesn't use full-disk encryption this will need to move to the host directory or become opt-in.
-- **GPU/CUDA (`modules/nvidia.nix`)**: NVIDIA stack — `services.xserver.videoDrivers = [ "nvidia" ]`, `hardware.nvidia.open = true` (open kernel modules), `nixpkgs.config.cudaSupport = true`, and `hardware.nvidia-container-toolkit.enable` for Docker GPU passthrough. `allowUnfree` (in `modules/nix.nix`) is on for firmware/driver bits. Touching any of these usually means a full rebuild + reboot. For a non-NVIDIA host, drop this module from `modules/default.nix` rather than editing it in place.
-- **Desktop session (`modules/niri.nix`, `modules/audio.nix`)**: SDDM (Wayland) + niri compositor + Noctalia shell + xwayland-satellite. Polkit and gnome-keyring are pulled in here because niri needs them for auth/secret prompts. PipeWire (with ALSA + 32-bit + Pulse shim) handles audio. Niri's per-user config (`~/.config/niri/config.kdl`) and Noctalia's settings (`~/.config/quickshell/noctalia/settings.json`) live in `$HOME` and are not managed by this repo — the system module only ships the binaries and the SDDM session entry.
-- **User (`modules/users.nix`)**: single normal user `kuroma` in `wheel networkmanager video audio docker`, with `initialPassword = "temp"` — change with `passwd` after first boot; `initialPassword` is ignored on subsequent rebuilds. Default shell is zsh (`programs.zsh.enable = true` + `users.defaultUserShell = pkgs.zsh`); both lines must stay together — setting the default shell without enabling the program leaves zsh out of `/etc/shells`. Currently in `modules/` (so reusable across hosts); move to a host's `configuration.nix` if it should be host-specific.
-- **State version**: `system.stateVersion = "25.11"` lives in `hosts/zaphkiel/configuration.nix`. Do not bump casually — it pins stateful-module defaults (databases, etc.) to the install-time release. Each new host gets its own value.
+### Disk (`hosts/zaphkiel/disko.nix`)
+GPT + 1G ESP + LUKS container filling the rest. Inside LUKS: single Btrfs filesystem with subvolumes `root`, `home`, `nix`, `persist`, `swap` (64G swapfile). `compress=zstd,noatime` everywhere. NVMe `by-id` path and UUIDs are pinned here — hardware change means editing this file.
+
+### Boot (`modules/boot.nix`)
+GRUB with `enableCryptodisk = true` + EFI. Required because `/` is inside LUKS. Host-agnostic for now; move to the host directory if a future machine doesn't use FDE.
+
+### GPU (`modules/nvidia.nix`)
+`services.xserver.videoDrivers = ["nvidia"]`, `hardware.nvidia.open = true`, `nixpkgs.config.cudaSupport = true`, `hardware.nvidia-container-toolkit.enable` for Docker GPU passthrough. `allowUnfree` lives in `modules/nix.nix`. Full rebuild + reboot required when touching these. Non-NVIDIA hosts should omit this module entirely.
+
+### Desktop session (`modules/niri.nix`)
+- Enables `programs.niri`, polkit, gnome-keyring.
+- Login via greetd + tuigreet launching `niri-session`. `initial_session` autologins `kuroma`; `default_session` shows the TUI picker.
+- System packages: noctalia (from its own flake input, not nixpkgs), xwayland-satellite, wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
+- `XCURSOR_THEME = "breeze_cursors"` and `XCURSOR_SIZE = "24"` set via `environment.variables`.
+- Noctalia is from `inputs.noctalia` (`github:noctalia-dev/noctalia-shell`) so it tracks upstream rather than whatever nixpkgs has. The flake input must be passed via `specialArgs = { inherit inputs; }` for modules to access it.
+
+### Niri config assembly
+`home/niri.nix` reads `niriParts` (a list of KDL file paths from `extraSpecialArgs`) and concatenates them into `~/.config/niri/config.kdl` via `lib.concatMapStrings builtins.readFile`. The parts for zaphkiel in order:
+1. `config/niri/appearance.kdl` — cursor theme (`breeze_cursors`, size 24)
+2. `config/niri/spawn.kdl` — kills any lingering quickshell before starting noctalia-shell (fixes ghost process on session start), then spawns xwayland-satellite
+3. `config/niri/keybinds.kdl` — all keybinds: `Mod+T` → ghostty, `Mod+Space` → `noctalia-shell ipc call launcher toggle`, window/workspace nav, audio keys
+4. `hosts/zaphkiel/niri-outputs.kdl` — monitor layout: HDMI-A-2 landscape left (0,0), HDMI-A-1 portrait right (1920,0, `transform "90"`). HDMI-A-1 also has `layout { default-column-width { proportion 1.0; } }` so windows fill the portrait width and workspace up/down is the natural navigation direction.
+
+When adding a new host, create its `niriParts` list in `flake.nix` — include the global `config/niri/` parts it needs and its own `hosts/<name>/niri-outputs.kdl`.
+
+### Monitors (zaphkiel)
+Two 1080p@120Hz displays. Kanshi (`services.kanshi` in `hosts/zaphkiel/home.nix`) handles output positioning and hotplug. Niri's `niri-outputs.kdl` duplicates position/transform at the compositor level. HDMI-A-2 is the primary landscape monitor; HDMI-A-1 is portrait (rotated 90°) to the right. Niri workspaces are per-output by default — each monitor has its own independent workspace stack (Mod+Up/Down navigates within the focused output).
+
+### Home-manager
+Wired as a NixOS module — `sudo nixos-rebuild switch` applies both system and home config in one command. `useGlobalPkgs = true` and `useUserPackages = true`. Each user's config is split:
+- `home/kuroma.nix` — shared across all hosts: identity (`home.username`, `home.homeDirectory`, `home.stateVersion`), GTK theming (Papirus-Dark icons, breeze cursor), imports `home/niri.nix`.
+- `hosts/<name>/home.nix` — host-specific: kanshi monitor profiles, anything else tied to that machine's hardware.
+
+Both are merged in `flake.nix` via `users.kuroma = { imports = [ ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; }`.
+
+### User (`modules/users.nix`)
+Single normal user `kuroma` in groups `wheel networkmanager video audio docker`. `initialPassword = "temp"` — change with `passwd` after first boot (ignored on subsequent rebuilds). Default shell is zsh; `programs.zsh.enable = true` and `users.defaultUserShell = pkgs.zsh` must stay together — the program option adds zsh to `/etc/shells`.
+
+### Apps (`modules/apps.nix`)
+User-facing apps: dolphin, kdenlive, obs-studio, vesktop, prismlauncher, ffmpeg. Steam via `programs.steam.enable` (not just systemPackages — this sets up the Steam FHS environment correctly).
+
+### Fonts (`modules/fonts.nix`)
+`maple-mono.NF`, `noto-fonts`, `noto-fonts-cjk-sans` (CJK + Thai coverage), `gabarito`, `nerd-fonts.jetbrains-mono`. Google Sans is not in nixpkgs (licensing) — install manually if needed.
+
+### Gnome Keyring / Vivaldi
+`services.gnome.gnome-keyring.enable = true` is set in `modules/niri.nix`. Vivaldi prompts for keyring unlock on first launch per session; add `security.pam.services.greetd.enableGnomeKeyring = true` to auto-unlock at greetd login.
+
+### State version
+`system.stateVersion = "25.11"` in `hosts/zaphkiel/configuration.nix`. Do not bump — it pins stateful-module defaults to the install-time release. Each new host gets its own value matching when it was first installed.

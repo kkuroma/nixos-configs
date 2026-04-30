@@ -3,8 +3,8 @@
   programs.steam.enable = true;
 
   environment.systemPackages = with pkgs; [
-    dolphin
-    kdenlive
+    kdePackages.dolphin
+    kdePackages.kdenlive
     obs-studio
     vesktop
     prismlauncher

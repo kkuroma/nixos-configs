@@ -79,7 +79,7 @@ GRUB with `enableCryptodisk = true` + EFI. Required because `/` is inside LUKS. 
 When adding a new host, create its `niriParts` list in `flake.nix` — include the global `config/niri/` parts it needs and its own `hosts/<name>/niri-outputs.kdl`.
 
 ### Monitors (zaphkiel)
-Two 1080p@120Hz displays. Kanshi (`services.kanshi` in `hosts/zaphkiel/home.nix`) handles output positioning and hotplug. Niri's `niri-outputs.kdl` duplicates position/transform at the compositor level. HDMI-A-2 is the primary landscape monitor; HDMI-A-1 is portrait (rotated 90°) to the right. Niri workspaces are per-output by default — each monitor has its own independent workspace stack (Mod+Up/Down navigates within the focused output).
+Two 1080p@120Hz displays. Kanshi (`services.kanshi` in `hosts/zaphkiel/home.nix`) handles output positioning and hotplug. Uses the `settings` list format (not the deprecated `profiles` attrset). Niri's `niri-outputs.kdl` duplicates position/transform at the compositor level. HDMI-A-2 is the primary landscape monitor; HDMI-A-1 is portrait (rotated 90°) to the right. Niri workspaces are per-output by default — each monitor has its own independent workspace stack (Mod+Up/Down navigates within the focused output).
 
 ### Home-manager
 Wired as a NixOS module — `sudo nixos-rebuild switch` applies both system and home config in one command. `useGlobalPkgs = true` and `useUserPackages = true`. Each user's config is split:
@@ -92,7 +92,7 @@ Both are merged in `flake.nix` via `users.kuroma = { imports = [ ./home/kuroma.n
 Single normal user `kuroma` in groups `wheel networkmanager video audio docker`. `initialPassword = "temp"` — change with `passwd` after first boot (ignored on subsequent rebuilds). Default shell is zsh; `programs.zsh.enable = true` and `users.defaultUserShell = pkgs.zsh` must stay together — the program option adds zsh to `/etc/shells`.
 
 ### Apps (`modules/apps.nix`)
-User-facing apps: dolphin, kdenlive, obs-studio, vesktop, prismlauncher, ffmpeg. Steam via `programs.steam.enable` (not just systemPackages — this sets up the Steam FHS environment correctly).
+User-facing apps: `kdePackages.dolphin`, `kdePackages.kdenlive`, obs-studio, vesktop, prismlauncher, ffmpeg. Steam via `programs.steam.enable` (not just systemPackages — this sets up the Steam FHS environment correctly).
 
 ### Fonts (`modules/fonts.nix`)
 `maple-mono.NF`, `noto-fonts`, `noto-fonts-cjk-sans` (CJK + Thai coverage), `gabarito`, `nerd-fonts.jetbrains-mono`. Google Sans is not in nixpkgs (licensing) — install manually if needed.

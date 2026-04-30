@@ -8,7 +8,7 @@
     btop
     vscodium
     vivaldi
-    foot
+    ghostty
     claude-code
     fastfetch
     zsh

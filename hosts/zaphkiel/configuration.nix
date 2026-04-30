@@ -1,0 +1,25 @@
+{ ... }:
+{
+  imports = [
+    ./disko.nix
+    ./hardware-configuration.nix
+
+    ../../modules/audio.nix
+    ../../modules/bluetooth.nix
+    ../../modules/boot.nix
+    ../../modules/docker.nix
+    ../../modules/locale.nix
+    ../../modules/networking.nix
+    ../../modules/niri.nix
+    ../../modules/nix.nix
+    ../../modules/nvidia.nix
+    ../../modules/packages.nix
+    ../../modules/printing.nix
+    ../../modules/ssh.nix
+    ../../modules/users.nix
+  ];
+
+  networking.hostName = "zaphkiel";
+
+  system.stateVersion = "25.11";
+}

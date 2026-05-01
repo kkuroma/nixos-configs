@@ -7,4 +7,9 @@
     google-fonts
     nerd-fonts.jetbrains-mono
   ];
+
+  fonts.fontconfig.defaultFonts = {
+    sansSerif = [ "Noto Sans" ];
+    monospace = [ "Maple Mono NF" "Noto Sans Mono" ];
+  };
 }

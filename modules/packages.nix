@@ -6,7 +6,6 @@
     curl
     neovim
     btop
-    vscodium
     vivaldi
     ghostty
     claude-code

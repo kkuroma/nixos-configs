@@ -1,17 +1,10 @@
-// HDMI-A-2: primary landscape display (left)
 output "HDMI-A-2" {
     mode "1920x1080" refresh=120.0
     position x=0 y=0
 }
 
-// HDMI-A-1: portrait display (right, rotated 90°)
-// full-width columns mean windows fill the portrait width and you navigate
-// workspaces up/down rather than columns left/right — feels like vertical scrolling
 output "HDMI-A-1" {
     mode "1920x1080" refresh=120.0
     position x=1920 y=0
     transform "90"
-    layout {
-        default-column-width { proportion 1.0; }
-    }
 }

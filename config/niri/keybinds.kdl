@@ -1,6 +1,6 @@
 binds {
     Mod+T      hotkey-overlay-title="Terminal"  { spawn "ghostty"; }
-    Mod+Space  hotkey-overlay-title="Launcher"  { spawn "bash" "-c" "noctalia-shell ipc call launcher toggle"; }
+    Mod+Space  hotkey-overlay-title="Launcher"  { spawn "bash" "-c" "qs ipc call launcher toggle"; }
     Mod+Q                                       { close-window; }
     Mod+Shift+Q                                 { quit; }
 

@@ -1,3 +1,2 @@
-// kill any lingering quickshell process before starting to avoid ghost sessions
-spawn-at-startup "bash" "-c" "pkill -x quickshell; sleep 0.3; noctalia-shell"
+spawn-at-startup "bash" "-c" "pkill -x qs || true; sleep 0.3; qs -c noctalia-shell"
 spawn-at-startup "xwayland-satellite"

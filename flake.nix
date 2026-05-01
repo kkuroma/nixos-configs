@@ -41,6 +41,8 @@
               inherit inputs;
               niriParts = [
                 ./config/niri/appearance.kdl
+                ./config/niri/input.kdl
+                ./config/niri/noctalia.kdl
                 ./config/niri/spawn.kdl
                 ./config/niri/keybinds.kdl
                 ./hosts/zaphkiel/niri-outputs.kdl

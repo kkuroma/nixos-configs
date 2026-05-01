@@ -1,4 +1,4 @@
 cursor {
-    theme "breeze_cursors"
-    size 24
+    xcursor-theme "breeze_cursors"
+    xcursor-size 24
 }

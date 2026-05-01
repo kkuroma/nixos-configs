@@ -22,6 +22,8 @@
   environment.variables = {
     XCURSOR_THEME = "breeze_cursors";
     XCURSOR_SIZE = "24";
+    HYPRCURSOR_THEME = "breeze_cursors";
+    HYPRCURSOR_SIZE = "24";
   };
 
   environment.systemPackages = [

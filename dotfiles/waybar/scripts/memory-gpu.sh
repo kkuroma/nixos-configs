@@ -1,0 +1,61 @@
+#!/bin/bash
+
+MODE=${1:-1} # 0 horizontal 1 vertical
+
+# Get RAM info
+mem_info=$(free -h | awk '/^Mem:/ {print $3,$2}')
+read -r mem_used mem_total <<< "$mem_info"
+mem_percent=$(free | awk '/^Mem:/ {printf "%.0f", $3/$2 * 100}')
+
+# Try to get NVIDIA GPU info
+if command -v nvidia-smi &> /dev/null; then
+    gpu_info=$(timeout 2 nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null)
+
+    if [ -n "$gpu_info" ]; then
+        IFS=',' read -r gpu_util vram_used vram_total temp power_draw power_limit <<< "$gpu_info"
+
+        # Format VRAM to GB
+        vram_used=$(echo "$vram_used" | awk '{printf "%.1f", $1/1024}')
+        vram_total=$(echo "$vram_total" | awk '{printf "%.1f", $1/1024}')
+
+        # Trim whitespace
+        gpu_util=$(echo "$gpu_util" | xargs)
+        temp=$(echo "$temp" | xargs)
+        power_draw=$(echo "$power_draw" | awk '{printf "%.0f", $1}')
+        power_limit=$(echo "$power_limit" | awk '{printf "%.0f", $1}')
+
+        # Display: RAM% | GPU%
+        if [ "$MODE" -eq 0 ]; then
+            display_text="󰍛 ${mem_percent}% 󰢮 ${gpu_util}%"
+        else
+            chars=("󰪞" "󰪟" "󰪠" "󰪡" "󰪢" "󰪣" "󰪤" "󰪥")
+            index_ram=$mem_percent*7/100
+            index_gpu=$gpu_util*7/100
+            display_text="${chars[$index_ram]}\n${chars[$index_gpu]}"
+        fi
+
+        # Tooltip with Pango markup
+        tooltip="<b><span color='#fab387'><big>󰍛 Memory &amp; GPU</big></span></b>"
+        tooltip+="\n<span color='#89dceb'>RAM:</span> <span color='#cdd6f4'>${mem_used} / ${mem_total} (${mem_percent}%)</span>"
+        tooltip+="\n<span color='#89dceb'>GPU Load:</span> <span color='#cdd6f4'>${gpu_util}%</span>"
+        tooltip+="\n<span color='#89dceb'>GPU Temp:</span> <span color='#cdd6f4'>${temp}°C</span>"
+        tooltip+="\n<span color='#89dceb'>VRAM:</span> <span color='#cdd6f4'>${vram_used}GB / ${vram_total}GB</span>"
+        tooltip+="\n<span color='#89dceb'>Power:</span> <span color='#cdd6f4'>${power_draw}W / ${power_limit}W</span>"
+    else
+        # nvidia-smi exists but failed - show RAM only
+        display_text="${mem_percent}%"
+        tooltip="<b><span color='#fab387'><big>󰍛 Memory</big></span></b>\n<span color='#89dceb'>RAM:</span> <span color='#cdd6f4'>${mem_used} / ${mem_total} (${mem_percent}%)</span>"
+    fi
+else
+    # No NVIDIA GPU - show RAM only
+    if [ "$MODE" -eq 0 ]; then
+        display_text="󰍛 ${mem_percent}%"
+    else
+        chars=("󰪞" "󰪟" "󰪠" "󰪡" "󰪢" "󰪣" "󰪤" "󰪥")
+        index_ram=$mem_percent*7/100
+        display_text="${chars[$index_ram]}"
+    fi
+    tooltip="<b><span color='#fab387'><big>󰍛 Memory</big></span></b>\n<span color='#89dceb'>RAM:</span> <span color='#cdd6f4'>${mem_used} / ${mem_total} (${mem_percent}%)</span>"
+fi
+
+echo "{\"text\":\"$display_text\",\"tooltip\":\"$tooltip\"}"

@@ -1,4 +1,4 @@
-{ config, inputs, pkgs, ... }:
+{ config, pkgs, ... }:
 let
   iconTheme = {
     name = "Papirus-Dark";
@@ -6,16 +6,18 @@ let
   };
 in
 {
-  imports = [ ./niri.nix ./codium.nix ];
+  imports = [ ./hyprland.nix ./codium.nix ];
+
+  # Expose iconTheme to all imported modules (hyprland.nix reads it)
+  _module.args.iconTheme = iconTheme;
 
   home.username = "kuroma";
   home.homeDirectory = "/home/kuroma";
   home.stateVersion = "25.11";
 
-  # qt6ct — HM manages everything except colors/ (noctalia writes noctalia.conf there)
   xdg.configFile."qt6ct/qt6ct.conf".text = ''
     [Appearance]
-    color_scheme_path=${config.home.homeDirectory}/.config/qt6ct/colors/noctalia.conf
+    color_scheme_path=${config.home.homeDirectory}/.config/qt6ct/colors/matugen.conf
     custom_palette=true
     icon_theme=${iconTheme.name}
     standard_dialogs=default
@@ -24,19 +26,6 @@ in
     [Fonts]
     fixed="Noto Sans Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
     general="Noto Sans,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
-  '';
-
-  # KDE apps (Dolphin etc.) read icon theme and fonts from kdeglobals
-  xdg.configFile."kdeglobals".text = ''
-    [Icons]
-    Theme=${iconTheme.name}
-
-    [General]
-    font=Noto Sans,11,-1,5,400,0,0,0,0,0
-    fixed=Noto Sans Mono,10,-1,5,400,0,0,0,0,0
-    smallestReadableFont=Noto Sans,8,-1,5,400,0,0,0,0,0
-    toolBarFont=Noto Sans,10,-1,5,400,0,0,0,0,0
-    menuFont=Noto Sans,11,-1,5,400,0,0,0,0,0
   '';
 
   gtk = {

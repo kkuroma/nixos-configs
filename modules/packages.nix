@@ -6,8 +6,6 @@
     curl
     neovim
     btop
-    vivaldi
-    ghostty
     claude-code
     fastfetch
     zsh

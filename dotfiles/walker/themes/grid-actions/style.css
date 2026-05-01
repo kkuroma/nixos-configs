@@ -1,0 +1,22 @@
+@import "../../style.css";
+
+/* 2-col grid cards */
+.item-box {
+  margin: 3px;
+}
+
+.item-image {
+  -gtk-icon-size: 32px;
+}
+
+.large-icons {
+  -gtk-icon-size: 32px;
+}
+
+.normal-icons {
+  -gtk-icon-size: 32px;
+}
+
+.item-image-text {
+  font-size: 28px;
+}

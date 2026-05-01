@@ -1,0 +1,58 @@
+@import "../../style.css";
+
+/* 5-col color swatch grid */
+.item-box {
+  margin: 3px;
+  padding: 8px 8px;
+  border: 2px solid transparent;
+}
+
+child:selected .item-box,
+row:selected .item-box {
+  background: @primary;
+  color: @on_primary;
+  border: 2px solid @on_primary;
+}
+
+child:selected .item-text,
+row:selected .item-text {
+  color: @on_primary;
+}
+
+child:selected .item-subtext,
+row:selected .item-subtext {
+  color: @on_primary;
+  opacity: 0.8;
+}
+
+child:selected .item-image-text,
+row:selected .item-image-text {
+  color: @on_primary;
+}
+
+.item-image {
+  -gtk-icon-size: 80px;
+  border-radius: 6px;
+}
+
+child:selected .item-image,
+row:selected .item-image {
+  -gtk-icon-size: 60px;
+  border-radius: 6px;
+}
+
+.large-icons {
+  -gtk-icon-size: 60px;
+}
+
+.normal-icons {
+  -gtk-icon-size: 60px;
+}
+
+.item-image-text {
+  font-size: 24px;
+}
+
+.item-subtext {
+  font-size: 13px;
+}

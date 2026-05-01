@@ -14,18 +14,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nix-vscode-extensions = {
       url = "github:nix-community/nix-vscode-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, disko, home-manager, noctalia, ... }@inputs:
+  outputs = { self, nixpkgs, disko, home-manager, ... }@inputs:
   let
     system = "x86_64-linux";
     lib = nixpkgs.lib;
@@ -42,17 +42,7 @@
             useGlobalPkgs = true;
             useUserPackages = true;
             backupFileExtension = "backup";
-            extraSpecialArgs = {
-              inherit inputs;
-              niriParts = [
-                ./config/niri/appearance.kdl
-                ./config/niri/input.kdl
-                ./config/niri/noctalia.kdl
-                ./config/niri/spawn.kdl
-                ./config/niri/keybinds.kdl
-                ./hosts/zaphkiel/niri-outputs.kdl
-              ];
-            };
+            extraSpecialArgs = { inherit inputs; };
             users.kuroma = { imports = [ ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; };
           };
         }

@@ -10,7 +10,7 @@
     ../../modules/docker.nix
     ../../modules/locale.nix
     ../../modules/networking.nix
-    ../../modules/niri.nix
+    ../../modules/hyprland.nix
     ../../modules/nix.nix
     ../../modules/nvidia.nix
     ../../modules/apps.nix

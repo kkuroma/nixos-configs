@@ -4,8 +4,6 @@
     ./disko.nix
     ./hardware-configuration.nix
 
-    ../../modules/audio.nix
-    ../../modules/bluetooth.nix
     ../../modules/boot.nix
     ../../modules/docker.nix
     ../../modules/locale.nix
@@ -14,10 +12,9 @@
     ../../modules/nix.nix
     ../../modules/nvidia.nix
     ../../modules/apps.nix
+    ../../modules/autofs.nix
     ../../modules/fonts.nix
-    ../../modules/packages.nix
-    ../../modules/printing.nix
-    ../../modules/ssh.nix
+    ../../modules/services.nix
     ../../modules/users.nix
   ];
 

@@ -26,7 +26,6 @@
     HYPRCURSOR_THEME = "breeze_cursors";
     HYPRCURSOR_SIZE = "24";
     QT_QPA_PLATFORMTHEME = "qt6ct";
-    # Ensures Qt apps wrapped by nixpkgs can find the qt6ct platform theme plugin
     QT_PLUGIN_PATH = "/run/current-system/sw/lib/qt-6/plugins";
   };
 
@@ -37,6 +36,7 @@
     pkgs.papirus-icon-theme
     pkgs.kdePackages.breeze
     pkgs.qt6Packages.qt6ct
+    pkgs.libsForQt5.qt5ct
     pkgs.adwaita-qt6
   ];
 }

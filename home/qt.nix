@@ -1,18 +1,20 @@
 { config, lib, ... }:
 let
-  ui   = config.rice.fonts.ui;
-  mono = config.rice.fonts.mono;
-  icon = "Papirus-Dark";
-  qtc  = "${config.home.homeDirectory}/.config";
+  ui     = config.rice.fonts.ui;
+  mono   = config.rice.fonts.mono;
+  uiSz   = "13";
+  monoSz = "13";
+  icon   = "Papirus-Dark";
+  qtc    = "${config.home.homeDirectory}/.config";
 in
 {
   # adw-gtk3 is the base theme; noctalia applies its palette on top at runtime.
   # GTK4 (libadwaita) ignores gtk-theme and uses noctalia's color variables directly.
   dconf.settings."org/gnome/desktop/interface" = {
     gtk-theme           = lib.mkDefault "adw-gtk3";
-    font-name           = lib.mkDefault "${ui} 11";
-    document-font-name  = lib.mkDefault "${ui} 11";
-    monospace-font-name = lib.mkDefault "${mono} 11";
+    font-name           = lib.mkDefault "${ui} ${uiSz}";
+    document-font-name  = lib.mkDefault "${ui} ${uiSz}";
+    monospace-font-name = lib.mkDefault "${mono} ${monoSz}";
   };
 
   xdg.configFile."kdeglobals".text = ''
@@ -22,11 +24,11 @@ in
     [General]
     ColorScheme=noctalia
     TerminalApplication=ghostty
-    font=${ui},11,-1,5,400,0,0,0,0,0
-    fixed=${mono},11,-1,5,400,0,0,0,0,0
+    font=${ui},${uiSz},-1,5,400,0,0,0,0,0
+    fixed=${mono},${monoSz},-1,5,400,0,0,0,0,0
     smallestReadableFont=${ui},8,-1,5,400,0,0,0,0,0
-    toolBarFont=${ui},10,-1,5,400,0,0,0,0,0
-    menuFont=${ui},11,-1,5,400,0,0,0,0,0
+    toolBarFont=${ui},${uiSz},-1,5,400,0,0,0,0,0
+    menuFont=${ui},${uiSz},-1,5,400,0,0,0,0,0
 
     [UiSettings]
     ColorScheme=noctalia
@@ -41,8 +43,8 @@ in
     style=Fusion
 
     [Fonts]
-    fixed="${mono},11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
-    general="${ui},11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    fixed="${mono},${monoSz},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    general="${ui},${uiSz},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 
     [Interface]
     activate_item_on_single_click=1
@@ -73,8 +75,8 @@ in
     style=Fusion
 
     [Fonts]
-    fixed="${mono},11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
-    general="${ui},11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    fixed="${mono},${monoSz},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    general="${ui},${uiSz},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 
     [Interface]
     activate_item_on_single_click=1

@@ -13,6 +13,7 @@
   home.packages = with pkgs; [
     # dev
     claude-code
+    (texlive.combine { inherit (texlive) scheme-medium latexmk biber; })
 
     # GUI apps
     feishin
@@ -24,16 +25,6 @@
     kdePackages.kdenlive
     prismlauncher
     imv
-
-    # CLI tools
-    ripgrep
-    fd
-    duf
-    bottom
-    procs
-    ffmpeg
-    fastfetch
-    killall
 
     # GTK theming (noctalia applies colors on top of adw-gtk3)
     adw-gtk3

@@ -10,6 +10,7 @@
       "cursor-style"     = "bar";
       "copy-on-select"   = "clipboard";
       "config-file"      = "~/.config/ghostty/config.ghostty";
+      "gtk-custom-css"   = "notebook tab label { font-size: 14px; }";
     };
   };
 }

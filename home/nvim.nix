@@ -25,13 +25,16 @@
     extraConfigLua = ''
       pcall(function() require('matugen').setup() end)
 
-      -- Open neo-tree automatically when nvim is started with a directory argument
+      -- Open neo-tree sidebar when nvim is started with a directory argument.
+      -- After opening, move focus right so there's always a main editing window
+      -- alongside the sidebar — prevents files from replacing the tree.
       vim.api.nvim_create_autocmd("VimEnter", {
         callback = function()
           local arg = vim.fn.argv(0)
           if arg and arg ~= "" and vim.fn.isdirectory(arg) == 1 then
-            vim.cmd("cd " .. arg)
+            vim.cmd("cd " .. vim.fn.fnameescape(arg))
             require("neo-tree.command").execute({ action = "show", dir = arg })
+            vim.cmd("wincmd l")
           end
         end,
       })
@@ -84,14 +87,20 @@
       # Left-side file tree (LazyVim style)
       neo-tree = {
         enable = true;
-        closeIfLastWindow = true;
-        window = {
-          position = "left";
-          width    = 30;
-        };
-        filesystem.filteredItems = {
-          hideDotfiles   = false;
-          hideGitignored = true;
+        settings = {
+          close_if_last_window = true;
+          window = {
+            position = "left";
+            width    = 30;
+            mappings = {
+              "<cr>" = "open_drop";
+              "o"    = "open_drop";
+            };
+          };
+          filesystem.filtered_items = {
+            hide_dotfiles   = false;
+            hide_gitignored = true;
+          };
         };
       };
 

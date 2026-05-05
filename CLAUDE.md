@@ -8,11 +8,13 @@ Personal NixOS flake config for multiple machines. Layout:
 
 - `flake.nix` — per-host `nixosConfigurations` declarations only. Wires inputs, `specialArgs`, home-manager, and the `niriParts` list for each host.
 - `modules/` — topic-scoped NixOS system modules. **No `modules/default.nix` aggregator** — each host's `configuration.nix` explicitly imports the modules it wants by path, so future hosts can opt in/out freely.
-- `hosts/<name>/` — per-host files: `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix` (host-specific HM config including `rice.niri.extraConfig` for monitor layout).
+- `hosts/<name>/` — per-host files: `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix` (host-specific HM config including `rice.niri.extraConfig` for monitor layout), `fstab.nix` (host-specific local drive mounts).
 - `home/` — shared home-manager modules. `kuroma.nix` is a pure entry point (imports + identity only). Each concern has its own file.
 - `config/` — raw static config files (non-nix). Deployed via `xdg.configFile.*.source` or `xdg.dataFile.*.source` in `home/kuroma.nix`. Subdirs: `niri/`, `fastfetch/`, `fonts/`, `noctalia/`.
 
 Currently one host: `zaphkiel` (x86_64-linux desktop).
+
+Flake inputs: `nixpkgs` (unstable), `disko`, `home-manager`, `noctalia`, `nix-vscode-extensions`, `nixvim`, `sops-nix`.
 
 ## Adding config — decision rules
 
@@ -81,7 +83,7 @@ Using `github:nixos/nixpkgs/nixpkgs-unstable` (not `nixos-unstable`). The `nixpk
 ### Desktop session (`modules/niri.nix`)
 - Enables `programs.niri`, polkit, gnome-keyring.
 - Login via greetd + tuigreet launching `niri-session`. `initial_session` autologins `kuroma`; `default_session` shows the TUI picker.
-- System packages: noctalia (from its own flake input), xwayland-satellite, xorg.xrdb, wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
+- System packages: noctalia (from its own flake input), xwayland-satellite, `pkgs.xrdb` (not `xorg.xrdb` — renamed), wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
 - `XCURSOR_THEME = "breeze_cursors"`, `XCURSOR_SIZE = "24"`, and `QT_QPA_PLATFORMTHEME = "qt6ct"` set via `environment.variables`. `__GLX_VENDOR_LIBRARY_NAME=nvidia` set in `modules/nvidia.nix` — required for Xwayland to use the NVIDIA GLX driver; without it OpenGL apps run on Mesa/llvmpipe.
 - `WAYLAND_DISPLAY` is set at runtime by niri, not via `environment.variables`. Processes launched outside the niri session (e.g. via `systemd-run --user`) will NOT have it. Use `nohup ... &` instead of `systemd-run` when spawning Wayland apps from a terminal.
 - `DISPLAY=:0` is set via `systemd.user.sessionVariables` in `home/niri.nix` (hardcoded to match the forced `:0` argument passed to xwayland-satellite). This makes it available to any process that inherits the systemd user environment (e.g. noctalia's app launcher).
@@ -151,7 +153,8 @@ Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono` 
 | `home/fonts.nix` | `rice.fonts.{ui,mono}` options, fontconfig, Google Sans Flex font file deployment |
 | `home/ghostty.nix` | `programs.ghostty` — settings with font from `rice.fonts.mono`, noctalia config-file ref |
 | `home/niri.nix` | Assembles `~/.config/niri/config.kdl`; declares `rice.niri.extraConfig` option |
-| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/neovim/fzf; defines `code-launcher` script |
+| `home/nvim.nix` | nixvim config — base16 theming, LSPs, neo-tree sidebar, treesitter, telescope, oil, lualine, conform |
+| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/fzf; defines `code-launcher` script; formatter binaries for conform-nvim |
 | `home/zsh.nix` | Zsh config, aliases, prompt, zoxide |
 | `home/nushell.nix` | Nushell config, same aliases, two-line prompt with timing |
 | `home/qt.nix` | kdeglobals, qt5ct, qt6ct as `.text`; GTK dconf settings — all use `rice.fonts.*` |
@@ -164,12 +167,13 @@ Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono` 
 **System (`modules/apps.nix`)**: `programs.steam.enable`, plus packages needed before login or by all users: `nushell git wget curl zip unzip`. `zsh` is handled by `programs.zsh.enable = true` in `modules/users.nix` (also adds it to `/etc/shells`). Also includes diagnostic/networking tools available to root: `jq`, `nmap`, `mtr`, `dnsutils`, `tcpdump`, `whois`, `pciutils`, `usbutils`, `lsof`, `strace`, `file`.
 
 **Home (`home/apps.nix`)**: All user-facing apps. Programs with HM modules use `programs.X.enable`:
-- `programs.neovim` (`withRuby = false`, `withPython3 = false`)
 - `programs.yazi` (`shellWrapperName = "y"`)
 - `programs.btop`, `programs.mpv`, `programs.zathura`
 - `programs.fzf` (`enableZshIntegration = true` — no nushell integration option)
 
-Also in `home.packages`: `python3.withPackages [numpy pandas scipy matplotlib requests ipython]`, `uv`, `onlyoffice-desktopeditors`, `kdePackages.ark` (Dolphin compress/extract), `imagemagick` (Dolphin image service menu).
+Neovim is managed by `home/nvim.nix` via nixvim — do NOT also enable `programs.neovim` in apps.nix (conflict).
+
+Also in `home.packages`: `python3.withPackages [numpy pandas scipy matplotlib requests ipython]`, `uv`, `onlyoffice-desktopeditors`, `kdePackages.ark` (Dolphin compress/extract), `imagemagick` (Dolphin image service menu). Formatter binaries for conform-nvim: `nixfmt`, `black`, `stylua`, `prettier`.
 
 Always set these explicitly to silence stateVersion upgrade warnings — do **not** bump `home.stateVersion` just to silence warnings.
 
@@ -193,14 +197,63 @@ Deployed via `xdg.configFile.*.source` or `xdg.dataFile.*.source` in `home/kurom
 
 ghostty config and kdeglobals are no longer static files — they are generated as `.text` in `home/ghostty.nix` and `home/qt.nix` respectively, using `rice.fonts.*` for interpolation.
 
+### Users (`modules/users.nix`)
+`users.mutableUsers = false` — NixOS enforces declared state on every rebuild; `passwd` changes are overwritten. Passwords declared as `hashedPassword` (yescrypt `$y$` hashes) directly in the file — safe to commit, cannot be reversed. To update a password: `mkpasswd --method=yescrypt`, paste hash into `users.nix`, rebuild. To verify a hash before committing: `python3 -c "import crypt,getpass; h=input('hash: '); print('OK' if crypt.crypt(getpass.getpass(), h)==h else 'WRONG')"`.
+
+SSH: `PasswordAuthentication = false`, `PermitRootLogin = "no"` in `modules/services.nix`. Key-only auth. Authorized public keys declared in `users.users.kuroma.openssh.authorizedKeys.keys` — add laptop pubkey there once generated.
+
 ### Services (`modules/services.nix`)
-Merged from what were previously `audio.nix`, `bluetooth.nix`, `ssh.nix`, `printing.nix`. Also contains tailscale and syncthing. Syncthing: `user = "kuroma"`, `dataDir = "/home/kuroma"`, one folder `Documents → ~/Documents`.
+Merged from what were previously `audio.nix`, `bluetooth.nix`, `ssh.nix`, `printing.nix`. Also contains tailscale and syncthing. Syncthing: `user = "kuroma"`, `dataDir = "/home/kuroma"`, one folder `Documents → ~/Documents`. SSH is key-only (`PasswordAuthentication = false`, `PermitRootLogin = "no"`).
 
 ### NAS automounts (`modules/autofs.nix`)
-CIFS mounts via autofs. Mounts four shares from `100.104.4.37` (Tailscale IP) under `/mnt/NAS/`: `anime`, `songs`, `backup-home`, `backup-games`. Credentials read from `/etc/autofs/nas-credentials` (created manually on the machine, not in git — `chmod 600`). `systemd.services.autofs` has `after = ["tailscaled.service"]` so it starts after the Tailscale tunnel is up.
+CIFS mounts via autofs. Mounts four shares from `100.104.4.37` (Tailscale IP) under `/mnt/NAS/`: `anime`, `songs`, `backup-home`, `backup-games`. Credentials read from `/run/secrets/nas/credentials` (decrypted at boot by sops-nix from `secrets/secrets.yaml` — see Secrets management below). `systemd.services.autofs` has `after = ["tailscaled.service"]` so it starts after the Tailscale tunnel is up.
+
+### Local storage mounts (`hosts/zaphkiel/fstab.nix`)
+Three ext4 drives mounted as automount units (mount on first access, not at boot):
+- `/dev/disk/by-uuid/60c72ba7-...` → `/mnt/Vault-Storage` (20T HDD)
+- `/dev/disk/by-uuid/c02c0849-...` → `/mnt/Vault-Academics` (1.8T SSD, label TheSSDVaultA)
+- `/dev/disk/by-uuid/a690716e-...` → `/mnt/Vault-Entertainment` (1.8T SSD, label TheSSDVaultE)
+
+`nofail` prevents boot failure if a drive is missing. `x-systemd.automount` defers mounting until first access. This file is in `hosts/zaphkiel/` not `modules/` because these drives are zaphkiel-specific; future hosts get their own `fstab.nix`.
+
+### Secrets management (`modules/sops.nix`, `secrets/`, `.sops.yaml`)
+Uses `sops-nix`. Encrypted file: `secrets/secrets.yaml` (committed to git, safe — encrypted with age). Contains NAS credentials only; user passwords are NOT in sops (see Users section).
+
+**Age keys** (both in `.sops.yaml` as recipients):
+- `zaphkiel` host key: derived from `/etc/ssh/ssh_host_ed25519_key` at activation time — `age1m74tl84...`
+- `kuroma` personal key: `age1fqvkw0y...` — private key stored in password manager as `AGE-SECRET-KEY-1...`, must be present at `~/.config/sops/age/keys.txt` on any machine used to edit secrets
+
+**Editing secrets**: `nix-shell -p sops --run 'sops ~/nixos-configs/secrets/secrets.yaml'` — opens editor, saves encrypted.
+
+**Bootstrap flow for new machines** (chicken-and-egg: new host key not yet in recipients):
+1. New host's `configuration.nix` imports `modules/users.nix` but NOT `modules/sops.nix` initially
+2. `users.mutableUsers = false` + `hashedPassword` still applies → real passwords work from first boot
+3. After boot: `cat /etc/ssh/ssh_host_ed25519_key.pub | nix run nixpkgs#ssh-to-age` → get pubkey
+4. Add to `.sops.yaml`, run `sops updatekeys secrets/secrets.yaml` from any machine with the personal key
+5. Add `../../modules/sops.nix` import to new host's config, rebuild → NAS credentials now available
+
+**Adding new secrets**: add entry in `secrets/secrets.yaml` via `sops`, declare in `modules/sops.nix` under `sops.secrets`, reference the `/run/secrets/...` path where needed.
 
 ### Fonts (`modules/fonts.nix`)
 System-level font packages: `maple-mono.NF-CN`, `noto-fonts`, `noto-fonts-cjk-sans`, `noto-fonts-color-emoji`, `google-fonts` (includes Google Sans Flex and Google Sans Code), `nerd-fonts.jetbrains-mono`. `fonts.fontconfig.defaultFonts` sets Noto Sans / Noto Sans Mono / Noto Color Emoji as system fallbacks. Do NOT use `fonts.fontconfig.localConf` — it generates a file without the required XML root element in some nixpkgs versions, causing fontconfig errors.
+
+### Neovim (`home/nvim.nix`)
+Configured via `nixvim` (flake input `github:nix-community/nixvim`, imported as `inputs.nixvim.homeModules.nixvim`). Do NOT use `programs.neovim` alongside nixvim — conflict.
+
+**Theming**: `base16-nvim` (RRethy) loaded from noctalia-generated `~/.config/nvim/lua/matugen.lua`. Noctalia writes this file and sends `SIGUSR1` to reload live. `pcall` guard in `extraConfigLua` prevents startup errors before noctalia has run. `home.activation.nvimMatugenFallback` creates a stub no-op `matugen.lua` on first boot.
+
+**File tree**: neo-tree sidebar (left, width 30). Auto-opens when nvim is invoked with a directory (`nvim ./`); VimEnter autocmd runs `neo-tree show` then `wincmd l` to focus the editing area. `open_drop` mapped to `<cr>` and `o` so files always open in the main window (never replacing the tree). `close_if_last_window = true` closes neo-tree if the last file is closed.
+
+**LSPs**: nil_ls (Nix), pyright (Python), lua_ls (Lua), rust_analyzer (Rust — `installCargo/installRustc = false`, uses system toolchain), ts_ls (TypeScript/JS), bashls (Bash), texlab (LaTeX), taplo (TOML), yamlls (YAML).
+
+**Formatters** (conform-nvim, runs on save): nixfmt (Nix), black (Python), stylua (Lua), prettier (JS/TS/JSON/YAML/MD). Formatter binaries live in `home.packages` in `apps.nix` — conform-nvim does not install them.
+
+**LaTeX**: vimtex with `view_method = "zathura"`. Uses system texlive from `apps.nix` (`texlivePackage = null`).
+
+**Key bindings** (all `<leader>`-prefixed, leader is `\` by default):
+- `<leader>e` — toggle neo-tree, `<leader>o` — Oil file manager
+- `<leader>ff/fg/fb/fh` — Telescope find/grep/buffers/help
+- `gd`, `gr`, `K`, `<leader>ca`, `<leader>rn` — LSP navigation/actions
 
 ### VSCodium (`home/codium.nix`)
 - Uses `programs.vscodium` (not `programs.vscode`). After a HM update, `programs.vscode` stopped auto-detecting VSCodium and always uses `~/.vscode/extensions/` — only `programs.vscodium` correctly targets `~/.vscode-oss/extensions/`.

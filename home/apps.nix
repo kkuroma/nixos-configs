@@ -41,10 +41,10 @@ in
     uv
 
     # nvim formatters (used by conform-nvim)
-    nixfmt-rfc-style   # nix
+    nixfmt             # nix
     black              # python
     stylua             # lua
-    nodePackages.prettier  # js/ts/json/yaml/md
+    prettier               # js/ts/json/yaml/md
 
     # GUI apps
     feishin

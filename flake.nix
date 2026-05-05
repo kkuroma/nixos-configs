@@ -23,9 +23,19 @@
       url = "github:nix-community/nix-vscode-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, disko, home-manager, noctalia, ... }@inputs:
+  outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, ... }@inputs:
   let
     system = "x86_64-linux";
     lib = nixpkgs.lib;
@@ -36,6 +46,7 @@
       modules = [
         disko.nixosModules.disko
         home-manager.nixosModules.home-manager
+        sops-nix.nixosModules.sops
         ./hosts/zaphkiel/configuration.nix
         {
           home-manager = {
@@ -49,7 +60,7 @@
                 ./config/niri/keybinds.kdl
               ];
             };
-            users.kuroma = { imports = [ ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; };
+            users.kuroma = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; };
           };
         }
       ];

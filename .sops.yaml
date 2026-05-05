@@ -1,0 +1,13 @@
+keys:
+  # zaphkiel host key — derived from /etc/ssh/ssh_host_ed25519_key at activation.
+  - &zaphkiel age1m74tl84hpwc7hqzahz6p08q2klg9ggt9u6tjzctnq3tnqyyycpeqaqy7qk
+
+  # Personal admin key — AGE-SECRET-KEY stored in password manager.
+  - &kuroma age1fqvkw0yedz7fy4fc9ekrc88tuufaq0c9c9xukst6k08yx7vflgls0mmuec
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *zaphkiel
+          - *kuroma

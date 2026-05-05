@@ -4,6 +4,7 @@
     ./fonts.nix
     ./ghostty.nix
     ./apps.nix
+    ./nvim.nix
     ./niri.nix
     ./codium.nix
     ./zsh.nix
@@ -27,4 +28,13 @@
 
   xdg.configFile."noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json".source =
     ../config/noctalia/colorschemes/material-ocean-dark/material-ocean-dark.json;
+
+  xdg.configFile."noctalia/user-templates.toml".source =
+    ../config/noctalia/user-templates.toml;
+
+  xdg.configFile."noctalia/templates/fcitx5-theme.conf".source =
+    ../config/noctalia/templates/fcitx5-theme.conf;
+
+  xdg.configFile."noctalia/templates/nvim-theme.lua".source =
+    ../config/noctalia/templates/nvim-theme.lua;
 }

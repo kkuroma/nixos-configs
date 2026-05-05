@@ -1,0 +1,11 @@
+[config]
+
+[templates.fcitx5]
+input_path = '~/.config/noctalia/templates/fcitx5-theme.conf'
+output_path = '~/.local/share/fcitx5/themes/noctalia/theme.conf'
+post_hook = 'kill -9 $(pgrep fcitx5); fcitx5 -d &'
+
+[templates.nvim]
+input_path = '~/.config/noctalia/templates/nvim-theme.lua'
+output_path = "~/.config/nvim/lua/matugen.lua"
+post_hook = 'pkill -SIGUSR1 nvim'

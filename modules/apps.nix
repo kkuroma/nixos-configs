@@ -25,6 +25,8 @@
     lsof
     strace
     file
+    xterm
+    glfw
 
     # networking
     nmap

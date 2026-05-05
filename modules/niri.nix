@@ -2,6 +2,7 @@
 {
   programs.niri.enable = true;
   programs.dconf.enable = true;
+  programs.uwsm.enable = true;
 
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;
@@ -26,12 +27,12 @@
     HYPRCURSOR_THEME = "breeze_cursors";
     HYPRCURSOR_SIZE = "24";
     QT_QPA_PLATFORMTHEME = "qt6ct";
-    QT_PLUGIN_PATH = "/run/current-system/sw/lib/qt-6/plugins";
   };
 
   environment.systemPackages = [
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     pkgs.xwayland-satellite
+    pkgs.xrdb
     pkgs.wl-clipboard
     pkgs.papirus-icon-theme
     pkgs.kdePackages.breeze

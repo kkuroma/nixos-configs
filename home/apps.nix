@@ -20,11 +20,6 @@ let
   '';
 in
 {
-  programs.neovim = { 
-    enable = true; 
-    withRuby = false; 
-    withPython3 = false; 
-  };
   programs.yazi = {
     enable = true;
     shellWrapperName = "y"; 
@@ -44,6 +39,12 @@ in
     (texlive.combine { inherit (texlive) scheme-medium latexmk biber; })
     (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
     uv
+
+    # nvim formatters (used by conform-nvim)
+    nixfmt-rfc-style   # nix
+    black              # python
+    stylua             # lua
+    nodePackages.prettier  # js/ts/json/yaml/md
 
     # GUI apps
     feishin

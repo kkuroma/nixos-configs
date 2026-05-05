@@ -34,6 +34,11 @@ sudo nixos-rebuild switch --flake ~/nixos-configs#zaphkiel
 ```
 Variants: `boot` (apply on next boot), `test` (no bootloader entry), `build` (build only).
 
+What requires what after `nixos-rebuild switch`:
+- **Logout + login** (restart the graphical session): any change to `environment.variables`, `systemd.user.sessionVariables`, `systemd.user.services`, or `environment.etc` — the running niri session inherits the old environment and old unit files until a fresh session starts.
+- **Reboot**: kernel parameters (`boot.kernelParams`), kernel package (`boot.kernelPackages`), initrd changes, LUKS/disk layout, nvidia driver install/update. After a kernel or driver change, the running kernel and the installed nvidia module will be mismatched until reboot.
+- **Neither** (takes effect immediately): most `systemd.services` (system services — `nixos-rebuild switch` restarts them), `/etc/` file changes that apps re-read on demand, nix store paths already built.
+
 Validate without applying:
 ```
 nix flake check
@@ -76,15 +81,20 @@ Using `github:nixos/nixpkgs/nixpkgs-unstable` (not `nixos-unstable`). The `nixpk
 ### Desktop session (`modules/niri.nix`)
 - Enables `programs.niri`, polkit, gnome-keyring.
 - Login via greetd + tuigreet launching `niri-session`. `initial_session` autologins `kuroma`; `default_session` shows the TUI picker.
-- System packages: noctalia (from its own flake input), xwayland-satellite, wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
-- `XCURSOR_THEME = "breeze_cursors"`, `XCURSOR_SIZE = "24"`, and `QT_QPA_PLATFORMTHEME = "qt6ct"` set via `environment.variables`.
+- System packages: noctalia (from its own flake input), xwayland-satellite, xorg.xrdb, wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
+- `XCURSOR_THEME = "breeze_cursors"`, `XCURSOR_SIZE = "24"`, and `QT_QPA_PLATFORMTHEME = "qt6ct"` set via `environment.variables`. `__GLX_VENDOR_LIBRARY_NAME=nvidia` set in `modules/nvidia.nix` — required for Xwayland to use the NVIDIA GLX driver; without it OpenGL apps run on Mesa/llvmpipe.
 - `WAYLAND_DISPLAY` is set at runtime by niri, not via `environment.variables`. Processes launched outside the niri session (e.g. via `systemd-run --user`) will NOT have it. Use `nohup ... &` instead of `systemd-run` when spawning Wayland apps from a terminal.
+- `DISPLAY=:0` is set via `systemd.user.sessionVariables` in `home/niri.nix` (hardcoded to match the forced `:0` argument passed to xwayland-satellite). This makes it available to any process that inherits the systemd user environment (e.g. noctalia's app launcher).
+- **xwayland-satellite** runs as a `systemd.user.services.xwayland-satellite` service (Type=notify, forced to `:0`) rather than `spawn-at-startup`, so `DISPLAY` enters the user session environment. After sd_notify READY, `xrdb -merge ~/.config/Xresources` is run to apply cursor theme to the X server. Do NOT add a `spawn-at-startup "xwayland-satellite"` line in the niri KDL config.
+- **xwayland-satellite service ordering**: the service must use `After = [ "graphical-session.target" ]` (not `graphical-session-pre.target`). xwayland-satellite needs `WAYLAND_DISPLAY` in the systemd user environment to connect to the compositor. uwsm exports `WAYLAND_DISPLAY` only when `graphical-session.target` becomes active (after niri is fully up). Using `graphical-session-pre.target` causes a race where xwayland-satellite starts before niri has exported its socket → panic with `NoCompositor`. Symptom: `systemctl --user status xwayland-satellite` shows `failed (Result: start-limit-hit)` with `NoCompositor` in the journal.
+- **Why noctalia's launcher needs xwayland-satellite running but a terminal does not**: spawning a `.desktop` from a terminal does a direct `exec()` — the child inherits the shell's full environment (including `DISPLAY`). Noctalia's app launcher uses GTK's GIO/D-Bus activation, which spawns processes via the D-Bus daemon with the systemd user environment — also has `DISPLAY=:0`, but still requires the actual X server (xwayland-satellite) to be listening on `:0`. The symptom looks like a missing env var but the real cause is the X server not running. Killing noctalia and restarting it from a terminal does not fix this — the process environment is fine either way; the X server just isn't there.
+- `~/.config/Xresources` is managed by HM in `home/niri.nix` with `Xcursor.theme: breeze_cursors` and `Xcursor.size: 24`.
 - Noctalia is from `inputs.noctalia` (`github:noctalia-dev/noctalia-shell`) — correct approach, do not move to nixpkgs. The flake exports `homeModules.default` and `nixosModules.default` but only the package is currently used.
 
 ### Niri config assembly
 `home/niri.nix` assembles `~/.config/niri/config.kdl` from three sources:
 
-1. **Inline text** (hardcoded in `home/niri.nix`): cursor theme, input config, spawn-at-startup lines, and the `ghostty.float` window-rule. These were previously separate KDL files (`appearance.kdl`, `input.kdl`, `spawn.kdl`) but are now embedded directly to reduce the niriParts list.
+1. **Inline text** (hardcoded in `home/niri.nix`): cursor theme, input config, `spawn-at-startup "noctalia-shell"`, and the `ghostty.float` window-rule. xwayland-satellite is NOT in spawn-at-startup — it runs as a systemd user service. These were previously separate KDL files (`appearance.kdl`, `input.kdl`, `spawn.kdl`) but are now embedded directly to reduce the niriParts list.
 2. **`niriParts`** (KDL file paths from `extraSpecialArgs` in `flake.nix`):
    - `config/niri/noctalia.kdl` — includes noctalia's runtime `noctalia.kdl`, adds global corner-radius + `open-maximized true` window-rule, debug block, noctalia-overview layer-rule
    - `config/niri/keybinds.kdl` — all keybinds

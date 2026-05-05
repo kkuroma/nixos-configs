@@ -4,7 +4,13 @@
   hardware.bluetooth.powerOnBoot = true;
 
   services.blueman.enable = true;
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;  # key-only auth
+      PermitRootLogin = "no";
+    };
+  };
   services.printing.enable = true;
   services.tailscale.enable = true;
 

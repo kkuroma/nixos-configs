@@ -20,5 +20,10 @@
 
   networking.hostName = "zaphkiel";
 
+  # Hibernate resume — Btrfs swapfile inside LUKS.
+  # After first boot: run `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile`
+  # and add the printed number as: boot.kernelParams = [ "resume_offset=<NUMBER>" ];
+  boot.resumeDevice = "/dev/mapper/cryptroot";
+
   system.stateVersion = "25.11";
 }

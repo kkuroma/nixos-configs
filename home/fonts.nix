@@ -1,8 +1,10 @@
 { lib, config, ... }:
 {
   options.rice.fonts = {
-    ui   = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
-    mono = lib.mkOption { type = lib.types.str; default = "Google Sans Code"; };
+    ui      = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
+    mono    = lib.mkOption { type = lib.types.str; default = "Maple Mono NF CN"; };
+    uiSize  = lib.mkOption { type = lib.types.int; default = 12; };
+    monoSize = lib.mkOption { type = lib.types.int; default = 12; };
   };
 
   config = {

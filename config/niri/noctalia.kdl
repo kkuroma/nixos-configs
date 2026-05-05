@@ -6,6 +6,7 @@ include "noctalia.kdl"
 window-rule {
     geometry-corner-radius 6
     clip-to-geometry true
+    default-column-width { proportion 0.5; }
 }
 
 debug {

@@ -9,6 +9,9 @@
     ./zsh.nix
     ./nushell.nix
     ./qt.nix
+    ./fcitx5.nix
+    ./xdg.nix
+    ./git.nix
   ];
 
   home.username = "kuroma";
@@ -21,4 +24,7 @@
 
   xdg.configFile."noctalia/colorschemes/Material Ocean/Material Ocean.json".source =
     ../config/noctalia/colorschemes/material-ocean/material-ocean.json;
+
+  xdg.configFile."noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json".source =
+    ../config/noctalia/colorschemes/material-ocean-dark/material-ocean-dark.json;
 }

@@ -1,24 +1,28 @@
 { ... }:
 {
-  services.kanshi = {
-    enable = true;
-    settings = [
-      {
-        profile.name = "default";
-        profile.outputs = [
-          {
-            criteria = "HDMI-A-1";
-            mode = "1920x1080@120Hz";
-            position = "0,0";
-            transform = "90";
-          }
-          {
-            criteria = "HDMI-A-2";
-            mode = "1920x1080@120Hz";
-            position = "1080,700";
-          }
-        ];
-      }
-    ];
-  };
+  # Single source of truth for monitor layout — niri handles hotplug natively.
+  # Kanshi removed; niri output config replaces it entirely.
+  rice.niri.extraConfig = ''
+    output "HDMI-A-1" {
+        mode "1920x1080@120.000"
+        position x=0 y=0
+        transform "90"
+        layout {
+            gaps 6
+            border { width 2; }
+            focus-ring { width 2; }
+            default-column-width { proportion 1.0; }
+        }
+    }
+
+    output "HDMI-A-2" {
+        mode "1920x1080@120.000"
+        position x=1080 y=700
+        layout {
+            gaps 6
+            border { width 2; }
+            focus-ring { width 2; }
+        }
+    }
+  '';
 }

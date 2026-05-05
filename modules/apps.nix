@@ -13,6 +13,7 @@
 
     # CLI tools
     ripgrep
+    tree
     fd
     duf
     bottom
@@ -20,5 +21,21 @@
     ffmpeg
     fastfetch
     killall
+    jq
+    lsof
+    strace
+    file
+
+    # networking
+    nmap
+    mtr
+    dnsutils
+    tcpdump
+    whois
+
+    # hardware integration
+    pciutils
+    usbutils
+    nvme-cli    
   ];
 }

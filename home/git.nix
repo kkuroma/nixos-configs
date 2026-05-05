@@ -2,9 +2,11 @@
 {
   programs.git = {
     enable = true;
-    userName  = "kuroma";
-    userEmail = "laoganma960@gmail.com";
-    extraConfig = {
+    settings = {
+      user = {
+        name  = "kuroma";
+        email = "contact@kuroma.dev";
+      };
       init.defaultBranch = "main";
       pull.rebase         = false;
       core.autocrlf       = "input";

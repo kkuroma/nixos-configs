@@ -43,8 +43,9 @@
         } else {
           ""
         }
-        let now = (date now | format date "%Y/%m/%d][%H:%M:%S")
-        $"(ansi cyan)╭──($venv)[(ansi red)(ansi attr_bold)($env.USER)(ansi reset)(ansi cyan)@(ansi green)(ansi attr_bold)(sys host | get hostname)(ansi reset)(ansi cyan)][(ansi blue)(ansi attr_bold)($dir_trimmed)(ansi reset)(ansi cyan)]──[(ansi magenta)(ansi attr_bold)($now)(ansi reset)(ansi cyan)](ansi reset)(char newline)"
+        let date_str = (date now | format date "%Y/%m/%d")
+        let time_str = (date now | format date "%H:%M:%S")
+        $"(ansi cyan)╭──($venv)[(ansi red)(ansi attr_bold)($env.USER)(ansi reset)(ansi yellow)@(ansi green)(ansi attr_bold)(sys host | get hostname)(ansi reset)(ansi cyan)][(ansi blue)(ansi attr_bold)($dir_trimmed)(ansi reset)(ansi cyan)]──[(ansi magenta)(ansi attr_bold)($date_str)(ansi reset)(ansi cyan)][(ansi yellow)(ansi attr_bold)($time_str)(ansi reset)(ansi cyan)](ansi reset)(char newline)"
       }
 
       $env.PROMPT_COMMAND_RIGHT = {||
@@ -63,7 +64,7 @@
         }
       }
 
-      $env.PROMPT_INDICATOR = {|| $"(ansi cyan)╰─(ansi green)(ansi attr_bold)>(ansi reset) " }
+      $env.PROMPT_INDICATOR = {|| $"(ansi cyan)╰─(ansi green)(ansi attr_bold)▶(ansi reset) " }
       $env.PROMPT_INDICATOR_VI_INSERT = {|| ": " }
       $env.PROMPT_INDICATOR_VI_NORMAL = {|| "> " }
       $env.PROMPT_MULTILINE_INDICATOR = {|| "::: " }

@@ -2,8 +2,8 @@
 let
   ui     = config.rice.fonts.ui;
   mono   = config.rice.fonts.mono;
-  uiSz   = "13";
-  monoSz = "13";
+  uiSz   = toString config.rice.fonts.uiSize;
+  monoSz = toString config.rice.fonts.monoSize;
   icon   = "Papirus-Dark";
   qtc    = "${config.home.homeDirectory}/.config";
 in

@@ -1,11 +1,19 @@
 binds {
-    Mod+grave  hotkey-overlay-title="Overview"  { toggle-overview; }
-    Mod+T      hotkey-overlay-title="Terminal"  { spawn "ghostty"; }
-    Mod+Space  hotkey-overlay-title="Launcher"  { spawn-sh "noctalia-shell ipc call launcher toggle"; }
-    Ctrl+Shift+S                                { spawn-sh "noctalia-shell ipc call plugin:screenshot takeScreenshot region"; }
-    Ctrl+Mod+V                                  { spawn-sh "noctalia-shell ipc call plugin:clipboard toggle";}
-    Mod+Q                                       { close-window; }
-    Mod+Shift+Q                                 { quit; }
+    Mod+grave hotkey-overlay-title="Overview"  { toggle-overview; }
+    Mod+T hotkey-overlay-title="Terminal" { spawn "ghostty"; }
+    Mod+Shift+T hotkey-overlay-title="Float Terminal" { spawn "ghostty" "--class=ghostty.float"; }
+    Mod+Space hotkey-overlay-title="Launcher" { spawn-sh "noctalia-shell ipc call launcher toggle"; }
+    Mod+C hotkey-overlay-title="VSCode" { spawn "codium"; }
+    Mod+B hotkey-overlay-title="Browser" { spawn "vivaldi"; }
+    Mod+E hotkey-overlay-title="Files" { spawn "dolphin"; }
+    Mod+W { spawn-sh "noctalia-shell ipc call wallpaper toggle"; }
+    Mod+S { spawn-sh "noctalia-shell ipc call settings toggle"; }
+    Mod+Escape { spawn-sh "noctalia-shell ipc --any-display call sessionMenu toggle"; }
+    Ctrl+Shift+S { spawn-sh "noctalia-shell ipc call plugin:screenshot takeScreenshot region"; }
+    Ctrl+Mod+V { spawn-sh "noctalia-shell ipc call plugin:clipboard toggle"; }
+    Shift+Mod+C { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "code-launcher"; }
+    Mod+Q { close-window; }
+    Mod+Shift+Q { quit; }
 
     Mod+Left        { focus-column-left; }
     Mod+Right       { focus-column-right; }
@@ -16,6 +24,11 @@ binds {
     Mod+Shift+Right { move-column-right; }
     Mod+Shift+Up    { move-column-to-workspace-up; }
     Mod+Shift+Down  { move-column-to-workspace-down; }
+
+    Alt+BracketLeft        { focus-workspace-down; }
+    Alt+BracketRight       { focus-workspace-up; }
+    Alt+Shift+BracketRight { focus-column-right; }
+    Alt+Shift+BracketLeft  { focus-column-left; }
 
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
@@ -39,9 +52,16 @@ binds {
     Mod+Shift+9 { move-column-to-workspace 9; }
     Mod+Shift+0 { move-column-to-workspace 10; }
 
+    Mod+V           { toggle-window-floating; }
     Mod+F           { maximize-column; }
     Mod+Shift+F     { fullscreen-window; }
     Mod+Shift+Space { toggle-window-floating; }
+
+    Alt+Equal { set-column-width "+10%"; }
+    Alt+Minus { set-column-width "-10%"; }
+
+    Alt+Shift+Semicolon   { consume-or-expel-window-left; }
+    Alt+Shift+Apostrophe  { consume-or-expel-window-right; }
 
     XF86AudioRaiseVolume  allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1+"; }
     XF86AudioLowerVolume  allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.1-"; }

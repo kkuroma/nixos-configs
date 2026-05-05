@@ -1,5 +1,20 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
+  # Minimal applications.menu required by kbuildsycoca6 to build its application
+  # service database.  Without this file kbuildsycoca6 logs "applications.menu
+  # not found" and skips indexing apps, leaving keditfiletype showing nothing.
+  # <DefaultAppDirs/> scans $XDG_DATA_DIRS/applications/; <DefaultMergeDirs/>
+  # picks up per-package .menu fragments from applications-merged/.
+  xdg.configFile."menus/applications.menu".text = ''
+    <!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+      "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+    <Menu>
+      <Name>Applications</Name>
+      <DefaultAppDirs/>
+      <DefaultMergeDirs/>
+    </Menu>
+  '';
+
   # Rebuild KDE's service database once per graphical session.
   # Without this, Dolphin's "Open With" dialog is empty because the cache
   # that indexes all installed .desktop files has never been built.
@@ -86,8 +101,28 @@
     };
   };
 
-  # Dolphin right-click service menu for image transforms.
-  # Uses absolute nix store paths so the menu works regardless of PATH.
+  # Vivaldi custom UI CSS — point Vivaldi to this file via
+  # Settings → Appearance → Custom UI Modifications.
+  # Uses fonts declared in home/fonts.nix so one edit updates everything.
+  xdg.configFile."vivaldi-theme/theme.css".text =
+    let
+      ui   = config.rice.fonts.ui;
+      mono = config.rice.fonts.mono;
+    in ''
+      /* vivaldi font override bc funny hehe */
+      * {
+        font-family: '${ui}', system-ui, sans-serif !important;
+      }
+
+      /* keep icons from breaking */
+      .vds-icon, 
+      .button-icon, 
+      [class^="icon-"] {
+        font-family: 'Vivaldi Icons', vivaldi !important;
+      }
+    '';
+
+  # r-click service menu in dolphin from reimage ported to nix
   xdg.dataFile."kio/servicemenus/reimage.desktop".text = ''
     [Desktop Entry]
     Type=Service

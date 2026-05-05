@@ -8,7 +8,7 @@ Personal NixOS flake config for multiple machines. Layout:
 
 - `flake.nix` — per-host `nixosConfigurations` declarations only. Wires inputs, `specialArgs`, home-manager, and the `niriParts` list for each host.
 - `modules/` — topic-scoped NixOS system modules. **No `modules/default.nix` aggregator** — each host's `configuration.nix` explicitly imports the modules it wants by path, so future hosts can opt in/out freely.
-- `hosts/<name>/` — per-host files: `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix` (host-specific HM config), `niri-outputs.kdl` (monitor layout + per-output niri layout overrides).
+- `hosts/<name>/` — per-host files: `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix` (host-specific HM config including `rice.niri.extraConfig` for monitor layout).
 - `home/` — shared home-manager modules. `kuroma.nix` is a pure entry point (imports + identity only). Each concern has its own file.
 - `config/` — raw static config files (non-nix). Deployed via `xdg.configFile.*.source` or `xdg.dataFile.*.source` in `home/kuroma.nix`. Subdirs: `niri/`, `fastfetch/`, `fonts/`, `noctalia/`.
 
@@ -21,7 +21,7 @@ Currently one host: `zaphkiel` (x86_64-linux desktop).
 - **Shared home-manager config** → add a new file under `home/` and import it in `home/kuroma.nix`.
 - **Host-specific home-manager config** → edit `hosts/<name>/home.nix`.
 - **Niri config (all hosts)** → add a KDL file under `config/niri/` and add it to `niriParts` in `flake.nix`.
-- **Host-specific niri config** → edit `hosts/<name>/niri-outputs.kdl`.
+- **Host-specific niri config** (cursor/input/spawn are shared inline in `home/niri.nix`; monitor layout) → set `rice.niri.extraConfig` in `hosts/<name>/home.nix`.
 - **Static config files** (no Nix interpolation needed) → add raw file under `config/`, reference with `.source` in `home/kuroma.nix`. **All `.source` refs live in `kuroma.nix` for traceability — never scatter them into sub-modules.**
 - **Config files needing Nix interpolation** → use `.text` in the relevant home module (e.g. `home/qt.nix` for kdeglobals/qt5ct/qt6ct, `home/ghostty.nix` for ghostty).
 - **Do not write NF icons or ANSI escape sequences directly** in Nix strings — copy raw files with `.source` instead.
@@ -60,10 +60,15 @@ sudo nixos-install --flake .#zaphkiel
 GPT + 1G ESP + LUKS container filling the rest. Inside LUKS: single Btrfs filesystem with subvolumes `root`, `home`, `nix`, `persist`, `swap` (64G swapfile). `compress=zstd,noatime` everywhere. NVMe `by-id` path and UUIDs are pinned here — hardware change means editing this file.
 
 ### Boot (`modules/boot.nix`)
-GRUB with `enableCryptodisk = true` + EFI. Required because `/` is inside LUKS. Host-agnostic for now; move to the host directory if a future machine doesn't use FDE.
+systemd-boot + EFI. `configurationLimit = 10` keeps the ESP tidy. LUKS is unlocked by the initrd (disko auto-generates `boot.initrd.luks.devices`), so the bootloader itself needs no crypto support — the ESP is unencrypted. Host-agnostic; move to the host directory if a future machine needs different loader settings.
+
+**Migrating from GRUB to systemd-boot on a live system**: `bootctl status` fails when systemd-boot is not installed yet, which causes the NixOS installer script to abort. Fix: run `sudo bootctl --esp-path=/boot install` once, then `nixos-rebuild switch` succeeds on all subsequent runs.
 
 ### GPU (`modules/nvidia.nix`)
 `services.xserver.videoDrivers = ["nvidia"]`, `hardware.nvidia.open = true`, `nixpkgs.config.cudaSupport = true`, `hardware.nvidia-container-toolkit.enable` for Docker GPU passthrough. `allowUnfree` lives in `modules/nix.nix`. Full rebuild + reboot required when touching these. Non-NVIDIA hosts should omit this module entirely.
+
+### Kernel (zaphkiel)
+Uses `boot.kernelPackages = pkgs.linuxPackages_xanmod_latest` (xanmod). Because the binary cache only covers the standard nixpkgs kernels, changing the kernel or updating xanmod triggers local compilation of the nvidia kernel module and any CUDA-linked packages (OBS, etc.). A reboot is required after every kernel change to align the running kernel with the nvidia driver library. The nvidia CDI generator service will log a "Driver/library version mismatch" error until you reboot.
 
 ### nixpkgs channel
 Using `github:nixos/nixpkgs/nixpkgs-unstable` (not `nixos-unstable`). The `nixpkgs-unstable` branch skips NixOS integration test gating so package updates land faster. All flake inputs use `inputs.nixpkgs.follows = "nixpkgs"` to share a single nixpkgs version.
@@ -73,65 +78,80 @@ Using `github:nixos/nixpkgs/nixpkgs-unstable` (not `nixos-unstable`). The `nixpk
 - Login via greetd + tuigreet launching `niri-session`. `initial_session` autologins `kuroma`; `default_session` shows the TUI picker.
 - System packages: noctalia (from its own flake input), xwayland-satellite, wl-clipboard, papirus-icon-theme, kdePackages.breeze (cursor).
 - `XCURSOR_THEME = "breeze_cursors"`, `XCURSOR_SIZE = "24"`, and `QT_QPA_PLATFORMTHEME = "qt6ct"` set via `environment.variables`.
+- `WAYLAND_DISPLAY` is set at runtime by niri, not via `environment.variables`. Processes launched outside the niri session (e.g. via `systemd-run --user`) will NOT have it. Use `nohup ... &` instead of `systemd-run` when spawning Wayland apps from a terminal.
 - Noctalia is from `inputs.noctalia` (`github:noctalia-dev/noctalia-shell`) — correct approach, do not move to nixpkgs. The flake exports `homeModules.default` and `nixosModules.default` but only the package is currently used.
 
 ### Niri config assembly
-`home/niri.nix` reads `niriParts` (a list of KDL file paths from `extraSpecialArgs`) and concatenates them into `~/.config/niri/config.kdl` via `lib.concatMapStrings builtins.readFile`. Parts for zaphkiel in order:
-1. `config/niri/appearance.kdl` — cursor theme (`breeze_cursors`, size 24)
-2. `config/niri/input.kdl` — input device config
-3. `config/niri/noctalia.kdl` — includes noctalia's runtime `noctalia.kdl`, adds corner-radius window-rule, debug block, noctalia-overview layer-rule
-4. `config/niri/spawn.kdl` — kills lingering quickshell, spawns xwayland-satellite
-5. `config/niri/keybinds.kdl` — all keybinds
-6. `hosts/zaphkiel/niri-outputs.kdl` — monitor layout
+`home/niri.nix` assembles `~/.config/niri/config.kdl` from three sources:
 
-When adding a new host, create its `niriParts` list in `flake.nix`.
+1. **Inline text** (hardcoded in `home/niri.nix`): cursor theme, input config, spawn-at-startup lines, and the `ghostty.float` window-rule. These were previously separate KDL files (`appearance.kdl`, `input.kdl`, `spawn.kdl`) but are now embedded directly to reduce the niriParts list.
+2. **`niriParts`** (KDL file paths from `extraSpecialArgs` in `flake.nix`):
+   - `config/niri/noctalia.kdl` — includes noctalia's runtime `noctalia.kdl`, adds global corner-radius + `open-maximized true` window-rule, debug block, noctalia-overview layer-rule
+   - `config/niri/keybinds.kdl` — all keybinds
+3. **`config.rice.niri.extraConfig`** (a `lib.types.lines` option): host-specific KDL appended last. Set in `hosts/<name>/home.nix`. Used for monitor `output {}` blocks (replaces the old `niri-outputs.kdl` file).
+
+`home/niri.nix` also includes a `home.activation.niriNoctaliaFallback` script (runs after `writeBoundary`) that creates a placeholder `~/.config/niri/noctalia.kdl` if one doesn't exist yet — prevents `include` errors on a fresh install before noctalia has run for the first time.
+
+When adding a new host, create its `niriParts` list in `flake.nix` and set `rice.niri.extraConfig` in `hosts/<name>/home.nix` for monitor layout.
 
 ### Niri config — known gotchas
 - **One global `layout {}` node only**: niri errors on duplicate `layout {}` blocks. Noctalia generates one at runtime via `noctalia.kdl`. Put all layout overrides in per-output `layout {}` blocks inside `output {}` nodes instead.
 - **`recent-windows { highlight }` is first-wins**: adding a second `recent-windows` block after `include "noctalia.kdl"` has no effect — niri ignores it. To disable the active-window highlight tint, use noctalia's settings UI (Settings → recent windows toggle), not the KDL config.
 - **KDL inline block syntax requires semicolons**: `border { width 2; }` not `border { width 2 }`.
 - **Nix path literals cannot contain spaces**: file paths used with `.source` must have no spaces. The `xdg.configFile` key (a string) can have spaces for the deployed path. Example: source file `config/noctalia/colorschemes/material-ocean/material-ocean.json` deploys to `"noctalia/colorschemes/Material Ocean/Material Ocean.json"`.
+- **`default-floating-position relative-to` valid values** (niri 26.04+): `top-left`, `top-right`, `bottom-left`, `bottom-right`, `top`, `bottom`, `left`, `right`. The old value `output-center` was removed. Niri centers floating windows by default when no `default-floating-position` is specified.
+- **`default-floating-width`/`default-floating-height` do not exist** — use `default-column-width` and `default-window-height` inside window-rules for floating size.
+- **`open-maximized true` has no effect on floating windows** — safe to set globally; only affects tiling columns.
+- **Ghostty `--class` must be a valid DBus name** (requires at least one dot, e.g. `ghostty.float`). Values without dots are silently ignored and ghostty falls back to `com.mitchellh.ghostty`. In niri `match app-id`, escape the dot as `[.]` to avoid regex wildcard matching: `match app-id="ghostty[.]float"`.
+- **No `is-only-window` match condition** in niri 26.04. Auto-maximize-when-alone is approximated with a global `open-maximized true` window-rule (every tiling window opens maximized; niri's scrolling layout keeps multiple windows accessible side by side at full width).
 
 ### Noctalia — theming
 - Noctalia writes `~/.config/niri/noctalia.kdl` at runtime (layout colors, border colors, recent-windows highlight). Our `config/niri/noctalia.kdl` includes this file then appends static overrides.
 - Noctalia writes `~/.config/ghostty/config.ghostty` (terminal palette). `home/ghostty.nix` uses `programs.ghostty` and references this via `"config-file" = "~/.config/ghostty/config.ghostty"` in settings.
-- Custom color schemes go in `config/noctalia/colorschemes/<name>/` (no spaces in path) and are deployed via `xdg.configFile` in `kuroma.nix`. Currently: `material-ocean` → deploys to `~/.config/noctalia/colorschemes/Material Ocean/Material Ocean.json`.
-- **VSCodium theming**: `noctalia.noctaliatheme` is installed via `home.activation.noctaliaThemeExtension` in `home/codium.nix` — a bash script that copies the nix-managed extension to `~/.vscode-oss/extensions/noctalia.noctaliatheme/` as a writable directory. A `.nix-src` sentinel file tracks the nix store path and triggers a re-copy on extension updates. It is NOT in the extensions list (HM would symlink it read-only and noctalia can't write its color theme file).
+- Custom color schemes go in `config/noctalia/colorschemes/<name>/` (no spaces in path) and are deployed via `xdg.configFile` in `kuroma.nix`. Currently deployed:
+  - `material-ocean` → `~/.config/noctalia/colorschemes/Material Ocean/Material Ocean.json`
+  - `material-ocean-dark` → `~/.config/noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json`
+- **VSCodium theming**: `noctalia.noctaliatheme` is installed via `home.activation.noctaliaThemeExtension` in `home/codium.nix` — a bash script that copies the nix-managed extension to `~/.vscode-oss/extensions/noctalia.noctaliatheme-${version}-universal/` as a writable directory. The version is derived at eval time from the nix package's `package.json`. The versioned directory name matches what VSCodium marketplace uses, so noctalia's runtime writes (to `themes/NoctaliaTheme-color-theme.json`) land in the same directory. The extension is NOT in the extensions list (HM would symlink it read-only and noctalia can't write its color theme file).
 - **GTK theming**: GTK is not managed by the HM `gtk` module (causes `.gtk.css.backup` conflicts). Instead: `adw-gtk3` package installed, `dconf.settings` in `home/qt.nix` sets `gtk-theme = "adw-gtk3"` and font names. Noctalia applies its palette on top of adw-gtk3 at runtime (Settings → Color Scheme → Templates → GTK on). GTK4/libadwaita ignores `gtk-theme` and uses noctalia's color variables directly.
 - **qt5ct/qt6ct color files**: `~/.config/qt6ct/colors/` and `~/.config/qt5ct/colors/` are plain directories (not HM-managed symlinks). Noctalia can freely write `noctalia.conf` there. Only `qt6ct.conf`/`qt5ct.conf` themselves are HM symlinks.
 
 ### Fonts
-Font names are declared as HM module options in `home/fonts.nix`:
+Font names and sizes are declared as HM module options in `home/fonts.nix`:
 ```nix
 options.rice.fonts = {
-  ui   = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
-  mono = lib.mkOption { type = lib.types.str; default = "Google Sans Code"; };
+  ui       = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
+  mono     = lib.mkOption { type = lib.types.str; default = "Maple Mono NF CN"; };
+  uiSize   = lib.mkOption { type = lib.types.int; default = 12; };
+  monoSize = lib.mkOption { type = lib.types.int; default = 12; };
 };
 ```
-Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono`. To change fonts globally, edit the two defaults in `fonts.nix` only.
+Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono` / `config.rice.fonts.uiSize` / `config.rice.fonts.monoSize`. To change fonts globally, edit the defaults in `fonts.nix` only.
 
 - **UI font**: Google Sans Flex (variable TTF in `config/fonts/`, installed to `~/.local/share/fonts/` via `xdg.dataFile`).
-- **Mono font**: Google Sans Code (already in nixpkgs via `google-fonts` system package).
+- **Mono font**: Maple Mono NF CN (system package `maple-mono.NF-CN` in `modules/fonts.nix` — includes CJK glyphs).
 - **Fallbacks**: Noto Sans CJK/Arabic/Thai/Hebrew/Devanagari for non-Latin scripts; Noto Serif CJK for serif; Noto Color Emoji. Configured in `home/fonts.nix` fontconfig (`~/.config/fontconfig/fonts.conf`).
-- **System fontconfig** (`modules/fonts.nix`): only uses `fonts.fontconfig.defaultFonts` (Noto Sans / Noto Sans Mono / Noto Color Emoji) as system-level fallbacks. `fonts.fontconfig.localConf` is NOT used — it generates invalid XML in some nixpkgs versions.
+- **System fontconfig** (`modules/fonts.nix`): only uses `fonts.fontconfig.defaultFonts` (Noto Sans / Noto Sans Mono / Noto Color Emoji) as system-level fallbacks. `fonts.fontconfig.localConf` is NOT used — it generates a file without the required XML root element in some nixpkgs versions, causing fontconfig errors.
 - **After adding a font file**: run `fc-cache -f` once.
 
 ### Home-manager module layout
-`home/kuroma.nix` is a pure entry point — imports + identity fields only. All `.source` references to raw config files are consolidated here for traceability. Sub-modules:
+`home/kuroma.nix` is a pure entry point — imports + identity fields only. All `.source` references to raw config files are consolidated here for traceability. Also enables `services.cliphist` (clipboard history daemon). Sub-modules:
 
 | File | Contents |
 |------|----------|
 | `home/fonts.nix` | `rice.fonts.{ui,mono}` options, fontconfig, Google Sans Flex font file deployment |
 | `home/ghostty.nix` | `programs.ghostty` — settings with font from `rice.fonts.mono`, noctalia config-file ref |
-| `home/niri.nix` | Assembles `~/.config/niri/config.kdl` from `niriParts` |
-| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/neovim/fzf |
+| `home/niri.nix` | Assembles `~/.config/niri/config.kdl`; declares `rice.niri.extraConfig` option |
+| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/neovim/fzf; defines `code-launcher` script |
 | `home/zsh.nix` | Zsh config, aliases, prompt, zoxide |
 | `home/nushell.nix` | Nushell config, same aliases, two-line prompt with timing |
 | `home/qt.nix` | kdeglobals, qt5ct, qt6ct as `.text`; GTK dconf settings — all use `rice.fonts.*` |
-| `home/codium.nix` | VSCodium + extensions + userSettings; noctalia extension via `home.activation` |
+| `home/codium.nix` | VSCodium (`programs.vscodium`) + extensions + userSettings; noctalia extension via `home.activation` |
+| `home/fcitx5.nix` | fcitx5 input method: packages, systemd user service autostart, IM env vars, input group profile |
+| `home/xdg.nix` | MIME defaults (`xdg.mimeApps`), kbuildsycoca6 session service, Vivaldi CSS, Dolphin image service menu |
+| `home/git.nix` | `programs.git` — global user name/email, defaultBranch, pull/rebase settings |
 
 ### Apps — system vs home split
-**System (`modules/apps.nix`)**: `programs.steam.enable`, plus packages needed before login or by all users: `nushell git wget curl zip unzip`. `zsh` is handled by `programs.zsh.enable = true` in `modules/users.nix` (also adds it to `/etc/shells`).
+**System (`modules/apps.nix`)**: `programs.steam.enable`, plus packages needed before login or by all users: `nushell git wget curl zip unzip`. `zsh` is handled by `programs.zsh.enable = true` in `modules/users.nix` (also adds it to `/etc/shells`). Also includes diagnostic/networking tools available to root: `jq`, `nmap`, `mtr`, `dnsutils`, `tcpdump`, `whois`, `pciutils`, `usbutils`, `lsof`, `strace`, `file`.
 
 **Home (`home/apps.nix`)**: All user-facing apps. Programs with HM modules use `programs.X.enable`:
 - `programs.neovim` (`withRuby = false`, `withPython3 = false`)
@@ -139,10 +159,13 @@ Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono`.
 - `programs.btop`, `programs.mpv`, `programs.zathura`
 - `programs.fzf` (`enableZshIntegration = true` — no nushell integration option)
 
+Also in `home.packages`: `python3.withPackages [numpy pandas scipy matplotlib requests ipython]`, `uv`, `onlyoffice-desktopeditors`, `kdePackages.ark` (Dolphin compress/extract), `imagemagick` (Dolphin image service menu).
+
 Always set these explicitly to silence stateVersion upgrade warnings — do **not** bump `home.stateVersion` just to silence warnings.
 
 ### Shell (zsh + nushell)
-- Both shells have identical aliases. Zsh uses `programs.zsh.initContent` with `lib.mkOrder 550` for pre-compinit content (replaces deprecated `initExtraBeforeCompInit`/`initExtra`).
+- Both shells share the same core aliases (`ls`/`ll`/`la`/`lah`/`l` via `lsd`, `g`, `snvim`, navigation shortcuts). Shell-specific differences: nushell uses the `^` prefix on `grep`/`fgrep`/`egrep`/`diff`/`ip` to force external commands (bypasses nushell builtins); zsh has additional `history = "history 0"` and `reload = "exec zsh"` aliases that don't apply in nushell. `lsd` is added to `home.packages` in both `zsh.nix` and `nushell.nix` (nix deduplicates).
+- Zsh uses `programs.zsh.initContent` with `lib.mkOrder 550` for pre-compinit content (replaces deprecated `initExtraBeforeCompInit`/`initExtra`).
 - `reload` alias is `exec zsh` (not `source ~/.zshrc` — re-sourcing causes double-init issues with NVM etc.).
 - Nushell two-line prompt: `PROMPT_COMMAND` must end with `(char newline)` for `PROMPT_INDICATOR` to appear on the second line.
 - Nushell uses `$env.USER` (not `$env.USERNAME`). `CMD_DURATION_MS` is a string — cast with `| into int` before arithmetic.
@@ -156,6 +179,7 @@ Deployed via `xdg.configFile.*.source` or `xdg.dataFile.*.source` in `home/kurom
 | `config/fastfetch/config.jsonc` | `~/.config/fastfetch/config.jsonc` | `xdg.configFile` |
 | `config/fonts/GoogleSansFlex-VariableFont.ttf` | `~/.local/share/fonts/GoogleSansFlex-VariableFont.ttf` | `xdg.dataFile` (in `fonts.nix`) |
 | `config/noctalia/colorschemes/material-ocean/material-ocean.json` | `~/.config/noctalia/colorschemes/Material Ocean/Material Ocean.json` | `xdg.configFile` |
+| `config/noctalia/colorschemes/material-ocean-dark/material-ocean-dark.json` | `~/.config/noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json` | `xdg.configFile` |
 
 ghostty config and kdeglobals are no longer static files — they are generated as `.text` in `home/ghostty.nix` and `home/qt.nix` respectively, using `rice.fonts.*` for interpolation.
 
@@ -169,13 +193,46 @@ CIFS mounts via autofs. Mounts four shares from `100.104.4.37` (Tailscale IP) un
 System-level font packages: `maple-mono.NF-CN`, `noto-fonts`, `noto-fonts-cjk-sans`, `noto-fonts-color-emoji`, `google-fonts` (includes Google Sans Flex and Google Sans Code), `nerd-fonts.jetbrains-mono`. `fonts.fontconfig.defaultFonts` sets Noto Sans / Noto Sans Mono / Noto Color Emoji as system fallbacks. Do NOT use `fonts.fontconfig.localConf` — it generates a file without the required XML root element in some nixpkgs versions, causing fontconfig errors.
 
 ### VSCodium (`home/codium.nix`)
+- Uses `programs.vscodium` (not `programs.vscode`). After a HM update, `programs.vscode` stopped auto-detecting VSCodium and always uses `~/.vscode/extensions/` — only `programs.vscodium` correctly targets `~/.vscode-oss/extensions/`.
 - Extensions from `nix-vscode-extensions` open-vsx. `mutableExtensionsDir = true`.
-- `latex-workshop` is patched with `pkgs.runCommand` to remove the engine version constraint in `package.json` (`sed` replaces `"vscode": "^X.Y.Z"` with `"vscode": "*"`). This avoids breakage when nixpkgs VSCodium lags behind the extension's declared minimum version.
+- `latex-workshop` is patched with `pkgs.runCommand` to remove the engine version constraint in `package.json` (`sed` replaces `"vscode": "^X.Y.Z"` with `"vscode": "^1.0.0"`). This avoids breakage when nixpkgs VSCodium lags behind the extension's declared minimum version.
 - `userSettings` manages all non-color settings declaratively. Color settings (`workbench.colorCustomizations`, `editor.tokenColorCustomizations`) are excluded — noctalia's theme extension handles colors.
 - Noctalia extension is NOT in the extensions list. It is installed by `home.activation.noctaliaThemeExtension` as a writable copy (see Noctalia — theming above).
+- **`extensions.json` is generated by Nix** (`home.activation.vscodiumExtensionsJson`): HM creates unversioned symlinks (e.g. `esbenp.prettier-vscode`) but VSCodium trusts `extensions.json` and won't rescan if the file says `[]`. The activation generates a proper index from `extList` (mirrored extension list) using a `__EXT_DIR__` placeholder substituted with `$HOME/.vscode-oss/extensions` at activation time. Runs after `noctaliaThemeExtension`. **If adding a new extension: add it to both `profiles.default.extensions` AND `extList` in the `let` block.**
 
 ### Monitors (zaphkiel)
-Two 1080p@120Hz displays. Kanshi (`services.kanshi` in `hosts/zaphkiel/home.nix`) handles output positioning and hotplug. HDMI-A-2 is the primary landscape monitor; HDMI-A-1 is portrait (rotated 90°) to the right, `position x=1080 y=0`. Per-output `layout {}` blocks in `niri-outputs.kdl` control gaps, border widths, and `default-column-width`.
+Two 1080p@120Hz displays. Output configuration is set via `rice.niri.extraConfig` in `hosts/zaphkiel/home.nix` as raw KDL `output {}` blocks. HDMI-A-1 is portrait (rotated 90°); HDMI-A-2 is the primary landscape monitor.
+
+### Code launcher (`home/apps.nix`)
+`code-launcher` is a `writeShellScriptBin` script that runs fd+fzf inside a floating Ghostty window and opens the selected path in VSCodium. Key details:
+- Searches `~/` recursively (fd with `-H -E .git`).
+- fzf uses `bat` for syntax-highlighted file previews (`--preview-window=right:50%:wrap`).
+- Launched via keybind `Shift+Mod+C` as `ghostty --class=ghostty.float --window-width=80 --window-height=42 -e code-launcher`. Uses the shared `ghostty.float` class so the `ghostty.float` window-rule applies (open-floating, 50%×50% size).
+- VSCodium is launched with `nohup codium --ozone-platform=wayland "$path" > /dev/null 2>&1 &` — not `systemd-run --user`, which would miss `WAYLAND_DISPLAY` (set at runtime by niri, absent from the systemd user environment).
+- Sends a `notify-send` notification (via `libnotify`) confirming which path was opened.
+- The niri window-rule for `ghostty.float` (`open-floating true`, `default-column-width/default-window-height { proportion 0.5; }`) is inlined in `home/niri.nix`. It is also used by `Mod+Shift+T` for plain floating terminals.
+- `bat` and `libnotify` are listed separately in `home.packages` as explicit deps (not via `programs.bat`).
+
+### Input method (`home/fcitx5.nix`)
+fcitx5 is configured entirely in home-manager (no `i18n.inputMethod` NixOS module):
+- **Packages**: `fcitx5`, `fcitx5-mozc` (JP), `fcitx5-m17n` (TH Kedmanee via `m17n:th_kedmanee`), `qt6Packages.fcitx5-chinese-addons` (ZH Pinyin), `qt6Packages.fcitx5-configtool`, `fcitx5-gtk`.
+- **Env vars** set via `systemd.user.sessionVariables` (writes to `~/.config/environment.d/`) so they propagate to niri and all spawned apps: `XMODIFIERS=@im=fcitx`, `GTK_IM_MODULE=fcitx`, `QT_IM_MODULE=fcitx`, `SDL_IM_MODULE=fcitx`.
+- **Autostart**: `systemd.user.services.fcitx5` bound to `graphical-session.target`.
+- **Input group profile** deployed as a mutable copy via `home.activation.fcitx5Profile` (sentinel pattern — same as codium settings). fcitx5 writes to `~/.config/fcitx5/profile` at runtime; the sentinel re-deploys only when the nix source changes.
+- Input method order: `keyboard-us` → `mozc` → `pinyin` → `m17n:th_kedmanee`. Ctrl+Space cycles through them.
+
+### XDG / MIME / Dolphin (`home/xdg.nix`)
+- **MIME defaults** via `xdg.mimeApps`: zathura for PDF/epub, imv for images, mpv for video/audio, nvim for text/code/JSON, vivaldi-stable for HTTP(S), onlyoffice-desktopeditors for office formats. `nvim.desktop` has `Terminal=true`; `TerminalApplication=ghostty` in kdeglobals (set in `home/qt.nix`) ensures it opens in ghostty.
+- **`kbuildsycoca6` session service**: KDE's service database (which Dolphin uses for "Open With") is empty until `kbuildsycoca6` runs. A `systemd.user.services.kbuildsycoca6` oneshot runs `--noincremental` at every `graphical-session.target` start. Without this, Dolphin shows no apps.
+- **Dolphin image service menu** (`~/.local/share/kio/servicemenus/reimage.desktop`): right-click actions for resize (25/50/75%), rotate CW/CCW, flip H/V, convert to PNG/JPG/WebP. Uses absolute nix store paths for `mogrify`/`convert` (from `imagemagick`).
+- **Vivaldi custom CSS** (`~/.config/chromium-theme.css`): sets `--font-ui` and `--font-mono` CSS variables from `rice.fonts.*`, applies them to tabs/toolbars/panels (UI font) and URL bar (mono font). Point Vivaldi to this file via Settings → Appearance → Custom UI Modifications.
+- **Dolphin compress/extract**: provided by `kdePackages.ark` in `home.packages`. Ark registers KIO service menus for archive operations automatically once `kbuildsycoca6` has run.
+
+### Git (`home/git.nix`)
+`programs.git` with global `user.name = "kuroma"`, `user.email = "contact@kuroma.dev"`, `init.defaultBranch = "main"`, `pull.rebase = false`, `core.autocrlf = "input"`. Uses `programs.git.settings` (the current HM option name — `userName`/`userEmail`/`extraConfig` were renamed).
+
+### Hibernate resume (zaphkiel)
+`boot.resumeDevice = "/dev/mapper/cryptroot"` is set in `hosts/zaphkiel/configuration.nix` (host-specific because the swap device path is host-specific). The swapfile is at `/swap/swapfile` on the Btrfs subvolume inside LUKS. To complete hibernate setup: run `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile` on the live system and add the printed offset as `boot.kernelParams = [ "resume_offset=<NUMBER>" ]` in `hosts/zaphkiel/configuration.nix`.
 
 ### Gnome Keyring / Vivaldi
 `services.gnome.gnome-keyring.enable = true` is set in `modules/niri.nix`. Vivaldi prompts for keyring unlock on first launch per session; add `security.pam.services.greetd.enableGnomeKeyring = true` to auto-unlock at greetd login.

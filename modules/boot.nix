@@ -1,10 +1,9 @@
-{ ... }:
+{ pkgs, ... }:
 {
-  boot.loader.grub = {
+  boot.loader.systemd-boot = {
     enable = true;
-    device = "nodev";
-    efiSupport = true;
-    enableCryptodisk = true;
+    configurationLimit = 10;
   };
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelPackages = pkgs.linuxKernel.packages.linux_xanmod_latest;
 }

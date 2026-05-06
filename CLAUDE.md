@@ -242,7 +242,7 @@ Configured via `nixvim` (flake input `github:nix-community/nixvim`, imported as 
 
 **Theming**: `base16-nvim` (RRethy) loaded from noctalia-generated `~/.config/nvim/lua/matugen.lua`. Noctalia writes this file and sends `SIGUSR1` to reload live. `pcall` guard in `extraConfigLua` prevents startup errors before noctalia has run. `home.activation.nvimMatugenFallback` creates a stub no-op `matugen.lua` on first boot.
 
-**File tree**: neo-tree sidebar (left, width 30). Auto-opens when nvim is invoked with a directory (`nvim ./`); VimEnter autocmd runs `neo-tree show` then `wincmd l` to focus the editing area. `open_drop` mapped to `<cr>` and `o` so files always open in the main window (never replacing the tree). `close_if_last_window = true` closes neo-tree if the last file is closed.
+**File tree**: neo-tree sidebar (left, width 30). Auto-opens when nvim is invoked with a directory (`nvim ./`) via `filesystem.hijack_netrw_behavior = "open_default"` — neo-tree intercepts the directory buffer and opens sidebar + empty main buffer natively. netrw is disabled in `extraConfigLuaPre` (`vim.g.loaded_netrw = 1`) so neo-tree wins the hijack. oil's `default_file_explorer = false` prevents oil from stealing `nvim ./` too. `open_drop` mapped to `<cr>` and `o` so files always open in the main window (never replacing the tree). Do NOT use a VimEnter autocmd for this — it fights with oil and has timing issues.
 
 **LSPs**: nil_ls (Nix), pyright (Python), lua_ls (Lua), rust_analyzer (Rust — `installCargo/installRustc = false`, uses system toolchain), ts_ls (TypeScript/JS), bashls (Bash), texlab (LaTeX), taplo (TOML), yamlls (YAML).
 
@@ -284,6 +284,13 @@ fcitx5 is configured entirely in home-manager (no `i18n.inputMethod` NixOS modul
 - **Input group profile** deployed as a mutable copy via `home.activation.fcitx5Profile` (sentinel pattern — same as codium settings). fcitx5 writes to `~/.config/fcitx5/profile` at runtime; the sentinel re-deploys only when the nix source changes.
 - Input method order: `keyboard-us` → `mozc` → `pinyin` → `m17n:th_kedmanee`. Ctrl+Space cycles through them.
 
+### Noctalia app launcher — single-launch bug (Steam, OnlyOffice)
+Apps that do not call `gdk_notify_startup_complete()` (Steam, OnlyOffice) leave a GLib startup-notification sequence open after launch. Noctalia's GIO launcher sees the sequence as "in progress" and refuses to launch a second instance. Symptom: app launches once from noctalia, then never again; terminal launch always works.
+
+Fix applied in `home/xdg.nix`: `xdg.desktopEntries` overrides for `steam` and `onlyoffice-desktopeditors` with `startupNotify = false`. This prevents GIO from ever starting a sequence, so re-launch is always allowed. **If a new app shows the same symptom, add an `xdg.desktopEntries` override with `startupNotify = false`.**
+
+A reboot/re-login may be needed after the first rebuild for the new `.desktop` overrides to take effect in noctalia's app index.
+
 ### XDG / MIME / Dolphin (`home/xdg.nix`)
 - **MIME defaults** via `xdg.mimeApps`: zathura for PDF/epub, imv for images, mpv for video/audio, nvim for text/code/JSON, vivaldi-stable for HTTP(S), onlyoffice-desktopeditors for office formats. `nvim.desktop` has `Terminal=true`; `TerminalApplication=ghostty` in kdeglobals (set in `home/qt.nix`) ensures it opens in ghostty.
 - **`kbuildsycoca6` session service**: KDE's service database (which Dolphin uses for "Open With") is empty until `kbuildsycoca6` runs. A `systemd.user.services.kbuildsycoca6` oneshot runs `--noincremental` at every `graphical-session.target` start. Without this, Dolphin shows no apps.
@@ -298,7 +305,7 @@ fcitx5 is configured entirely in home-manager (no `i18n.inputMethod` NixOS modul
 `boot.resumeDevice = "/dev/mapper/cryptroot"` is set in `hosts/zaphkiel/configuration.nix` (host-specific because the swap device path is host-specific). The swapfile is at `/swap/swapfile` on the Btrfs subvolume inside LUKS. To complete hibernate setup: run `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile` on the live system and add the printed offset as `boot.kernelParams = [ "resume_offset=<NUMBER>" ]` in `hosts/zaphkiel/configuration.nix`.
 
 ### Gnome Keyring / Vivaldi
-`services.gnome.gnome-keyring.enable = true` is set in `modules/niri.nix`. Vivaldi prompts for keyring unlock on first launch per session; add `security.pam.services.greetd.enableGnomeKeyring = true` to auto-unlock at greetd login.
+`services.gnome.gnome-keyring.enable = true` and `security.pam.services.greetd.enableGnomeKeyring = true` are set in `modules/niri.nix`. The PAM line auto-unlocks the keyring at greetd login using the user's login password, so Vivaldi (and polkit) no longer prompt for the keyring password each session. If the keyring was previously initialized with a different password (e.g. the old "temp" password), delete `~/.local/share/keyrings/` and re-login — greetd will create a fresh keyring locked to the current login password.
 
 ### State version
 `system.stateVersion = "25.11"` in `hosts/zaphkiel/configuration.nix`. Do not bump — it pins stateful-module defaults to the install-time release. Each new host gets its own value matching when it was first installed. When HM warns about default value changes across versions, **set the option explicitly** to adopt the new default and silence the warning — do not bump `home.stateVersion`.

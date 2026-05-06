@@ -1,5 +1,40 @@
 { pkgs, config, ... }:
 {
+  # Override Steam and OnlyOffice .desktop entries with StartupNotify=false so
+  # noctalia's GLib launcher never holds a startup-notification sequence open.
+  # Without this, the first launch starts a sequence that never completes
+  # (these apps don't call gdk_notify_startup_complete), and noctalia refuses
+  # to launch a second instance while the sequence is still "in progress".
+  xdg.desktopEntries.steam = {
+    name = "Steam";
+    exec = "steam %U";
+    icon = "steam";
+    comment = "Application for managing and playing games on Steam";
+    categories = [ "Network" "FileTransfer" "Game" ];
+    startupNotify = false;
+  };
+
+  xdg.desktopEntries.onlyoffice-desktopeditors = {
+    name = "ONLYOFFICE";
+    genericName = "Document Editor";
+    exec = "${pkgs.onlyoffice-desktopeditors}/bin/onlyoffice-desktopeditors %U";
+    icon = "onlyoffice-desktopeditors";
+    comment = "Edit office documents";
+    categories = [ "Office" "WordProcessor" "Spreadsheet" "Presentation" ];
+    mimeType = [
+      "application/msword"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.ms-excel"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.ms-powerpoint"
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      "application/vnd.oasis.opendocument.text"
+      "application/vnd.oasis.opendocument.spreadsheet"
+      "application/vnd.oasis.opendocument.presentation"
+    ];
+    startupNotify = false;
+  };
+
   # Minimal applications.menu required by kbuildsycoca6 to build its application
   # service database.  Without this file kbuildsycoca6 logs "applications.menu
   # not found" and skips indexing apps, leaving keditfiletype showing nothing.

@@ -1,5 +1,5 @@
 binds {
-    Mod+grave hotkey-overlay-title="Overview"  { toggle-overview; }
+    Mod+grave hotkey-overlay-title="Overview" { toggle-overview; }
     Mod+T hotkey-overlay-title="Terminal" { spawn "ghostty"; }
     Mod+Shift+T hotkey-overlay-title="Float Terminal" { spawn "ghostty" "--class=ghostty.float"; }
     Mod+Space hotkey-overlay-title="Launcher" { spawn-sh "noctalia-shell ipc call launcher toggle"; }
@@ -14,6 +14,7 @@ binds {
     Shift+Mod+C { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "code-launcher"; }
     Mod+Q { close-window; }
     Mod+Shift+Q { quit; }
+    Mod+R { spawn-sh "kill -9 $(pgrep quickshell); noctalia-shell & disown"; }
 
     Mod+Left        { focus-column-left; }
     Mod+Right       { focus-column-right; }
@@ -25,8 +26,8 @@ binds {
     Mod+Shift+Up    { move-column-to-workspace-up; }
     Mod+Shift+Down  { move-column-to-workspace-down; }
 
-    Alt+BracketLeft        { focus-workspace-down; }
-    Alt+BracketRight       { focus-workspace-up; }
+    Alt+BracketLeft        { focus-workspace-up; }
+    Alt+BracketRight       { focus-workspace-down; }
     Alt+Shift+BracketRight { focus-column-right; }
     Alt+Shift+BracketLeft  { focus-column-left; }
 

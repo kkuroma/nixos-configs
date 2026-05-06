@@ -19,6 +19,8 @@
   home.homeDirectory = "/home/kuroma";
   home.stateVersion = "25.11";
 
+  home.file.".face".source = ../config/.face;
+
   services.cliphist.enable = true;
 
   xdg.configFile."fastfetch/config.jsonc".source = ../config/fastfetch/config.jsonc;

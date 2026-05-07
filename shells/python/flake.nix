@@ -14,7 +14,7 @@
       ];
       shellHook = ''
         export DEV_SHELL=python
-        exec $SHELL
+        exec zsh
       '';
     };
   };

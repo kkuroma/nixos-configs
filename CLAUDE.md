@@ -74,6 +74,8 @@ systemd-boot + EFI. `configurationLimit = 10` keeps the ESP tidy. LUKS is unlock
 ### GPU (`modules/nvidia.nix`)
 `services.xserver.videoDrivers = ["nvidia"]`, `hardware.nvidia.open = true`, `nixpkgs.config.cudaSupport = true`, `hardware.nvidia-container-toolkit.enable` for Docker GPU passthrough. `allowUnfree` lives in `modules/nix.nix`. Full rebuild + reboot required when touching these. Non-NVIDIA hosts should omit this module entirely.
 
+`services.lact.enable = true` — LACT (Linux GPU Control Application) daemon for GPU monitoring, fan curves, power limits, and clock overrides. Installs both the system service and the `lact` GUI binary. The service starts automatically; open `lact` from a terminal or app launcher to configure.
+
 ### Kernel (zaphkiel)
 Uses `boot.kernelPackages = pkgs.linuxPackages_xanmod_latest` (xanmod). Because the binary cache only covers the standard nixpkgs kernels, changing the kernel or updating xanmod triggers local compilation of the nvidia kernel module and any CUDA-linked packages (OBS, etc.). A reboot is required after every kernel change to align the running kernel with the nvidia driver library. The nvidia CDI generator service will log a "Driver/library version mismatch" error until you reboot.
 
@@ -120,6 +122,7 @@ When adding a new host, create its `niriParts` list in `flake.nix` and set `rice
 ### Noctalia — theming
 - Noctalia writes `~/.config/niri/noctalia.kdl` at runtime (layout colors, border colors, recent-windows highlight). Our `config/niri/noctalia.kdl` includes this file then appends static overrides.
 - Noctalia writes `~/.config/ghostty/config.ghostty` (terminal palette). `home/ghostty.nix` uses `programs.ghostty` and references this via `"config-file" = "~/.config/ghostty/config.ghostty"` in settings.
+- **Starship theming**: noctalia generates `~/.cache/noctalia/starship-palette.toml` and writes `[palettes.noctalia]` into `~/.config/starship.toml`. `home/starship.nix` uses a `home.activation` sentinel pattern (same as VSCodium settings) to keep `starship.toml` as a writable file — NOT a HM symlink. Our base config does NOT include `palette = "noctalia"`; noctalia adds that directive alongside the palette block when it applies the theme. ANSI color names in our format strings (`blue bold`, `cyan`, etc.) already resolve correctly via ghostty's terminal palette before noctalia runs.
 - Custom color schemes go in `config/noctalia/colorschemes/<name>/` (no spaces in path) and are deployed via `xdg.configFile` in `kuroma.nix`. Currently deployed:
   - `material-ocean` → `~/.config/noctalia/colorschemes/Material Ocean/Material Ocean.json`
   - `material-ocean-dark` → `~/.config/noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json`
@@ -154,9 +157,10 @@ Any home module reads them as `config.rice.fonts.ui` / `config.rice.fonts.mono` 
 | `home/ghostty.nix` | `programs.ghostty` — settings with font from `rice.fonts.mono`, noctalia config-file ref |
 | `home/niri.nix` | Assembles `~/.config/niri/config.kdl`; declares `rice.niri.extraConfig` option |
 | `home/nvim.nix` | nixvim config — base16 theming, LSPs, neo-tree sidebar, treesitter, telescope, oil, lualine, conform |
-| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/fzf; defines `code-launcher` script; formatter binaries for conform-nvim |
-| `home/zsh.nix` | Zsh config, aliases, prompt, zoxide |
-| `home/nushell.nix` | Nushell config, same aliases, two-line prompt with timing |
+| `home/apps.nix` | User packages + `programs.X.enable` for yazi/btop/mpv/zathura/fzf/direnv; `code-launcher` and `init-shell` scripts; formatter binaries for conform-nvim |
+| `home/zsh.nix` | Zsh config, aliases, zoxide; prompt is handled by starship |
+| `home/nushell.nix` | Nushell config, same aliases; prompt is handled by starship |
+| `home/starship.nix` | Starship prompt — mutable `~/.config/starship.toml` via activation sentinel; nushell init via `~/.cache/starship/init.nu` |
 | `home/qt.nix` | kdeglobals, qt5ct, qt6ct as `.text`; GTK dconf settings — all use `rice.fonts.*` |
 | `home/codium.nix` | VSCodium (`programs.vscodium`) + extensions + userSettings; noctalia extension via `home.activation` |
 | `home/fcitx5.nix` | fcitx5 input method: packages, systemd user service autostart, IM env vars, input group profile |
@@ -181,9 +185,22 @@ Always set these explicitly to silence stateVersion upgrade warnings — do **no
 - Both shells share the same core aliases (`ls`/`ll`/`la`/`lah`/`l` via `lsd`, `g`, `snvim`, navigation shortcuts). Shell-specific differences: nushell uses the `^` prefix on `grep`/`fgrep`/`egrep`/`diff`/`ip` to force external commands (bypasses nushell builtins); zsh has additional `history = "history 0"` and `reload = "exec zsh"` aliases that don't apply in nushell. `lsd` is added to `home.packages` in both `zsh.nix` and `nushell.nix` (nix deduplicates).
 - Zsh uses `programs.zsh.initContent` with `lib.mkOrder 550` for pre-compinit content (replaces deprecated `initExtraBeforeCompInit`/`initExtra`).
 - `reload` alias is `exec zsh` (not `source ~/.zshrc` — re-sourcing causes double-init issues with NVM etc.).
-- Nushell two-line prompt: `PROMPT_COMMAND` must end with `(char newline)` for `PROMPT_INDICATOR` to appear on the second line.
-- Nushell uses `$env.USER` (not `$env.USERNAME`). `CMD_DURATION_MS` is a string — cast with `| into int` before arithmetic.
 - `programs.zoxide` has both `enableZshIntegration` and `enableNushellIntegration` set to `true` (in `home/zsh.nix`).
+- **Prompt**: both shells use Starship (`home/starship.nix`). Zsh integration via `eval "$(starship init zsh)"` injected by `programs.zsh.initContent` in `starship.nix`. Nushell integration via `source ~/.cache/starship/init.nu` (generated at activation by `home.activation.starshipNushellInit`). Do NOT use `programs.starship` — it creates a read-only symlink at `~/.config/starship.toml` which prevents noctalia from writing its palette section.
+- **Prompt layout**: left side — shell indicator (nu/bash only; zsh is silent since it's the default), path, git branch/state/status/metrics, nix-dev indicator (fires when `IN_NIX_SHELL` is set), `DEV_SHELL` env var (set by dev shell shellHooks). Right side (same line via `$fill`) — cmd_duration (hidden under 1s), time (HH:MM:SS). Second line — `$character` (❯ green / ❯ red on error).
+
+### Dev shells (`shells/`)
+Reusable `nix develop` shell templates accessible via aliases `shell-python` / `shell-networking`. Symlinked to `~/Shells/` via `config.lib.file.mkOutOfStoreSymlink` in `home/kuroma.nix` (live symlink, not nix store — required for `nix flake lock` to work).
+
+- `shells/python/` — python3 with ipython/numpy/pandas/scipy/matplotlib + uv/ruff/black/pyright/jupyter. shellHook exports `DEV_SHELL=python` and `exec zsh`.
+- `shells/networking/` — full pentest toolkit (nmap, metasploit, gobuster, ffuf, wireshark, etc.). shellHook exports `DEV_SHELL=networking` and `exec zsh`.
+- `shells/torch/` — **removed** (portable pre-installed torch is impractical; use `init-shell --cuda` for per-project CUDA shells instead).
+
+`exec zsh` in the shellHook replaces the bash process that `nix develop` spawns with zsh, so the user's full zsh config and starship load normally inside the dev shell. `DEV_SHELL` is preserved across exec because it is already exported before exec runs.
+
+**`init-shell` script** (`home/apps.nix`): generates a `flake.nix` + `.envrc` in the current directory for per-project shells. Flags: `--python` (uv/ruff/black/pyright + auto-venv shellHook), `--npx` (nodejs), `--networking` (pentest subset), `--cuda` (CUDA libs + auto-venv). After generating `flake.nix`, runs `nix flake lock`, writes `use flake` to `.envrc`, and runs `direnv allow`. The `--python` and `--cuda` shellHooks auto-create `.venv` with `uv venv` if missing and activate it — direnv captures the env diff and injects it into the running shell on `cd`.
+
+**direnv**: `programs.direnv.enable = true; nix-direnv.enable = true;` in `home/apps.nix`. Auto-activates `nix develop` environments on `cd` into directories with `.envrc`. `nix-direnv` creates a GC root so the environment survives `nix-collect-garbage` and is cached between activations. `mkhl.direnv` VSCodium extension is in `extList` in `home/codium.nix` for automatic Python interpreter detection.
 
 ### Static config files (`config/`)
 Deployed via `xdg.configFile.*.source` or `xdg.dataFile.*.source` in `home/kuroma.nix`:

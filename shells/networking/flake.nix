@@ -6,7 +6,7 @@
     devShells.x86_64-linux.default = pkgs.mkShell {
       shellHook = ''
         export DEV_SHELL=networking
-        exec $SHELL
+        exec zsh
       '';
       packages = with pkgs; [
         # recon

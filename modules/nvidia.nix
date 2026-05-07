@@ -19,4 +19,6 @@
   hardware.graphics.enable32Bit = true;
 
   hardware.nvidia-container-toolkit.enable = true;
+
+  services.lact.enable = true;
 }

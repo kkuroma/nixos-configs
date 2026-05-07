@@ -1,9 +1,10 @@
 { pkgs, lib, ... }:
 let
-  # Base config — noctalia appends [palettes.noctalia] below this at runtime.
-  # Use the activation sentinel pattern so the file stays writable for noctalia.
+  # Activation sentinel pattern keeps starship.toml writable so noctalia can
+  # append its [palettes.noctalia] section. palette = "noctalia" is intentionally
+  # omitted here — noctalia adds it alongside [palettes.noctalia] when it applies
+  # the theme. ANSI color names used below resolve via ghostty's terminal palette.
   configFile = pkgs.writeText "starship-base.toml" ''
-    palette = "noctalia"
     format = "$shell$directory$git_branch$git_state$git_status$git_metrics$nix_shell$env_var$fill$cmd_duration $time$line_break$character"
 
     [shell]

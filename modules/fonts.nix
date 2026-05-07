@@ -1,7 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
   fonts.packages = with pkgs; [
-    maple-mono.NF-CN      # includes CJK glyphs — replaces NF variant
+    maple-mono.NF-CN
     noto-fonts
     noto-fonts-cjk-sans
     noto-fonts-color-emoji
@@ -9,9 +9,12 @@
     nerd-fonts.jetbrains-mono
   ];
 
+  # fallbacks in case the userspace font cant be found
   fonts.fontconfig.defaultFonts = {
     sansSerif = [ "Noto Sans" ];
     monospace = [ "Noto Sans Mono" ];
-    emoji    = [ "Noto Color Emoji" ];
+    emoji = [ "Noto Color Emoji" ];
   };
+
+  fonts.fontDir.enable = true;
 }

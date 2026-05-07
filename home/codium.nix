@@ -19,6 +19,7 @@ let
   extList = [
     ovsx."13xforever".language-x86-64-assembly
     ovsx.bbenoist.doxygen
+    ovsx.mkhl.direnv
     ovsx.bbenoist.nix
     ovsx.cheshirekow.cmake-format
     ovsx.cschlosser.doxdocgen

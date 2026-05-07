@@ -1,7 +1,7 @@
 { lib, config, pkgs, niriParts, ... }:
 {
   options.rice.niri.extraConfig = lib.mkOption {
-    type    = lib.types.lines;
+    type = lib.types.lines;
     default = "";
   };
 
@@ -12,7 +12,6 @@
             xcursor-theme "breeze_cursors"
             xcursor-size 24
         }
-
         input {
             focus-follows-mouse max-scroll-amount="0%"
         }
@@ -37,8 +36,8 @@
       Unit = {
         Description = "Xwayland rootless X display server";
         BindsTo = [ "graphical-session.target" ];
-        After   = [ "graphical-session.target" ];
-        PartOf  = [ "graphical-session.target" ];
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
       };
       Service = {
         Type = "notify";

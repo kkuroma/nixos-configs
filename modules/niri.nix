@@ -34,11 +34,5 @@
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     pkgs.xwayland-satellite
     pkgs.xrdb
-    pkgs.wl-clipboard
-    pkgs.papirus-icon-theme
-    pkgs.kdePackages.breeze
-    pkgs.qt6Packages.qt6ct
-    pkgs.libsForQt5.qt5ct
-    pkgs.adwaita-qt6
   ];
 }

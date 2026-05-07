@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 {
   imports = [
     ./fonts.nix
@@ -9,6 +9,7 @@
     ./codium.nix
     ./zsh.nix
     ./nushell.nix
+    ./starship.nix
     ./qt.nix
     ./fcitx5.nix
     ./xdg.nix
@@ -20,6 +21,10 @@
   home.stateVersion = "25.11";
 
   home.file.".face".source = ../config/.face;
+
+  home.file."Shells" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/System/nixos-configs/shells";
+  };
 
   services.cliphist.enable = true;
 

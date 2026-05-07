@@ -1,10 +1,7 @@
 { pkgs, config, ... }:
 {
-  # Override Steam and OnlyOffice .desktop entries with StartupNotify=false so
-  # noctalia's GLib launcher never holds a startup-notification sequence open.
-  # Without this, the first launch starts a sequence that never completes
-  # (these apps don't call gdk_notify_startup_complete), and noctalia refuses
-  # to launch a second instance while the sequence is still "in progress".
+  # Override Steam .desktop entries with StartupNotify=false to trick noctaliat to not check
+  # if there's already a running instance which prevents subsequent startups
   xdg.desktopEntries.steam = {
     name = "Steam";
     exec = "steam %U";
@@ -14,32 +11,7 @@
     startupNotify = false;
   };
 
-  xdg.desktopEntries.onlyoffice-desktopeditors = {
-    name = "ONLYOFFICE";
-    genericName = "Document Editor";
-    exec = "${pkgs.onlyoffice-desktopeditors}/bin/onlyoffice-desktopeditors %U";
-    icon = "onlyoffice-desktopeditors";
-    comment = "Edit office documents";
-    categories = [ "Office" "WordProcessor" "Spreadsheet" "Presentation" ];
-    mimeType = [
-      "application/msword"
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      "application/vnd.ms-excel"
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      "application/vnd.ms-powerpoint"
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-      "application/vnd.oasis.opendocument.text"
-      "application/vnd.oasis.opendocument.spreadsheet"
-      "application/vnd.oasis.opendocument.presentation"
-    ];
-    startupNotify = false;
-  };
-
-  # Minimal applications.menu required by kbuildsycoca6 to build its application
-  # service database.  Without this file kbuildsycoca6 logs "applications.menu
-  # not found" and skips indexing apps, leaving keditfiletype showing nothing.
-  # <DefaultAppDirs/> scans $XDG_DATA_DIRS/applications/; <DefaultMergeDirs/>
-  # picks up per-package .menu fragments from applications-merged/.
+  # Minimal applications.menu required by kbuildsycoca6 to build its application service db
   xdg.configFile."menus/applications.menu".text = ''
     <!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
       "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
@@ -50,17 +22,15 @@
     </Menu>
   '';
 
-  # Rebuild KDE's service database once per graphical session.
-  # Without this, Dolphin's "Open With" dialog is empty because the cache
-  # that indexes all installed .desktop files has never been built.
+  # Rebuild KDE's service database once per graphical session so dolphon has a "open with" dialog
   systemd.user.services.kbuildsycoca6 = {
     Unit = {
       Description = "Rebuild KDE service configuration cache";
-      After       = [ "graphical-session-pre.target" ];
-      PartOf      = [ "graphical-session.target" ];
+      After = [ "graphical-session-pre.target" ];
+      PartOf = [ "graphical-session.target" ];
     };
     Service = {
-      Type      = "oneshot";
+      Type = "oneshot";
       ExecStart = "${pkgs.kdePackages.kservice}/bin/kbuildsycoca6 --noincremental";
     };
     Install.WantedBy = [ "graphical-session.target" ];
@@ -70,75 +40,73 @@
     enable = true;
     defaultApplications = {
       # PDF / ebooks
-      "application/pdf"        = [ "org.pwmt.zathura.desktop" ];
-      "application/epub+zip"   = [ "org.pwmt.zathura.desktop" ];
-      "application/x-cbz"      = [ "org.pwmt.zathura.desktop" ];
+      "application/pdf" = [ "org.pwmt.zathura.desktop" ];
+      "application/epub+zip" = [ "org.pwmt.zathura.desktop" ];
+      "application/x-cbz" = [ "org.pwmt.zathura.desktop" ];
 
       # Images — imv
-      "image/jpeg"    = [ "imv.desktop" ];
-      "image/png"     = [ "imv.desktop" ];
-      "image/gif"     = [ "imv.desktop" ];
-      "image/webp"    = [ "imv.desktop" ];
-      "image/tiff"    = [ "imv.desktop" ];
-      "image/bmp"     = [ "imv.desktop" ];
-      "image/x-bmp"   = [ "imv.desktop" ];
-      "image/avif"    = [ "imv.desktop" ];
-      "image/heif"    = [ "imv.desktop" ];
+      "image/jpeg" = [ "imv.desktop" ];
+      "image/png" = [ "imv.desktop" ];
+      "image/gif" = [ "imv.desktop" ];
+      "image/webp" = [ "imv.desktop" ];
+      "image/tiff" = [ "imv.desktop" ];
+      "image/bmp" = [ "imv.desktop" ];
+      "image/x-bmp" = [ "imv.desktop" ];
+      "image/avif" = [ "imv.desktop" ];
+      "image/heif" = [ "imv.desktop" ];
       "image/svg+xml" = [ "imv.desktop" ];
 
       # Video — mpv
-      "video/mp4"        = [ "mpv.desktop" ];
+      "video/mp4" = [ "mpv.desktop" ];
       "video/x-matroska" = [ "mpv.desktop" ];
-      "video/webm"       = [ "mpv.desktop" ];
-      "video/x-msvideo"  = [ "mpv.desktop" ];
-      "video/quicktime"  = [ "mpv.desktop" ];
-      "video/x-flv"      = [ "mpv.desktop" ];
-      "video/ogg"        = [ "mpv.desktop" ];
-      "video/mpeg"       = [ "mpv.desktop" ];
-      "video/x-ms-wmv"   = [ "mpv.desktop" ];
-      "video/3gpp"       = [ "mpv.desktop" ];
+      "video/webm" = [ "mpv.desktop" ];
+      "video/x-msvideo" = [ "mpv.desktop" ];
+      "video/quicktime" = [ "mpv.desktop" ];
+      "video/x-flv" = [ "mpv.desktop" ];
+      "video/ogg" = [ "mpv.desktop" ];
+      "video/mpeg" = [ "mpv.desktop" ];
+      "video/x-ms-wmv" = [ "mpv.desktop" ];
+      "video/3gpp" = [ "mpv.desktop" ];
 
       # Audio — mpv
-      "audio/mpeg"       = [ "mpv.desktop" ];
-      "audio/flac"       = [ "mpv.desktop" ];
-      "audio/ogg"        = [ "mpv.desktop" ];
-      "audio/x-wav"      = [ "mpv.desktop" ];
-      "audio/mp4"        = [ "mpv.desktop" ];
-      "audio/aac"        = [ "mpv.desktop" ];
+      "audio/mpeg" = [ "mpv.desktop" ];
+      "audio/flac" = [ "mpv.desktop" ];
+      "audio/ogg" = [ "mpv.desktop" ];
+      "audio/x-wav" = [ "mpv.desktop" ];
+      "audio/mp4" = [ "mpv.desktop" ];
+      "audio/aac" = [ "mpv.desktop" ];
       "audio/x-opus+ogg" = [ "mpv.desktop" ];
 
       # Text / code — nvim (Terminal=true in nvim.desktop, TerminalApplication=ghostty in kdeglobals)
-      "text/plain"               = [ "nvim.desktop" ];
-      "text/x-script.python"     = [ "nvim.desktop" ];
-      "text/x-c"                 = [ "nvim.desktop" ];
-      "text/x-c++"               = [ "nvim.desktop" ];
-      "text/x-shellscript"       = [ "nvim.desktop" ];
+      "text/plain" = [ "nvim.desktop" ];
+      "text/x-script.python" = [ "nvim.desktop" ];
+      "text/x-c" = [ "nvim.desktop" ];
+      "text/x-c++" = [ "nvim.desktop" ];
+      "text/x-shellscript" = [ "nvim.desktop" ];
       "application/x-shellscript" = [ "nvim.desktop" ];
-      "application/json"         = [ "nvim.desktop" ];
-      "text/markdown"            = [ "nvim.desktop" ];
+      "application/json" = [ "nvim.desktop" ];
+      "text/markdown" = [ "nvim.desktop" ];
 
       # Web / URLs — Vivaldi
-      "text/html"              = [ "vivaldi-stable.desktop" ];
-      "x-scheme-handler/http"  = [ "vivaldi-stable.desktop" ];
+      "text/html" = [ "vivaldi-stable.desktop" ];
+      "x-scheme-handler/http" = [ "vivaldi-stable.desktop" ];
       "x-scheme-handler/https" = [ "vivaldi-stable.desktop" ];
-      "x-scheme-handler/ftp"   = [ "vivaldi-stable.desktop" ];
+      "x-scheme-handler/ftp" = [ "vivaldi-stable.desktop" ];
 
       # Office documents — OnlyOffice
-      "application/msword"                                                           = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"      = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.ms-excel"                                                     = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"            = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.ms-powerpoint"                                                = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation"    = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.oasis.opendocument.text"                                      = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.oasis.opendocument.spreadsheet"                               = [ "onlyoffice-desktopeditors.desktop" ];
-      "application/vnd.oasis.opendocument.presentation"                              = [ "onlyoffice-desktopeditors.desktop" ];
+      "application/msword" = [ "libreoffice-writer.desktop" ];
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = [ "libreoffice-writer.desktop" ];
+      "application/vnd.ms-excel" = [ "libreoffice-calc.desktop" ];
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" = [ "libreoffice-calc.desktop" ];
+      "application/vnd.ms-powerpoint" = [ "libreoffice-impress.desktop" ];
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation" = [ "libreoffice-impress.desktop" ];
+      "application/vnd.oasis.opendocument.text" = [ "libreoffice-writer.desktop" ];
+      "application/vnd.oasis.opendocument.spreadsheet" = [ "libreoffice-calc.desktop" ];
+      "application/vnd.oasis.opendocument.presentation" = [ "libreoffice-impress.desktop" ];
     };
   };
 
-  # Vivaldi custom UI CSS — point Vivaldi to this file via
-  # Settings → Appearance → Custom UI Modifications.
-  # Uses fonts declared in home/fonts.nix so one edit updates everything.
+  # Vivaldi custom UI CSS (Settings → Appearance → Custom UI Modifications)
   xdg.configFile."vivaldi-theme/theme.css".text =
     let
       ui   = config.rice.fonts.ui;

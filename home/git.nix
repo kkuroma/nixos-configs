@@ -4,12 +4,12 @@
     enable = true;
     settings = {
       user = {
-        name  = "kuroma";
+        name = "kuroma";
         email = "contact@kuroma.dev";
       };
       init.defaultBranch = "main";
-      pull.rebase         = false;
-      core.autocrlf       = "input";
+      pull.rebase = false;
+      core.autocrlf = "input";
     };
   };
 }

@@ -1,16 +1,14 @@
 { lib, config, ... }:
 {
   options.rice.fonts = {
-    ui      = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
-    mono    = lib.mkOption { type = lib.types.str; default = "Maple Mono NF CN"; };
-    uiSize  = lib.mkOption { type = lib.types.int; default = 12; };
+    ui = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
+    mono = lib.mkOption { type = lib.types.str; default = "Maple Mono NF CN"; };
+    uiSize = lib.mkOption { type = lib.types.int; default = 12; };
     monoSize = lib.mkOption { type = lib.types.int; default = 12; };
   };
 
   config = {
-    xdg.dataFile."fonts/GoogleSansFlex-VariableFont.ttf".source =
-      ../config/fonts/GoogleSansFlex-VariableFont.ttf;
-
+    xdg.dataFile."fonts/GoogleSansFlex-VariableFont.ttf".source = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
     xdg.configFile."fontconfig/fonts.conf".text = ''
       <?xml version="1.0"?>
       <!DOCTYPE fontconfig SYSTEM "fonts.dtd">

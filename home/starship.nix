@@ -1,84 +1,88 @@
 { pkgs, lib, ... }:
 let
-  # Activation sentinel pattern keeps starship.toml writable so noctalia can
-  # append its [palettes.noctalia] section. palette = "noctalia" is intentionally
-  # omitted here — noctalia adds it alongside [palettes.noctalia] when it applies
-  # the theme. ANSI color names used below resolve via ghostty's terminal palette.
-  configFile = pkgs.writeText "starship-base.toml" ''
-    format = "$shell$directory$git_branch$git_state$git_status$git_metrics$nix_shell$env_var$fill$cmd_duration $time$line_break$character"
+  starshipConfig = {
+    format = "$shell$directory$git_branch$git_state$git_status$git_metrics$nix_shell$env_var$fill$cmd_duration $time$line_break$character";
 
-    [shell]
-    disabled = false
-    bash_indicator = "bash "
-    zsh_indicator = ""
-    nu_indicator = "nu "
-    format = "[$indicator]($style)"
-    style = "cyan bold"
+    shell = {
+      disabled = false;
+      bash_indicator = "bash ";
+      zsh_indicator = "";
+      nu_indicator = "nu ";
+      format = "[$indicator]($style)";
+      style = "cyan bold";
+    };
 
-    [directory]
-    style = "blue bold"
-    truncation_length = 4
-    truncate_to_repo = true
-    read_only = " 󰌾"
+    directory = {
+      style = "blue bold";
+      truncation_length = 4;
+      truncate_to_repo = true;
+      read_only = " 󰌾";
+    };
 
-    [git_branch]
-    symbol = " "
-    format = "[$symbol$branch]($style) "
-    style = "bright-black"
+    git_branch = {
+      symbol = " ";
+      format = "[$symbol$branch]($style) ";
+      style = "bright-black";
+    };
 
-    [git_status]
-    format = '([$all_status$ahead_behind]($style) )'
-    style = "cyan"
+    git_status = {
+      format = "([$all_status$ahead_behind]($style) )";
+      style = "cyan";
+    };
 
-    [git_state]
-    format = '\([$state( $progress_current/$progress_total)]($style)\) '
-    style = "bright-black"
+    git_state = {
+      format = "\\([$state( $progress_current/$progress_total)]($style)\\) ";
+      style = "bright-black";
+    };
 
-    [git_metrics]
-    disabled = false
+    git_metrics.disabled = false;
 
-    [nix_shell]
-    disabled = false
-    heuristic = false
-    impure_msg = "nix-dev"
-    pure_msg = "nix-dev(pure)"
-    unknown_msg = "nix-dev"
-    format = "[$symbol$state]($style) "
-    symbol = " "
-    style = "bold blue"
+    nix_shell = {
+      disabled = false;
+      heuristic = false;
+      impure_msg = "nix-dev";
+      pure_msg = "nix-dev(pure)";
+      unknown_msg = "nix-dev";
+      format = "[$symbol$state]($style) ";
+      symbol = " ";
+      style = "bold blue";
+    };
 
-    [env_var.DEV_SHELL]
-    variable = "DEV_SHELL"
-    format = "[$symbol$env_value]($style) "
-    symbol = "󱠇 "
-    style = "bold yellow"
-    disabled = false
+    env_var.DEV_SHELL = {
+      variable = "DEV_SHELL";
+      format = "[$symbol$env_value]($style) ";
+      symbol = "󱠇 ";
+      style = "bold yellow";
+      disabled = false;
+    };
 
-    [fill]
-    symbol = " "
+    fill.symbol = " ";
 
-    [cmd_duration]
-    format = "[$duration]($style)"
-    style = "yellow"
-    min_time = 1000
+    cmd_duration = {
+      format = "[$duration]($style)";
+      style = "yellow";
+      min_time = 1000;
+    };
 
-    [time]
-    disabled = false
-    style = "bold white"
-    format = "[$time]($style)"
-    time_format = "%H:%M:%S"
+    time = {
+      disabled = false;
+      style = "bold white";
+      format = "[$time]($style)";
+      time_format = "%H:%M:%S";
+    };
 
-    [character]
-    success_symbol = "[❯](bold green)"
-    error_symbol = "[❯](bold red)"
-    vicmd_symbol = "[❮](bold green)"
-  '';
+    character = {
+      success_symbol = "[❯](bold green)";
+      error_symbol = "[❯](bold red)";
+      vicmd_symbol = "[❮](bold green)";
+    };
+  };
+
+  configFile = (pkgs.formats.toml {}).generate "starship-base.toml" starshipConfig;
 in
 {
   home.packages = [ pkgs.starship ];
 
-  # Write mutable starship.toml so noctalia can append its palette section.
-  # Only re-copies when our nix config changes; noctalia's palette additions survive rebuilds.
   home.activation.starshipConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     dest="$HOME/.config/starship.toml"
     sentinel="$HOME/.config/.starship-nix-src"
@@ -90,7 +94,6 @@ in
     fi
   '';
 
-  # Generate nushell init script at activation time.
   home.activation.starshipNushellInit = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.cache/starship"
     ${pkgs.starship}/bin/starship init nu > "$HOME/.cache/starship/init.nu"

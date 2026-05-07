@@ -44,17 +44,17 @@
       "application/epub+zip" = [ "org.pwmt.zathura.desktop" ];
       "application/x-cbz" = [ "org.pwmt.zathura.desktop" ];
 
-      # Images — imv
-      "image/jpeg" = [ "imv.desktop" ];
-      "image/png" = [ "imv.desktop" ];
-      "image/gif" = [ "imv.desktop" ];
-      "image/webp" = [ "imv.desktop" ];
-      "image/tiff" = [ "imv.desktop" ];
-      "image/bmp" = [ "imv.desktop" ];
-      "image/x-bmp" = [ "imv.desktop" ];
-      "image/avif" = [ "imv.desktop" ];
-      "image/heif" = [ "imv.desktop" ];
-      "image/svg+xml" = [ "imv.desktop" ];
+      # Images — imv-dir
+      "image/jpeg" = [ "imv-dir.desktop" ];
+      "image/png" = [ "imv-dir.desktop" ];
+      "image/gif" = [ "imv-dir.desktop" ];
+      "image/webp" = [ "imv-dir.desktop" ];
+      "image/tiff" = [ "imv-dir.desktop" ];
+      "image/bmp" = [ "imv-dir.desktop" ];
+      "image/x-bmp" = [ "imv-dir.desktop" ];
+      "image/avif" = [ "imv-dir.desktop" ];
+      "image/heif" = [ "imv-dir.desktop" ];
+      "image/svg+xml" = [ "imv-dir.desktop" ];
 
       # Video — mpv
       "video/mp4" = [ "mpv.desktop" ];

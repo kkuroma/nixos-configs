@@ -24,6 +24,14 @@
             match app-id="ghostty[.]float"
             open-floating true
         }
+        window-rule {
+            match app-id="imv"
+            open-floating true
+        }
+        window-rule {
+            match app-id="mpv"
+            open-floating true
+        }
       '' +
       config.rice.niri.extraConfig;
     xdg.configFile."Xresources".text = ''

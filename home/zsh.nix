@@ -20,29 +20,29 @@
     };
 
     shellAliases = {
-      ".."    = "cd ..";
-      "..."   = "cd ../..";
-      "...."  = "cd ../../..";
+      ".." = "cd ..";
+      "..." = "cd ../..";
+      "...." = "cd ../../..";
       "....." = "cd ../../../..";
-      dl      = "cd ~/Downloads";
-      doc     = "cd ~/Documents";
-      dt      = "cd ~/Desktop";
-      g       = "git";
-      snvim   = "sudo nvim";
-      ls      = "lsd --color=auto";
-      ll      = "lsd -l";
-      la      = "lsd -A";
-      lah     = "lsd -lah";
-      l       = "lsd -CF";
-      grep    = "grep --color=auto";
-      fgrep   = "fgrep --color=auto";
-      egrep   = "egrep --color=auto";
-      diff    = "diff --color=auto";
-      ip      = "ip --color=auto";
+      dl = "cd ~/Downloads";
+      doc = "cd ~/Documents";
+      dt = "cd ~/Desktop";
+      g = "git";
+      snvim = "sudo nvim";
+      ls = "lsd --color=auto";
+      ll = "lsd -l";
+      la = "lsd -A";
+      lah = "lsd -lah";
+      l = "lsd -CF";
+      grep = "grep --color=auto";
+      fgrep = "fgrep --color=auto";
+      egrep = "egrep --color=auto";
+      diff = "diff --color=auto";
+      ip = "ip --color=auto";
       history = "history 0";
       reload  = "exec zsh";
-
-      shell-python     = "nix develop ~/Shells/python";
+      nix-clean = "nix-collect-garbage -d; nix-store --optimise";
+      shell-python = "nix develop ~/Shells/python";
       shell-networking = "nix develop ~/Shells/networking";
     };
 

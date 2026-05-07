@@ -42,6 +42,8 @@
       history = "history 0";
       reload  = "exec zsh";
       nix-clean = "nix-collect-garbage -d; nix-store --optimise";
+      nix-rebuild = "sudo nixos-rebuild switch --flake ~/System/nixos-configs#$(hostname)";
+      nix-update = "nix flake update --flake ~/System/nixos-configs";
       shell-python = "nix develop ~/Shells/python";
       shell-networking = "nix develop ~/Shells/networking";
     };

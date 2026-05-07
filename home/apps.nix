@@ -104,6 +104,7 @@ in
     texliveFull
     (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
     uv
+    nodejs
 
     # nvim formatters (used by conform-nvim)
     nixfmt

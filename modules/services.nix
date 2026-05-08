@@ -4,6 +4,7 @@
   hardware.bluetooth.powerOnBoot = true;
 
   services.blueman.enable = true;
+
   services.openssh = {
     enable = true;
     settings = {
@@ -11,8 +12,11 @@
       PermitRootLogin = "no";
     };
   };
+
   services.printing.enable = true;
 
+  services.power-profiles-daemon.enable = true;
+  
   services.pipewire = {
     enable = true;
     alsa.enable = true;

@@ -6,7 +6,7 @@
 
   users.users.kuroma = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "video" "audio" "docker" ];
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "docker" "libvirtd"];
     hashedPassword = "$y$j9T$q1KbTSd8p6jH.MCZirPKO1$MjP3mLcVvv8I5OxOWUXGJpnlQl8.00CuAJuYp3RZ1O.";
     openssh.authorizedKeys.keys = [
       # "ssh-ed25519 stuff, idk add later me bored asf"

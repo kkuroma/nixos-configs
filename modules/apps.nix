@@ -19,7 +19,6 @@
     bottom
     procs
     ffmpeg
-    fastfetch
     killall
     jq
     lsof

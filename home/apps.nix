@@ -126,7 +126,6 @@ in
     libreoffice-qt
     hunspell
     hunspellDicts.th_TH
-    virt-manager
 
     # cli tools
     bat
@@ -141,6 +140,7 @@ in
     imagemagick
     slurp
     distrobox
+    util-linux
     fastfetch
 
     # themes

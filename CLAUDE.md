@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `home/` — shared home-manager modules. `kuroma.nix` is a pure entry point (imports + identity only). All `.source` refs live here for traceability.
 - `config/` — raw static config files. Deployed via `.source` in `home/kuroma.nix`.
 
-Host: `zaphkiel` (x86_64-linux). Inputs: nixpkgs-unstable, disko, home-manager, noctalia, nix-vscode-extensions, nixvim, sops-nix.
+Hosts: `zaphkiel` (x86_64-linux, desktop, NVIDIA RTX), `raziel` (x86_64-linux, Framework 13 AMD AI 300 laptop). Inputs: nixpkgs-unstable, disko, home-manager, noctalia, nix-vscode-extensions, nixvim, sops-nix, nixos-hardware.
 
 ## Decision rules
 
@@ -28,28 +28,39 @@ Host: `zaphkiel` (x86_64-linux). Inputs: nixpkgs-unstable, disko, home-manager, 
 
 ```
 sudo nixos-rebuild switch --flake ~/System/nixos-configs#zaphkiel
+sudo nixos-rebuild switch --flake ~/System/nixos-configs#raziel
 nix flake check
 nix flake update
 ```
 
-After rebuild: **logout+login** for env var / session service changes; **reboot** for kernel/nvidia/initrd/LUKS.
+After rebuild: **logout+login** for env var / session service changes; **reboot** for kernel/amdgpu/initrd/LUKS.
 
 ## Architecture
 
 ### Disk / Boot
-GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 64G). systemd-boot, `configurationLimit = 10`. GRUB migration: run `sudo bootctl --esp-path=/boot install` first, then rebuild.
+GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). systemd-boot, `configurationLimit = 10`. GRUB migration: run `sudo bootctl --esp-path=/boot install` first, then rebuild.
 
-### GPU (`modules/nvidia.nix`)
-`hardware.nvidia.open = true`, `cudaSupport = true`, nvidia-container-toolkit for Docker GPU passthrough. `services.lact.enable = true` for GPU control. Full rebuild + reboot required on changes. Non-NVIDIA hosts omit this module.
+**Swapfile (zaphkiel)**: 88G — sized for 62G RAM + 24G VRAM state saved to RAM during hibernate. disko declares size; on a fresh install the swapfile must be created with `chattr +C` + `fallocate` (not `truncate`) to avoid btrfs holes. After creation or resize: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile` → update `resume_offset` in `hosts/zaphkiel/configuration.nix`.
 
-### Virtualization (`hosts/zaphkiel/virtualization.nix`)
+### GPU
+- **`modules/nvidia.nix`** (zaphkiel): `hardware.nvidia.open = true`, `cudaSupport = true`, nvidia-container-toolkit for Docker GPU passthrough. `services.lact.enable = true`. Full rebuild + reboot required on changes.
+  - `hardware.nvidia.powerManagement.enable = true` — enables nvidia-suspend/hibernate/resume systemd services.
+  - `boot.extraModprobeConfig = "options nvidia NVreg_PreserveVideoMemoryAllocations=1"` — required alongside powerManagement for display to restore after hibernate. Without it: DRM flip timeouts and `Failed to apply atomic modeset` on resume.
+- **`modules/amd.nix`** (raziel): `hardware.graphics`, `amd_pstate=active` kernel param, `ryzenadj`, `lact`. Used with `nixos-hardware.nixosModules.framework-amd-ai-300-series` in flake.
+
+### raziel-specific (`hosts/raziel/laptop.nix`)
+Fingerprint: `fprintd` + `libfprint-2-tod1-goodix` TOD driver (Goodix 27c6:609c sensor). PAM fprint enabled for `sudo` and `polkit-1`. `fwupd` for BIOS/EC/firmware updates. `fw-ectool` for charge limit control. After first boot: `fprintd-enroll $USER`. If fingerprint fails after suspend: `systemctl restart fprintd`.
+
+raziel display: `eDP-1`, 2880x1920@120, scale 2.0 (1440x960 logical).
+
+### Virtualization (`modules/virtualization.nix`)
 - **Docker** — GPU passthrough via nvidia-container-toolkit
 - **Podman** (`dockerCompat = false`) — distrobox only; separate socket from Docker
 - **Distrobox** — run as user `kuroma`, not root (root causes `no such option: pty`). Starship `[container]` module reads `/run/.containerenv` to show container name.
 - **KVM/QEMU + libvirtd** — virt-manager, SPICE USB redirect, qemu-guest/spice-vdagent for clipboard in guests
 
 ### Kernel
-`linuxPackages_xanmod_latest`. xanmod triggers local nvidia module compilation on update. Reboot required after every kernel change (nvidia CDI logs "version mismatch" until then).
+`linuxPackages_xanmod_latest`. On zaphkiel, xanmod triggers local nvidia module compilation on update — reboot required (nvidia CDI logs "version mismatch" until then). On raziel, xanmod is fine without extra compilation.
 
 ### Desktop session (`modules/niri.nix`)
 Login: greetd + tuigreet → `niri-session`, autologins `kuroma`. Packages: noctalia, xwayland-satellite, `pkgs.xrdb` (not `xorg.xrdb` — renamed), wl-clipboard, papirus, kdePackages.breeze.
@@ -137,6 +148,8 @@ Use `programs.vscodium` not `programs.vscode` (vscode targets wrong extensions d
 - **Dolphin "Open With" empty**: `systemd.user.services.kbuildsycoca6` oneshot (in `home/xdg.nix`) must run at session start.
 - **code-launcher**: launched via `ghostty --class=ghostty.float`. Uses `nohup codium ... &` not `systemd-run --user` (systemd-run misses `WAYLAND_DISPLAY`).
 - **Gnome Keyring**: `security.pam.services.greetd.enableGnomeKeyring = true` auto-unlocks at login. If stuck, delete `~/.local/share/keyrings/` and re-login.
-- **Hibernate resume**: `boot.resumeDevice = "/dev/mapper/cryptroot"` in `hosts/zaphkiel/configuration.nix`. Get offset: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile`, add as `resume_offset=<N>` kernel param.
+- **Hibernate resume**: `boot.resumeDevice = "/dev/mapper/cryptroot"` in host configuration.nix. Get offset: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile`, add as `resume_offset=<N>` kernel param. raziel uses `mem_sleep_default=s2idle`; resume offset is commented out until set up. See GPU section for NVIDIA display restoration requirements.
+- **Blueman applet**: HM auto-generates a drop-in that adds a second `ExecStart=` on top of the package unit → systemd refuses (not oneshot). Fix in `hosts/zaphkiel/home.nix`: `systemd.user.services.blueman-applet.Service.ExecStart = lib.mkForce [ "" "${pkgs.blueman}/bin/blueman-applet" ]`.
+- **AI services (zaphkiel)**: `hosts/zaphkiel/ai-services.nix` — llama-router (port 11434), llama-embedding (port 11435), n8n (port 5678), neo4j (port 7474 HTTP / 7687 Bolt), cockpit (port 9090). Services run as `llama` system user (groups: `video`, `render`). Models at `/var/lib/llm-models/`. Neo4j: `https.enable = false; http.enable = true` (default HTTPS fails without SSL policy). Cockpit: `settings.WebService.AllowUnencrypted = "true"` + `Origins = lib.mkForce "http://localhost:9090"` + `security.pam.services.cockpit = {}` required for localhost HTTP login.
 - **MIME + terminal**: `nvim.desktop` has `Terminal=true`; `TerminalApplication=ghostty` in kdeglobals routes it to ghostty.
 - **State version**: `system.stateVersion = "25.11"`. Do not bump. Set options explicitly to silence HM upgrade warnings.

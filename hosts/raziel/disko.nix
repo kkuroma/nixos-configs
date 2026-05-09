@@ -3,7 +3,8 @@
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-CT1000P310SSD8_25195016C9A6";
+        # Fill in: ls /dev/disk/by-id/ | grep nvme after booting the installer
+        device = "/dev/disk/by-id/REPLACE_WITH_NVME_ID";
         content = {
           type = "gpt";
           partitions = {
@@ -17,7 +18,6 @@
                 format = "vfat";
                 mountpoint = "/boot";
                 mountOptions = [ "fmask=0077" "dmask=0077" ];
-                extraArgs = [ "-i" "26905316" ];
               };
             };
             luks = {
@@ -25,7 +25,6 @@
               content = {
                 type = "luks";
                 name = "cryptroot";
-                extraFormatArgs = [ "--uuid" "08e63225-33c8-47e7-bcd0-032e80d788fd" ];
                 extraOpenArgs = [
                   "--allow-discards"
                   "--perf-no_read_workqueue"
@@ -33,7 +32,7 @@
                 ];
                 content = {
                   type = "btrfs";
-                  extraArgs = [ "-L" "nixos" "-f" "--uuid" "ba5658d6-075a-4474-a440-1d4605e3f440" ];
+                  extraArgs = [ "-L" "nixos" "-f" ];
                   subvolumes = {
                     "/root" = {
                       mountpoint = "/";
@@ -53,7 +52,7 @@
                     };
                     "/swap" = {
                       mountpoint = "/swap";
-                      swap.swapfile.size = "88G";
+                      swap.swapfile.size = "64G";
                     };
                   };
                 };

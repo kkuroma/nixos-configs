@@ -121,6 +121,7 @@ in
     kdePackages.dolphin
     kdePackages.kdenlive
     kdePackages.gwenview
+    kdePackages.konsole
     prismlauncher
     imv
     libreoffice-qt

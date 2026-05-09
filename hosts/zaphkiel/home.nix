@@ -1,7 +1,5 @@
-{ ... }:
+{ pkgs, lib, ... }:
 {
-  # Single source of truth for monitor layout — niri handles hotplug natively.
-  # Kanshi removed; niri output config replaces it entirely.
   rice.niri.extraConfig = ''
     output "HDMI-A-1" {
         mode "1920x1080@120.000"

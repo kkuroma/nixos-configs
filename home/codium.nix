@@ -51,6 +51,9 @@ let
     ovsx.vadimcn.vscode-lldb
     ovsx.vscodevim.vim
     ovsx.v1hz.kdl
+    ovsx.theqtcompany.qt-qml
+    ovsx.theqtcompany.qt-core
+    ovsx.delgan.qml-format
   ];
 
   # extensions json template

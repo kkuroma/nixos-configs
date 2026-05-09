@@ -44,8 +44,6 @@
       nix-clean = "nix-collect-garbage -d; nix-store --optimise";
       nix-rebuild = "sudo nixos-rebuild switch --flake ~/System/nixos-configs#$(hostname)";
       nix-update = "nix flake update --flake ~/System/nixos-configs";
-      shell-python = "nix develop ~/Shells/python";
-      shell-networking = "nix develop ~/Shells/networking";
     };
 
     initContent = lib.mkMerge [
@@ -102,6 +100,18 @@
 
         [[ -f "$HOME/.config/.dart-cli-completion/zsh-config.zsh" ]] && \
           . "$HOME/.config/.dart-cli-completion/zsh-config.zsh"
+
+        _init-shell() {
+          _arguments \
+            '--python[Python tooling (uv, ruff, pyright) — packages managed by uv]' \
+            '--cuda[CUDA packages + LD_LIBRARY_PATH]' \
+            '--npx[Node.js / npx]' \
+            '--networking[Network/security tools]' \
+            '--git[git init + .gitignore + git in devShell]' \
+            '--name[Shell name for starship prompt]: :' \
+            '(-h --help)'{-h,--help}'[Show help]'
+        }
+        compdef _init-shell init-shell
       ''
     ];
   };

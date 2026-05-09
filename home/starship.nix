@@ -5,12 +5,15 @@ let
   BL = builtins.fromJSON ''""'';
   BR = builtins.fromJSON ''""'';
 
+  # U+E73C = nf-dev-python
+  PY = builtins.fromJSON ''""'';
+
   # Helper: wrap content in a noctalia-colored powerline pill
   blob = bg: fg: content: "[${BL}](fg:${bg})[${content}](fg:${fg} bg:${bg})[${BR}](fg:${bg})";
 
   # Colors use noctalia palette names which resolve to theme hex values
   starshipConfig = {
-    format = "$shell$container$directory$git_branch$git_state$git_status$git_metrics$nix_shell$env_var$fill$cmd_duration$time$line_break$character";
+    format = "$shell$container$directory$git_branch$git_state$git_status$git_metrics$python$env_var$fill$cmd_duration$time$line_break$character";
 
     shell = {
       disabled = false;
@@ -54,16 +57,7 @@ let
 
     git_metrics.disabled = false;
 
-    nix_shell = {
-      disabled = false;
-      heuristic = false;
-      impure_msg = "dev";
-      pure_msg = "dev-pure";
-      unknown_msg = "nix-dev";
-      format = "${blob "sky" "black" "$symbol$state"} ";
-      symbol = "󱄅 ";
-      style = "fg:black bg:sky";
-    };
+    nix_shell.disabled = true;
 
     env_var.DEV_SHELL = {
       variable = "DEV_SHELL";
@@ -74,6 +68,14 @@ let
     };
 
     fill.symbol = " ";
+
+    python = {
+      symbol = PY;
+      format = "(${blob "teal" "black" "$symbol $virtualenv"} )";
+      detect_files = [];
+      detect_extensions = [];
+      detect_folders = [];
+    };
 
     cmd_duration = {
       format = "${blob "peach" "black" "$duration"}";
@@ -129,10 +131,12 @@ in
   '';
 
   programs.zsh.initContent = ''
-    eval "$(${pkgs.starship}/bin/starship init zsh)"
+    [[ "$TERM" != "linux" ]] && eval "$(${pkgs.starship}/bin/starship init zsh)"
   '';
 
   programs.nushell.extraConfig = ''
-    source ~/.cache/starship/init.nu
+    if ($env | get -i TERM | default "xterm") != "linux" {
+      source ~/.cache/starship/init.nu
+    }
   '';
 }

@@ -16,7 +16,8 @@
     tree
     fd
     duf
-    bottom
+    dust
+    btop
     procs
     ffmpeg
     killall

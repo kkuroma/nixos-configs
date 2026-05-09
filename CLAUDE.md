@@ -38,7 +38,7 @@ After rebuild: **logout+login** for env var / session service changes; **reboot*
 ## Architecture
 
 ### Disk / Boot
-GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). systemd-boot, `configurationLimit = 10`. GRUB migration: run `sudo bootctl --esp-path=/boot install` first, then rebuild.
+GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). systemd-boot, `configurationLimit = 10`.
 
 **Swapfile (zaphkiel)**: 88G — sized for 62G RAM + 24G VRAM state saved to RAM during hibernate. disko declares size; on a fresh install the swapfile must be created with `chattr +C` + `fallocate` (not `truncate`) to avoid btrfs holes. After creation or resize: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile` → update `resume_offset` in `hosts/zaphkiel/configuration.nix`.
 
@@ -104,6 +104,7 @@ Options in `home/fonts.nix`: `config.rice.fonts.{ui,mono,uiSize,monoSize}`. Edit
 |------|----------|
 | `home/fonts.nix` | `rice.fonts` options, fontconfig, font file deployment |
 | `home/ghostty.nix` | `programs.ghostty` with `rice.fonts.mono`, noctalia config-file ref |
+| `home/konsole.nix` | Konsole profile + konsolerc via `xdg.dataFile` + `kwriteconfig6` activation |
 | `home/niri.nix` | Niri config assembly; `rice.niri.extraConfig` option |
 | `home/nvim.nix` | nixvim — base16, LSPs, neo-tree, treesitter, telescope, oil, lualine, conform |
 | `home/apps.nix` | Packages, `programs.{yazi,btop,mpv,zathura,fzf,direnv}`, `code-launcher`, `init-shell` |
@@ -119,17 +120,25 @@ Options in `home/fonts.nix`: `config.rice.fonts.{ui,mono,uiSize,monoSize}`. Edit
 ### Shell (zsh + nushell)
 Shared aliases in both. Nushell uses `^` prefix on external commands (`grep`, `diff`, `ip`, etc.) to bypass builtins. `reload = "exec zsh"` not `source` (avoids NVM double-init). Zsh uses `lib.mkOrder 550` in `programs.zsh.initContent` for pre-compinit content.
 
-**Starship prompt**: `shell`(bold cyan text, zsh silent) → `container`(green blob, distrobox) → `directory`(blue) → `git_branch`(maroon) → `git_state/status/metrics` → `nix_shell`(sky, fires on `IN_NIX_SHELL`) → `DEV_SHELL`(yellow) → `$fill` → `cmd_duration`(peach, >1s) → `time`(mauve) → newline → `$character`. All segments except shell use blob-style pill caps (U+E0B6/U+E0B4).
+**Starship prompt**: `shell`(bold cyan text, zsh silent) → `container`(green blob, distrobox) → `directory`(blue) → `git_branch`(maroon) → `git_state/status/metrics` → `python`(teal blob, nf-dev-python icon + venv name, only when `VIRTUAL_ENV` set) → `DEV_SHELL`(yellow) → `$fill` → `cmd_duration`(peach, >1s) → `time`(mauve) → newline → `$character`. `nix_shell` is disabled. Starship is skipped on TTY (`TERM=linux`): zsh uses `[[ "$TERM" != "linux" ]]` guard, nushell uses an `if` block. All segments except shell use blob-style pill caps (U+E0B6/U+E0B4). PUA codepoints embedded via `builtins.fromJSON ''"\\uXXXX"''` in `starship.nix`.
 
-### Dev shells (`shells/`)
-- `shells/python/` — python3 + uv/ruff/black/pyright/jupyter. shellHook: `export DEV_SHELL=python; exec zsh`
-- `shells/networking/` — pentest toolkit. shellHook: `export DEV_SHELL=networking; exec zsh`
-
-`exec zsh` replaces the nix develop bash process with zsh. `DEV_SHELL` is preserved because it's exported before exec.
-
-**`init-shell`** (in `home/apps.nix`): generates `flake.nix` + `.envrc` for per-project shells. Flags: `--python`, `--npx`, `--networking`, `--cuda`. Writes `use flake` + runs `direnv allow`. `--python`/`--cuda` shellHooks auto-create `.venv` with `uv venv`.
+**`init-shell`** (`home/scripts/init-shell.sh`, referenced from `home/apps.nix` via `builtins.readFile`): generates `flake.nix` + `.envrc` for per-project Nix devShells. Flags: `--python`, `--cuda`, `--npx`, `--networking`, `--git`, `--name NAME`. Key behaviors:
+- `--python`: adds `python3 uv ruff black pyright` to devShell; runs `uv init` + `uv lock` at creation time; bootstraps `.venv` + `ipykernel` via `nix develop --command bash -c "uv venv && uv pip install ipykernel"` (uses nix Python, also creates `flake.lock`); `flake.lock` is staged immediately so nix-direnv's file watch sees a stable hash on first activation. Creates `.vscode/settings.json` pinning interpreter to `.venv/bin/python`. Sets `LD_LIBRARY_PATH` (mkShell attr) with `stdenv.cc.cc.lib` + `zlib` so uv-installed C extensions (numpy, torch, etc.) find `libstdc++.so.6` on NixOS.
+- `--cuda`: independent of `--python`; adds CUDA packages + sets `LD_LIBRARY_PATH` as a **mkShell-level attr** (includes `stdenv.cc.cc.lib` + full CUDA libs) so nix-direnv captures it. When combined with `--python`, appends `[[tool.uv.index]]` + `[tool.uv.sources]` to `pyproject.toml` so that `uv add torch` automatically gets the CUDA wheel (no `--index` flag needed).
+- `--git`: `git init` (if not a repo) + `.gitignore` + adds `git` to devShell.
+- Generated flake uses mkShell-level attrs (`DEV_SHELL`, `LD_LIBRARY_PATH`) — captured by `nix print-dev-env` (nix-direnv) and visible in both `nix develop` and direnv/VSCodium contexts. shellHook activates existing venv (if present) and does `[[ $- == *i* ]] && exec zsh`. No `HISTFILE` — project shells share the main zsh history.
+- `.envrc` is ALWAYS just `use flake` — no PATH_add, no VIRTUAL_ENV. Any env modification in `.envrc` beyond `use flake` causes direnv's env-diff to change on every precmd, producing an infinite re-evaluation loop.
+- `exec zsh` in shellHook is guarded by `[[ $- == *i* ]]` (interactive check). `nix develop --command bash -c "..."` starts a **non-interactive** bash; without this guard, `exec zsh` replaces bash before the `--command` runs, the command never executes, and direnv fires in the hijacked interactive session causing an infinite loop.
+- Venv creation (`uv venv`, `uv pip install ipykernel`) is done by the bootstrap command (`nix develop --command bash -c "..."`) in `init-shell`, NOT in shellHook. ShellHook only activates an already-existing venv.
+- `direnv allow` is called BEFORE `nix develop` bootstrap so that `.envrc` is trusted even if bootstrapping fails (`set -euo pipefail` would otherwise abort the script before the allow).
+- Tab-completion for flags in zsh (`compdef`) and nushell (`extern`) defined in their respective `.nix` files.
 
 **direnv**: `programs.direnv.enable = true; nix-direnv.enable = true` in `home/apps.nix`.
+
+**direnv gotcha — infinite reload loop**: Two causes, both fixed:
+1. `exec zsh` in shellHook without an interactive check — `nix develop --command bash -c "..."` sources shellHook before running the command; unconditional `exec zsh` hijacks the non-interactive bash, opens an interactive zsh session, direnv fires inside it and loops. Fix: `[[ $- == *i* ]] && exec zsh`.
+2. ANY `export` or `PATH_add` in `.envrc` (after `use flake`) causes direnv's env-diff to change on every precmd check, looping even when nix-direnv hits its cache. `.envrc` must be ONLY `use flake`.
+The loop symptom is `nix-direnv: Using cached dev shell` repeated endlessly — the word "cached" means nix evaluation was skipped, not that the loop stopped.
 
 ### Users / Auth
 `users.mutableUsers = false`. Passwords as `hashedPassword` (yescrypt). Update: `mkpasswd --method=yescrypt`, paste hash, rebuild. SSH key-only (`PasswordAuthentication = false`, `PermitRootLogin = "no"`).

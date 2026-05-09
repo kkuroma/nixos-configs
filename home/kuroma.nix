@@ -3,6 +3,7 @@
   imports = [
     ./fonts.nix
     ./ghostty.nix
+    ./konsole.nix
     ./apps.nix
     ./nvim.nix
     ./niri.nix
@@ -21,10 +22,6 @@
   home.stateVersion = "25.11";
 
   home.file.".face".source = ../config/.face;
-
-  home.file."Shells" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/System/nixos-configs/shells";
-  };
 
   services.cliphist.enable = true;
 

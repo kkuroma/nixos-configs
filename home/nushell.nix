@@ -26,13 +26,21 @@
       diff    = "^diff --color=auto";
       ip      = "^ip --color=auto";
 
-      shell-python     = "nix develop ~/Shells/python";
-      shell-networking = "nix develop ~/Shells/networking";
     };
 
     extraConfig = ''
       $env.config.show_banner = false
       $env.config.edit_mode = "emacs"
+
+      extern "init-shell" [
+        --python          # Python tooling (uv, ruff, pyright) — packages via uv
+        --cuda            # CUDA packages + LD_LIBRARY_PATH hook
+        --npx             # Node.js / npx
+        --networking      # Network/security tools
+        --git             # git init + .gitignore + git in devShell
+        --name: string    # Shell name shown in starship prompt
+        --help(-h)        # Show help
+      ]
     '';
   };
 }

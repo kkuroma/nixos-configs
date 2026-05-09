@@ -3,6 +3,12 @@
   # Framework EC tool (battery charge limit, fan curves, etc.)
   environment.systemPackages = [ pkgs.fw-ectool ];
 
+  # brightnessctl udev rules — lets video group members write to backlight
+  services.udev.packages = [ pkgs.brightnessctl ];
+
+  # Power button → suspend-then-hibernate (suspend first, hibernate after HibernateDelaySec)
+  services.logind.settings.Login.HandlePowerKey = "suspend-then-hibernate";
+
   # Fingerprint — Goodix MOC sensor (27c6:609c) on Framework 13 AMD AI 300
   # tod driver is required; generic libfprint does not support this sensor
   services.fprintd = {

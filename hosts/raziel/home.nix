@@ -12,5 +12,10 @@
             focus-ring { width 2; }
         }
     }
+
+    binds {
+        // Framework keyboard extra key (code 234) → settings panel
+        code:234 { spawn-sh "noctalia-shell ipc call settings toggle"; }
+    }
   '';
 }

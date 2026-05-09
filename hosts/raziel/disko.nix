@@ -4,7 +4,7 @@
       main = {
         type = "disk";
         # Fill in: ls /dev/disk/by-id/ | grep nvme after booting the installer
-        device = "/dev/disk/by-id/REPLACE_WITH_NVME_ID";
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_2000GB_25301V801926";
         content = {
           type = "gpt";
           partitions = {

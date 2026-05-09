@@ -7,6 +7,7 @@
 
     secrets = {
       "nas/credentials" = { };
+      "syncthing/password" = { owner = "kuroma"; };
     };
   };
 }

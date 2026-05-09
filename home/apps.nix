@@ -92,6 +92,8 @@ in
     onlyoffice-desktopeditors
 
     # cli tools
+    brightnessctl
+    playerctl
     bat
     tesseract
     imagemagick

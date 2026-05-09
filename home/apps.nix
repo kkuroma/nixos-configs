@@ -89,9 +89,7 @@ in
     kdePackages.konsole
     prismlauncher
     imv
-    libreoffice-qt
-    hunspell
-    hunspellDicts.th_TH
+    onlyoffice-desktopeditors
 
     # cli tools
     bat

@@ -1,6 +1,12 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
-  programs.steam.enable = true;
+  nixpkgs.overlays = [ inputs.millennium.overlays.default ];
+
+  # millenium steam for custom colors
+  programs.steam = {
+    enable = true;
+    package = pkgs.millennium-steam;
+  };
 
   environment.systemPackages = with pkgs; [
     # core

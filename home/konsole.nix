@@ -7,7 +7,7 @@
     [Appearance]
     AntiAliasFonts=true
     BoldIntense=false
-    Font=${config.rice.fonts.mono},${toString config.rice.fonts.monoSize},-1,5,400,0,0,0,0,0,Regular
+    Font=${config.rice.fonts.mono} Light,${toString config.rice.fonts.monoSize},-1,5,400,0,0,0,0,0,Regular
 
     [Scrolling]
     HistorySize=10000

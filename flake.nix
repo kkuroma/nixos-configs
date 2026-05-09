@@ -34,6 +34,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 

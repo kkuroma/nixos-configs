@@ -33,10 +33,10 @@ let
 
     directory = {
       style = "fg:black bg:blue";
-      format = "${blob "blue" "black" "$path$read_only"} ";
+      format = "${blob "blue" "black" "$read_only$path"} ";
       truncation_length = 4;
       truncate_to_repo = true;
-      read_only = "󰌾";
+      read_only = "󰌾 ";
     };
 
     git_branch = {

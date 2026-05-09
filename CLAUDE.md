@@ -98,6 +98,12 @@ Noctalia writes at runtime: `~/.config/niri/noctalia.kdl`, `~/.config/ghostty/co
 ### Fonts
 Options in `home/fonts.nix`: `config.rice.fonts.{ui,mono,uiSize,monoSize}`. Edit defaults in `fonts.nix` only — all modules read from there. UI=Google Sans Flex, Mono=Maple Mono NF CN. Do NOT use `fonts.fontconfig.localConf` (generates broken XML in some nixpkgs versions).
 
+**Maple Mono NF CN weight gotcha**: non-standard weights (ExtraLight, Light, Medium, etc.) register as separate fc families (`Maple Mono NF CN ExtraLight`, etc.), NOT as weight variants of `Maple Mono NF CN`. Requesting weight 200 of `Maple Mono NF CN` silently falls back to Regular (400) because Qt only sees Regular and Bold under that family name. Use the family name directly — in Konsole: `Font=Maple Mono NF CN ExtraLight,12,-1,5,400,...`.
+
+**ONLYOFFICE font picker**: uses its own directory scanner (not fontconfig) to populate the font picker — ignores symlinks entirely, only counts real files. `home/fonts.nix` `home.activation.onlyofficeFonts` copies real font files from Nix store packages to `~/.local/share/fonts/onlyoffice/` with sentinel-based incremental updates. Currently copies: noto-fonts, noto-fonts-cjk-sans (stored as `.otf.ttc` — find pattern must include `*.ttc`), Maple Mono NF CN, JetBrains Mono NF, Google Sans Flex. Sentinel files store the Nix store path so copies only re-run when a package updates. Cache files (`fonts.log`, `font_selection.bin`) are deleted on any copy to force rescan on next launch.
+
+**ONLYOFFICE UI font**: ONLYOFFICE bundles its own Qt5 runtime + platform plugins at `share/desktopeditors/platforms/`. It does NOT read system qt5ct/qt6ct/kdeglobals — `QT_QPA_PLATFORMTHEME=qt6ct` has no effect on it. Cannot be changed without patching the package. Not worth attempting.
+
 ### Home-manager modules
 
 | File | Contents |
@@ -114,7 +120,7 @@ Options in `home/fonts.nix`: `config.rice.fonts.{ui,mono,uiSize,monoSize}`. Edit
 | `home/qt.nix` | kdeglobals, qt5ct, qt6ct (`.text`), GTK dconf — all use `rice.fonts.*` |
 | `home/codium.nix` | VSCodium + extensions + settings + noctalia extension activation |
 | `home/fcitx5.nix` | fcitx5 input method (JP/ZH/TH), session service, sentinel profile |
-| `home/xdg.nix` | MIME defaults, kbuildsycoca6 service, Vivaldi CSS, Dolphin service menus |
+| `home/xdg.nix` | MIME defaults, kbuildsycoca6 service, Vivaldi CSS, Dolphin service menus (reimage, compress-video, ocr) |
 | `home/git.nix` | `programs.git` — user, email, defaultBranch, pull.rebase |
 
 ### Shell (zsh + nushell)
@@ -155,6 +161,8 @@ Use `programs.vscodium` not `programs.vscode` (vscode targets wrong extensions d
 ### Misc gotchas
 - **Noctalia single-launch bug** (Steam, OnlyOffice): apps that don't call `gdk_notify_startup_complete()` block re-launch from noctalia. Fix: `xdg.desktopEntries` override with `startupNotify = false` in `home/xdg.nix`.
 - **Dolphin "Open With" empty**: `systemd.user.services.kbuildsycoca6` oneshot (in `home/xdg.nix`) must run at session start.
+- **Dolphin service menus** (`home/xdg.nix`): `reimage.desktop` (image resize/rotate/flip/convert/square-crop/square-pad), `compress-video.desktop` (H.264 CPU/GPU at CRF/CQ 26/32/38 — outputs `_cpu_best.mp4` etc. alongside original), `ocr.desktop` (tesseract → `filename.txt` alongside image). All use `%F` and loop with bash so multi-select works.
+- **Office MIME types**: all `.doc/.docx/.xls/.xlsx/.ppt/.pptx/.odt/.ods/.odp` → `onlyoffice-desktopeditors.desktop`.
 - **code-launcher**: launched via `ghostty --class=ghostty.float`. Uses `nohup codium ... &` not `systemd-run --user` (systemd-run misses `WAYLAND_DISPLAY`).
 - **Gnome Keyring**: `security.pam.services.greetd.enableGnomeKeyring = true` auto-unlocks at login. If stuck, delete `~/.local/share/keyrings/` and re-login.
 - **Hibernate resume**: `boot.resumeDevice = "/dev/mapper/cryptroot"` in host configuration.nix. Get offset: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile`, add as `resume_offset=<N>` kernel param. raziel uses `mem_sleep_default=s2idle`; resume offset is commented out until set up. See GPU section for NVIDIA display restoration requirements.

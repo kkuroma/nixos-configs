@@ -120,20 +120,6 @@ FOOTER
 # Python project scaffold (uv)
 if [ $PYTHON -eq 1 ]; then
   uv init --no-readme --no-workspace -q
-  if [ $CUDA -eq 1 ]; then
-    cat >> pyproject.toml << 'PYTORCHINDEX'
-
-[[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
-
-[tool.uv.sources]
-torch = { index = "pytorch-cu124" }
-torchvision = { index = "pytorch-cu124" }
-torchaudio = { index = "pytorch-cu124" }
-PYTORCHINDEX
-  fi
   uv lock -q
 fi
 

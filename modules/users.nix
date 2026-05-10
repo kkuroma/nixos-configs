@@ -9,7 +9,8 @@
     extraGroups = [ "wheel" "networkmanager" "video" "audio" "docker" "libvirtd"];
     hashedPassword = "$y$j9T$q1KbTSd8p6jH.MCZirPKO1$MjP3mLcVvv8I5OxOWUXGJpnlQl8.00CuAJuYp3RZ1O.";
     openssh.authorizedKeys.keys = [
-      # "ssh-ed25519 stuff, idk add later me bored asf"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHcf33fgUY81ov0I6i+6ZJGGURkRwITQDDr3fgjlMid0 kuroma@zaphkiel"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINofwHa5GuqtIg7RGhFnr+2HrGncuwEK5EHlFEIE8gQU kuroma@raziel"
     ];
   };
 

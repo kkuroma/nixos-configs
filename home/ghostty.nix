@@ -1,5 +1,12 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
+  home.activation.ghosttyConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    config_file="$HOME/.config/ghostty/config.ghostty"
+    if [ ! -f "$config_file" ]; then
+      echo "theme = noctalia" > "$config_file"
+    fi
+  '';
+
   programs.ghostty = {
     enable = true;
     settings = {

@@ -32,14 +32,21 @@
     enable = true;
     user = "kuroma";
     dataDir = "/home/kuroma";
+    settings.devices = {
+      raziel.id   = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
+      zaphkiel.id = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";
+    };
     settings.folders."Documents" = {
       path = "/home/kuroma/Documents";
+      devices = [ "raziel" "zaphkiel" ];
     };
     settings.folders."PrismInstances" = {
       path = "/home/kuroma/.local/share/PrismLauncher/instances";
+      devices = [ "raziel" "zaphkiel" ];
     };
     settings.folders."Wallpapers" = {
       path = "/home/kuroma/Pictures/Wallpapers";
+      devices = [ "raziel" "zaphkiel" ];
     };
   };
 

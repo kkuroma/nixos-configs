@@ -23,6 +23,8 @@
   ];
 
   networking.hostName = "zaphkiel";
+  networking.firewall.allowedTCPPorts = [ 3000 ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 11435 ];
   boot.kernelParams = [ 
     "resume_offset=92872541" 
     "resume=/dev/mapper/cryptroot"

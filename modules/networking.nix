@@ -2,8 +2,8 @@
 {
   networking.networkmanager.enable = true;
 
-  # firewall, will set up properly later i need 3000
-  networking.firewall.allowedTCPPorts = [ 3000 ];
+  networking.firewall.allowedTCPPorts = [ 22000 ];
+  networking.firewall.allowedUDPPorts = [ 22000 21027 ];
 
   # tailscale
   services.tailscale = {

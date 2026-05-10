@@ -90,6 +90,8 @@ in
     prismlauncher
     imv
     onlyoffice-desktopeditors
+    qbittorrent
+    librewolf
 
     # cli tools
     brightnessctl

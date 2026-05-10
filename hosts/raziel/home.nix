@@ -1,5 +1,17 @@
 { ... }:
 {
+  systemd.user.services.lock-before-sleep = {
+    Unit = {
+      Description = "Lock screen before sleep";
+      Before = [ "sleep.target" ];
+    };
+    Install.WantedBy = [ "sleep.target" ];
+    Service = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
+    };
+  };
   # Framework 13 built-in display. Scale 2.0 → 1440x960 logical resolution.
   rice.niri.extraConfig = ''
     output "eDP-1" {

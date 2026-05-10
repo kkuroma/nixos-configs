@@ -7,8 +7,9 @@
 
   services.openssh = {
     enable = true;
+    openFirewall = false;
     settings = {
-      PasswordAuthentication = false;  # key-only auth
+      PasswordAuthentication = false;
       PermitRootLogin = "no";
     };
   };
@@ -38,7 +39,7 @@
       path = "/home/kuroma/.local/share/PrismLauncher/instances";
     };
     settings.folders."Wallpapers" = {
-      path = "/home/kuroma/Pictures/Wallpaper";
+      path = "/home/kuroma/Pictures/Wallpapers";
     };
   };
 

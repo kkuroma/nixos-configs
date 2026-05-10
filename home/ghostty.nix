@@ -9,6 +9,7 @@
       "scrollback-limit" = 10000;
       "cursor-style" = "bar";
       "copy-on-select" = "clipboard";
+      "theme" = "noctalia";
       "config-file" = "~/.config/ghostty/config.ghostty";
       "gtk-custom-css" = "notebook tab label { font-size: 14px; }";
     };

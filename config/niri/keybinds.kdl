@@ -80,4 +80,7 @@ binds {
     XF86AudioPrev  allow-when-locked=true { spawn "playerctl" "previous"; }
 
     Print { spawn-sh "mkdir -p ~/Pictures/Screenshots && grim -g \"$(slurp)\" ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"; }
+
+    // Framework 13 extra key (keycode 234) → settings panel
+    code:234 { spawn-sh "noctalia-shell ipc call settings toggle"; }
 }

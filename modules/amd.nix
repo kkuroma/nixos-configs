@@ -6,7 +6,7 @@
   # active = EPP-based; power-profiles-daemon sends EPP hints directly to the driver
   boot.kernelParams = [ "amd_pstate=active" ];
 
-  environment.systemPackages = [ pkgs.ryzenadj amd-xdna-driver-libs];
+  environment.systemPackages = [ pkgs.ryzenadj ];
 
   services.lact.enable = true;
 }

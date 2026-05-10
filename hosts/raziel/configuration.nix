@@ -27,9 +27,8 @@
   boot.kernelParams = [
     # s2idle suspend — recommended for Framework 13 AMD
     "mem_sleep_default=s2idle"
-    # Fill in after install: sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
-    # "resume_offset=XXXXXXXX"
-    # "resume=/dev/mapper/cryptroot"
+    "resume_offset=533760"
+    "resume=/dev/mapper/cryptroot"
   ];
 
   system.stateVersion = "25.11";

@@ -4,30 +4,33 @@
 
   services.udev.packages = [ pkgs.brightnessctl ];
 
-  services.logind.settings.Login.HandlePowerKey = "suspend-then-hibernate";
+  services.logind.settings.Login = {
+    HandlePowerKey = "suspend-then-hibernate";
+    HandleLidSwitch = "suspend-then-hibernate";
+    HandleLidSwitchExternalPower = "suspend-then-hibernate";
+  };
 
   security.pam.services.sudo.fprintAuth = true;
   security.pam.services.polkit-1.fprintAuth = true;
   services.fwupd.enable = true;
 
-  # System-scope service: user-scope sleep.target isn't reliably activated by logind
-  systemd.services.lock-before-sleep = {
-    description = "Lock screen before sleep";
-    before = [ "sleep.target" ];
-    wantedBy = [ "sleep.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      User = "kuroma";
-      Environment = [ "XDG_RUNTIME_DIR=/run/user/1000" "WAYLAND_DISPLAY=wayland-1" ];
-      ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
-        /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
-        sleep 0.5
-      ''}";
-      # Lock on resume too — the pre-sleep lock races the display blanking;
-      # ExecStop runs when sleep.target deactivates (system fully awake again)
-      ExecStop = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
-    };
+  # system-sleep hook: called fresh by systemd-sleep on every sleep/resume cycle.
+  # Avoids the RemainAfterExit stale-state bug where a sleep.target service only
+  # fires ExecStart once then stays "active" and skips subsequent sleeps.
+  environment.etc."systemd/system-sleep/lock-screen" = {
+    mode = "0555";
+    source = pkgs.writeShellScript "lock-screen-hook" ''
+      AS_USER="${pkgs.util-linux}/bin/runuser -u kuroma -- env XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1"
+      case "$1" in
+        pre)
+          $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
+          sleep 0.5
+          ;;
+        post)
+          $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
+          ;;
+      esac
+    '';
   };
 
   services.udev.extraRules = ''

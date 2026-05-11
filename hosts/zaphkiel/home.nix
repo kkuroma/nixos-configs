@@ -1,7 +1,6 @@
 { pkgs, lib, ... }:
 {
   rice.nvenc = true;
-
   rice.niri.extraConfig = ''
     output "HDMI-A-1" {
         mode "1920x1080@119.879"

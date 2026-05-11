@@ -1,9 +1,6 @@
 { ... }:
 {
-  # Lock screen before any sleep (power button, lid close, manual suspend).
-  # Runs in user session so it has Wayland access without runuser hacks.
-  # -w: holds a systemd sleep inhibitor until the lock command exits,
-  # so the display stays on long enough for the lock screen to render.
+  # swayidle installed and configured to lock screen BEFORE sleep/hibernate
   services.swayidle = {
     enable = true;
     extraArgs = [ "-w" ];

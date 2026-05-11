@@ -133,6 +133,7 @@ let
         "after" = [ "\"" "_" "d" "P" ];
       }
     ];
+    "vim.handleKeys" = { "<C-v>" = false; };
     "editor.multiCursorModifier" = "alt";
   };
 

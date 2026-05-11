@@ -13,15 +13,15 @@ let
 
   # Colors use noctalia palette names which resolve to theme hex values
   starshipConfig = {
-    format = "$shell$container$directory$git_branch$git_state$git_status$git_metrics$python$env_var$fill$cmd_duration$time$line_break$character";
+    format = "$shell$container$directory$git_branch$git_state$git_status$git_metrics$python$env_var$fill$cmd_duration$time $hostname$line_break$character";
 
     shell = {
       disabled = false;
       bash_indicator = "bash";
-      zsh_indicator = "";
+      zsh_indicator = "zsh";
       nu_indicator = "nu";
-      format = "[$indicator]($style) ";
-      style = "bold cyan";
+      format = "${blob "overlay1" "black" "$indicator"} ";
+      style = "fg:black bg:overlay1";
     };
 
     container = {
@@ -30,7 +30,7 @@ let
       format = "${blob "green" "black" "$symbol $name"} ";
       style = "fg:black bg:green";
     };
-
+    
     directory = {
       style = "fg:black bg:blue";
       format = "${blob "blue" "black" "$read_only$path"} ";
@@ -58,6 +58,13 @@ let
     git_metrics.disabled = false;
 
     nix_shell.disabled = true;
+
+    hostname = {
+      ssh_only = false;
+      format = "${blob "overlay1" "black" "$hostname"} ";
+      style = "fg:black bg:overlay1";
+      disabled = false;
+    };
 
     env_var.DEV_SHELL = {
       variable = "DEV_SHELL";
@@ -135,7 +142,7 @@ in
   '';
 
   programs.nushell.extraConfig = ''
-    if ($env | get -i TERM | default "xterm") != "linux" {
+    if ($env | get -o TERM | default "xterm") != "linux" {
       source ~/.cache/starship/init.nu
     }
   '';

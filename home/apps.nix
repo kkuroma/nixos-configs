@@ -113,6 +113,7 @@ in
     fastfetch
     ouch
     gamescope
+    wl-mirror
 
     # themes
     wl-screenrec

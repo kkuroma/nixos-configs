@@ -82,4 +82,5 @@ binds {
     Print { screenshot-screen; }
     Ctrl+Mod+Shift+S { screenshot-screen; }
     XF86AudioMedia { spawn-sh "noctalia-shell ipc call settings toggle"; }
+    Mod+P repeat=false { spawn-sh "wl-mirror $(niri msg --json focused-output | jq -r .name)"; }
 }

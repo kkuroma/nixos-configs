@@ -20,7 +20,10 @@
       RemainAfterExit = true;
       User = "kuroma";
       Environment = "XDG_RUNTIME_DIR=/run/user/1000";
-      ExecStart = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call sessionMenu lockAndSuspend";
+      ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
+        /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
+        sleep 0.3
+      ''}";
     };
   };
 

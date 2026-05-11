@@ -33,8 +33,8 @@
   xdg.configFile."noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json".source =
     ../config/noctalia/colorschemes/material-ocean-dark/material-ocean-dark.json;
 
-  xdg.configFile."noctalia/colorschemes/Natumikan/Natsumikan.json".source =
-    ../config/noctalia/colorschemes/Natumikan/Natsumikan.json;
+  xdg.configFile."noctalia/colorschemes/Natsumikan/Natsumikan.json".source =
+    ../config/noctalia/colorschemes/Natsumikan/Natsumikan.json;
 
   xdg.configFile."noctalia/user-templates.toml".source =
     ../config/noctalia/user-templates.toml;

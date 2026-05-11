@@ -88,6 +88,7 @@ let
     "window.confirmSaveUntitledWorkspace" = false;
     "editor.fontFamily" = "'${config.rice.fonts.mono}'";
     "editor.colorDecorators" = true;
+    "editor.defaultColorDecorators" = true;
     "editor.fontSize" = 13;
     "editor.minimap.enabled" = false;
     "editor.minimap.renderCharacters" = false;
@@ -123,6 +124,16 @@ let
       "*.sdb" = "\${capture}.\${extname}-*";
       "*.s3db" = "\${capture}.\${extname}-*";
     };
+    "vim.substituteGlobalFlag" = true;
+    "vim.visualstar" = true;
+    "vim.overrideCopy" = true;
+    "vim.visualModeKeyBindingsNonRecursive" = [
+      {
+        "before" = [ "p" ];
+        "after" = [ "\"" "_" "d" "P" ];
+      }
+    ];
+    "editor.multiCursorModifier" = "alt";
   };
 
   settingsFile = pkgs.writeText "vscodium-settings.json" (builtins.toJSON settings);

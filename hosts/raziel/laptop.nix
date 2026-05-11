@@ -22,7 +22,7 @@
       Environment = "XDG_RUNTIME_DIR=/run/user/1000";
       ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
         /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
-        sleep 0.3
+        sleep 1.0
       ''}";
     };
   };

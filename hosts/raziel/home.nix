@@ -25,8 +25,5 @@
         }
     }
 
-    binds {
-        XF86PowerOff { spawn-sh "noctalia-shell ipc --any-display call lockScreen lock && sleep 1 && systemctl suspend-then-hibernate"; }
-    }
   '';
 }

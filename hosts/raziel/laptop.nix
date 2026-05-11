@@ -4,11 +4,21 @@
 
   services.udev.packages = [ pkgs.brightnessctl ];
 
-  services.logind.settings.Login.HandlePowerKey = "ignore";
+  services.logind.settings.Login.HandlePowerKey = "suspend-then-hibernate";
 
-  # fprintd enabled by nixos-hardware; 27c6:609c is natively supported in libfprint 1.94+,
-  # the TOD driver (0.0.6, designed for 53xc) uses wrong delete protocol and breaks re-enrollment
   security.pam.services.sudo.fprintAuth = true;
   security.pam.services.polkit-1.fprintAuth = true;
   services.fwupd.enable = true;
+
+  services.udev.extraRules = ''
+    SUBSYSTEM=="power_supply", KERNEL=="ucsi-source-psy-USBC000:00[14]", ACTION=="change", RUN+="${pkgs.writeShellScript "charge-limit" ''
+      LEFT_ON=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/ucsi-source-psy-USBC000:001/online)
+      RIGHT_ON=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/ucsi-source-psy-USBC000:004/online)
+      if [ "$LEFT_ON" = "1" ]; then
+        ${pkgs.fw-ectool}/bin/ectool fwchargelimit 80
+      elif [ "$RIGHT_ON" = "1" ]; then
+        ${pkgs.fw-ectool}/bin/ectool fwchargelimit 100
+      fi
+    ''}"
+  '';
 }

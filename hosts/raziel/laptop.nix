@@ -10,6 +10,23 @@
   security.pam.services.polkit-1.fprintAuth = true;
   services.fwupd.enable = true;
 
+  # System-scope service: user-scope sleep.target isn't reliably activated by logind
+  systemd.services.lock-before-sleep = {
+    description = "Lock screen before sleep";
+    before = [ "sleep.target" ];
+    wantedBy = [ "sleep.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      User = "kuroma";
+      Environment = "XDG_RUNTIME_DIR=/run/user/1000";
+      ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
+        /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
+        sleep 1
+      ''}";
+    };
+  };
+
   services.udev.extraRules = ''
     SUBSYSTEM=="power_supply", KERNEL=="ucsi-source-psy-USBC000:00[14]", ACTION=="change", RUN+="${pkgs.writeShellScript "charge-limit" ''
       LEFT_ON=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/ucsi-source-psy-USBC000:001/online)

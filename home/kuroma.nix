@@ -33,6 +33,9 @@
   xdg.configFile."noctalia/colorschemes/Material Ocean Dark/Material Ocean Dark.json".source =
     ../config/noctalia/colorschemes/material-ocean-dark/material-ocean-dark.json;
 
+  xdg.configFile."noctalia/colorschemes/Ayu Ocean/Ayu Ocean.json".source =
+    ../config/noctalia/colorschemes/ayu-ocean/ayu-ocean.json;
+
   xdg.configFile."noctalia/user-templates.toml".source =
     ../config/noctalia/user-templates.toml;
 

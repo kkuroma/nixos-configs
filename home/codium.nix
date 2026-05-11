@@ -102,6 +102,8 @@ let
     "terminal.integrated.enableMultiLinePasteWarning" = "never";
     "chat.restoreLastPanelSession" = true;
     "extensions.experimental.affinity" = { "asvetliakov.vscode-neovim" = 1; };
+    "colorize.languages" = [ "*" ];
+    "colorize.decoration_type" = "dot";
     "workbench.editorAssociations" = {
       "{git,gitlens,chat-editing-snapshot-text-model,copilot,git-graph,git-graph-3}:/**/*.qrc" = "default";
       "*.qrc" = "qt-core.qrcEditor";
@@ -142,6 +144,14 @@ let
     { key = "ctrl+a"; command = "-extension.vim_ctrl+a"; when = "editorTextFocus && vim.active && vim.use<C-a> && !inDebugRepl"; }
     { key = "ctrl+x"; command = "-extension.vim_ctrl+x"; when = "editorTextFocus && vim.active && vim.use<C-x> && !inDebugRepl"; }
     { key = "ctrl+f"; command = "-extension.vim_ctrl+f"; when = "editorTextFocus && vim.active && vim.use<C-f> && !inDebugRepl && vim.mode != 'Insert'"; }
+    # Tab navigation
+    { key = "ctrl+shift+right"; command = "workbench.action.nextEditor"; }
+    { key = "ctrl+shift+left"; command = "workbench.action.previousEditor"; }
+    # Editor group (panel split) navigation
+    { key = "ctrl+alt+right"; command = "workbench.action.focusRightGroup"; }
+    { key = "ctrl+alt+left"; command = "workbench.action.focusLeftGroup"; }
+    { key = "ctrl+alt+up"; command = "workbench.action.focusAboveGroup"; }
+    { key = "ctrl+alt+down"; command = "workbench.action.focusBelowGroup"; }
   ];
 
   keybindingsFile = pkgs.writeText "vscodium-keybindings.json" (builtins.toJSON keybindings);

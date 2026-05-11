@@ -48,10 +48,16 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). syst
   - `boot.extraModprobeConfig = "options nvidia NVreg_PreserveVideoMemoryAllocations=1"` — required alongside powerManagement for display to restore after hibernate. Without it: DRM flip timeouts and `Failed to apply atomic modeset` on resume.
 - **`modules/amd.nix`** (raziel): `hardware.graphics`, `amd_pstate=active` kernel param, `ryzenadj`, `lact`. Used with `nixos-hardware.nixosModules.framework-amd-ai-300-series` in flake.
 
-### raziel-specific (`hosts/raziel/laptop.nix`)
-Fingerprint: `fprintd` + `libfprint-2-tod1-goodix` TOD driver (Goodix 27c6:609c sensor). PAM fprint enabled for `sudo` and `polkit-1`. `fwupd` for BIOS/EC/firmware updates. `fw-ectool` for charge limit control. After first boot: `fprintd-enroll $USER`. If fingerprint fails after suspend: `systemctl restart fprintd`.
+### raziel-specific (`hosts/raziel/laptop.nix` + `hosts/raziel/home.nix`)
+Fingerprint: native libfprint 1.94+ supports Goodix 27c6:609c — do NOT add `libfprint-2-tod1-goodix` (TOD driver 0.0.6 only covers 53xc sensors and corrupts enrollment on 609c). PAM fprint enabled for `sudo` and `polkit-1`. `fwupd` for BIOS/EC/firmware updates. `fw-ectool` for charge limit control. After first boot: `fprintd-enroll $USER`. If fingerprint fails after suspend: `systemctl restart fprintd`.
 
-raziel display: `eDP-1`, 2880x1920@120, scale 1.5 (1920x1280 logical). Lock-before-sleep: `systemd.user.services.lock-before-sleep` in `hosts/raziel/home.nix` — calls `noctalia-shell ipc --any-display call lockScreen lock`, WantedBy `sleep.target`.
+raziel display: `eDP-1`, 2880x1920@120, scale 1.5 (1920x1280 logical).
+
+**Lock before sleep** (`hosts/raziel/home.nix`): `services.swayidle` with `extraArgs = ["-w"]` and `events.before-sleep = "noctalia-shell ipc --any-display call lockScreen lock"`. The `-w` flag holds a systemd sleep inhibitor until the lock command exits. No timeout events — noctalia's own `IdleService` (ext-idle-notify-v1) handles screen-off/lock/suspend timers. Do NOT use system-scope systemd services or `/etc/systemd/system-sleep/` hooks for this — they lack Wayland access and the `RemainAfterExit` pattern only fires ExecStart once then stays stale.
+
+**Logind** (`hosts/raziel/laptop.nix`): `HandlePowerKey`, `HandleLidSwitch`, `HandleLidSwitchExternalPower` all set to `"suspend-then-hibernate"`. swayidle's `before-sleep` fires for all of these via the `PrepareForSleep` D-Bus signal.
+
+**Charge limit udev rule** (`hosts/raziel/laptop.nix`): `SUBSYSTEM=="power_supply", KERNEL=="ucsi-source-psy-USBC000:00[14]"` — left port (001) sets 80% limit, right port (004) sets 100%. Both enable idle inhibitor via noctalia IPC and send a notify-send notification. Unplug disables idle inhibitor. Uses `runuser -u kuroma -- env XDG_RUNTIME_DIR=... DBUS_SESSION_BUS_ADDRESS=...` to reach user session from udev root context.
 
 ### Virtualization (`modules/virtualization.nix`)
 - **Docker** — GPU passthrough via nvidia-container-toolkit

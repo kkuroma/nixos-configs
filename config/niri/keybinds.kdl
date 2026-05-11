@@ -79,7 +79,7 @@ binds {
     XF86AudioNext  allow-when-locked=true { spawn "playerctl" "next"; }
     XF86AudioPrev  allow-when-locked=true { spawn "playerctl" "previous"; }
 
-    Print { spawn-sh "mkdir -p ~/Pictures/Screenshots && grim ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"; }
-
+    Print { screenshot-screen; }
+    Ctrl+Mod+Shift+S { screenshot-screen; }
     XF86AudioMedia { spawn-sh "noctalia-shell ipc call settings toggle"; }
 }

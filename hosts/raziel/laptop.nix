@@ -19,11 +19,14 @@
       Type = "oneshot";
       RemainAfterExit = true;
       User = "kuroma";
-      Environment = "XDG_RUNTIME_DIR=/run/user/1000";
+      Environment = [ "XDG_RUNTIME_DIR=/run/user/1000" "WAYLAND_DISPLAY=wayland-1" ];
       ExecStart = "${pkgs.writeShellScript "lock-before-sleep" ''
         /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
-        sleep 1.0
+        sleep 0.5
       ''}";
+      # Lock on resume too — the pre-sleep lock races the display blanking;
+      # ExecStop runs when sleep.target deactivates (system fully awake again)
+      ExecStop = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
     };
   };
 
@@ -32,16 +35,18 @@
       LEFT_ON=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/ucsi-source-psy-USBC000:001/online)
       RIGHT_ON=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/ucsi-source-psy-USBC000:004/online)
 
+      AS_USER="${pkgs.util-linux}/bin/runuser -u kuroma -- env XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+
       if [ "$LEFT_ON" = "1" ]; then
         ${pkgs.fw-ectool}/bin/ectool fwchargelimit 80
+        $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call idleInhibitor enable
+        $AS_USER ${pkgs.libnotify}/bin/notify-send -i battery-caution-charging "Charge limit" "80% — left port"
       elif [ "$RIGHT_ON" = "1" ]; then
         ${pkgs.fw-ectool}/bin/ectool fwchargelimit 100
-      fi
-
-      if [ "$LEFT_ON" = "1" ] || [ "$RIGHT_ON" = "1" ]; then
-        ${pkgs.util-linux}/bin/runuser -u kuroma -- env XDG_RUNTIME_DIR=/run/user/1000 /run/current-system/sw/bin/noctalia-shell ipc --any-display call idleInhibitor enable
+        $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call idleInhibitor enable
+        $AS_USER ${pkgs.libnotify}/bin/notify-send -i battery-full-charging "Charge limit" "100% — right port"
       else
-        ${pkgs.util-linux}/bin/runuser -u kuroma -- env XDG_RUNTIME_DIR=/run/user/1000 /run/current-system/sw/bin/noctalia-shell ipc --any-display call idleInhibitor disable
+        $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call idleInhibitor disable
       fi
     ''}"
   '';

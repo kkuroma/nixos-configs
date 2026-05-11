@@ -24,7 +24,7 @@
       case "$1" in
         pre)
           $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock
-          sleep 0.5
+          ${pkgs.coreutils}/bin/sleep 0.5
           ;;
         post)
           $AS_USER /run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock

@@ -51,7 +51,7 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). syst
 ### raziel-specific (`hosts/raziel/laptop.nix`)
 Fingerprint: `fprintd` + `libfprint-2-tod1-goodix` TOD driver (Goodix 27c6:609c sensor). PAM fprint enabled for `sudo` and `polkit-1`. `fwupd` for BIOS/EC/firmware updates. `fw-ectool` for charge limit control. After first boot: `fprintd-enroll $USER`. If fingerprint fails after suspend: `systemctl restart fprintd`.
 
-raziel display: `eDP-1`, 2880x1920@120, scale 2.0 (1440x960 logical).
+raziel display: `eDP-1`, 2880x1920@120, scale 1.5 (1920x1280 logical). Lock-before-sleep: `systemd.user.services.lock-before-sleep` in `hosts/raziel/home.nix` — calls `noctalia-shell ipc --any-display call lockScreen lock`, WantedBy `sleep.target`.
 
 ### Virtualization (`modules/virtualization.nix`)
 - **Docker** — GPU passthrough via nvidia-container-toolkit
@@ -145,6 +145,23 @@ Shared aliases in both. Nushell uses `^` prefix on external commands (`grep`, `d
 1. `exec zsh` in shellHook without an interactive check — `nix develop --command bash -c "..."` sources shellHook before running the command; unconditional `exec zsh` hijacks the non-interactive bash, opens an interactive zsh session, direnv fires inside it and loops. Fix: `[[ $- == *i* ]] && exec zsh`.
 2. ANY `export` or `PATH_add` in `.envrc` (after `use flake`) causes direnv's env-diff to change on every precmd check, looping even when nix-direnv hits its cache. `.envrc` must be ONLY `use flake`.
 The loop symptom is `nix-direnv: Using cached dev shell` repeated endlessly — the word "cached" means nix evaluation was skipped, not that the loop stopped.
+
+### Networking (`modules/networking.nix`)
+- SSH: `openFirewall = false` — port 22 open only on `tailscale0` interface, not globally.
+- Syncthing firewall: TCP 22000, UDP 22000 + 21027 open globally (required for local LAN sync). Tailscale interface adds AI service ports per-host.
+- zaphkiel extra: TCP 3000 global; TCP 11434 + 11435 on tailscale0 (llama-router, llama-embedding).
+
+### Syncthing (`modules/services.nix`)
+Declarative config via `services.syncthing`. Devices: `raziel` + `zaphkiel` with their device IDs. Folders: `Documents` (`~/Documents`), `PrismInstances` (`~/.local/share/PrismLauncher/instances`), `Wallpapers` (`~/Pictures/Wallpapers`) — both devices on all three. GUI password set at startup via `ExecStartPost` script that polls `http://127.0.0.1:8384/rest/noauth/health`, reads the API key from `~/.config/syncthing/config.xml`, then PATCHes `/rest/config/gui` with the password from the sops secret `syncthing/password`.
+
+**Syncthing index reset**: if a folder has incorrect "deleted" state (e.g. after manual file copy without syncthing running), delete `~/.config/syncthing/index-v2/` on the machine with the stale index and restart syncthing. The other machine's index must NOT be deleted — it is the source of truth. The machine whose index is reset rescans from disk and pulls missing files from the peer.
+
+### Backups (zaphkiel, `hosts/zaphkiel/backup.nix`)
+Three rsync jobs as systemd services + timers, staggered 1 hour apart, running every 6 hours:
+- `backup-home`: 00:00/06:00/12:00/18:00 — `~/` → `/mnt/NAS/backup-home/` (excludes `.cache`, `Downloads`, `Trash`, `node_modules`, `.tmp`). Aborts if NAS not mounted.
+- `backup-songs`: 01:00/07:00/13:00/19:00 — `/mnt/Vault-Storage/songs/` → `/mnt/NAS/songs/`
+- `backup-anime`: 02:00/08:00/14:00/20:00 — `/mnt/Vault-Storage/anime/` → `/mnt/NAS/anime/`
+All run as user `kuroma`. `Persistent = true` so missed runs catch up on boot. NAS is ZFS and also has its own snapshots — primary home data recovery path.
 
 ### Users / Auth
 `users.mutableUsers = false`. Passwords as `hashedPassword` (yescrypt). Update: `mkpasswd --method=yescrypt`, paste hash, rebuild. SSH key-only (`PasswordAuthentication = false`, `PermitRootLogin = "no"`).

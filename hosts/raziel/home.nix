@@ -9,10 +9,10 @@
     Service = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
+      # noctalia IPC returns immediately; sleep 1 lets the lock screen render before suspend proceeds
+      ExecStart = "/bin/sh -c '/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock; sleep 1'";
     };
   };
-  # Framework 13 built-in display. Scale 2.0 → 1440x960 logical resolution.
   rice.niri.extraConfig = ''
     output "eDP-1" {
         mode "2880x1920@120.000"
@@ -25,5 +25,8 @@
         }
     }
 
+    binds {
+        XF86PowerOff { spawn-sh "noctalia-shell ipc --any-display call lockScreen lock && sleep 1 && systemctl suspend-then-hibernate"; }
+    }
   '';
 }

@@ -4,7 +4,7 @@
 
   rice.niri.extraConfig = ''
     output "HDMI-A-1" {
-        mode "1920x1080@120.000"
+        mode "1920x1080@119.879"
         position x=0 y=0
         transform "90"
         layout {
@@ -16,7 +16,7 @@
     }
 
     output "HDMI-A-2" {
-        mode "1920x1080@120.000"
+        mode "1920x1080@119.879"
         position x=1080 y=700
         layout {
             gaps 6

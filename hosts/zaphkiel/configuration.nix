@@ -20,6 +20,7 @@
     ../../modules/sops.nix
     ../../modules/virtualization.nix
     ./ai-services.nix
+    ./backup.nix
   ];
 
   networking.hostName = "zaphkiel";

@@ -92,6 +92,7 @@ in
     onlyoffice-desktopeditors
     qbittorrent
     librewolf
+    puddletag
 
     # cli tools
     brightnessctl
@@ -111,6 +112,7 @@ in
     util-linux
     fastfetch
     ouch
+    gamescope
 
     # themes
     wl-screenrec

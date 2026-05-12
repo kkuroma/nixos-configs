@@ -36,6 +36,7 @@
 
     millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
   };
 
   outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, nixos-hardware, ... }@inputs:

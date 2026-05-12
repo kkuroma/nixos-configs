@@ -93,6 +93,8 @@ in
     qbittorrent
     librewolf
     puddletag
+    logseq
+    upscayl
 
     # cli tools
     brightnessctl
@@ -114,6 +116,8 @@ in
     ouch
     gamescope
     wl-mirror
+    hyprpicker # colorpicker needs it
+    video2x
 
     # themes
     wl-screenrec

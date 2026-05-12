@@ -236,11 +236,4 @@ in
       [ -f /tmp/_noctalia-theme.json ] && mv /tmp/_noctalia-theme.json "$_theme"
     fi
   '';
-
-  # VSCodium Flakes
-  imports = [ inputs.vscode-server.nixosModules.default ];
-  services.vscode-server = {
-    enable = true;
-    installPath = "$HOME/.vscodium-server"; 
-  };
 }

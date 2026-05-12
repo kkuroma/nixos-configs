@@ -19,6 +19,7 @@
     ../../modules/fcitx5.nix
     ../../modules/sops.nix
     ../../modules/virtualization.nix
+    ../../modules/codiumserver.nix
     ./ai-services.nix
     ./backup.nix
   ];

@@ -60,7 +60,7 @@ let
     nix_shell.disabled = true;
 
     hostname = {
-      ssh_only = false;
+      ssh_only = true;
       format = "${blob "overlay1" "black" "$hostname"} ";
       style = "fg:black bg:overlay1";
       disabled = false;

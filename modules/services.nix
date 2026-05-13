@@ -68,4 +68,22 @@
         -d "{\"password\":\"$password\"}"
     '';
     in lib.mkForce [ "${script}" ];
+
+  # Snapper (backup)
+  # list all backups: snapper -c home list -> shows numbers like XX
+  # snapper -c home undochange XX..0 -> reverts 0 (current) to XX
+  # do as root
+  services.snapper = {
+    configs = {
+      home = {
+        ALLOW_USERS = [ "kuroma" ];
+        SUBVOLUME = "/home";
+        TIMELINE_CREATE = true;
+        TIMELINE_CLEANUP = true;
+        TIMELINE_MIN_AGE = 3600; # 60 minute lifetime before nuke
+        TIMELINE_LIMIT_HOURLY = "6"; # keep the last 6 hours
+        TIMELINE_LIMIT_DAILY = "1"; # keey tha last day
+      };
+    };
+  };
 }

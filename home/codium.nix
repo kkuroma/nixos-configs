@@ -99,7 +99,7 @@ let
     "files.autoSave" = "afterDelay";
     "security.workspace.trust.untrustedFiles" = "open";
     "remote.autoForwardPortsSource" = "hybrid";
-    "terminal.integrated.fontSize" = 12;
+    "terminal.integrated.fontSize" = 13;
     "terminal.integrated.initialHint" = false;
     "terminal.integrated.stickyScroll.enabled" = false;
     "terminal.integrated.enableMultiLinePasteWarning" = "never";

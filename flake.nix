@@ -59,6 +59,7 @@
     machines = {
       zaphkiel = {
         kernelPackages = pkgs: pkgs.linuxKernel.packages.linux_xanmod_latest;
+        fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
         displays = [
           {
             output = "HDMI-A-1";
@@ -78,6 +79,7 @@
         # linuxPackages_latest: mainline kernel, in Hydra cache (no local compilation),
         # better AMD power management support than xanmod on battery.
         kernelPackages = pkgs: pkgs.linuxPackages_latest;
+        fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 9; };
         displays = [
           {
             output = "eDP-1";

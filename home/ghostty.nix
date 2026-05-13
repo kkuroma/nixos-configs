@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, machineConfig, ... }:
 {
   home.activation.ghosttyConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
     config_file="$HOME/.config/ghostty/config.ghostty"
@@ -11,7 +11,7 @@
     enable = true;
     settings = {
       "font-family" = config.rice.fonts.mono;
-      "font-size" = 10;
+      "font-size" = machineConfig.fonts.ghosttyFontSize;
       "window-decoration" = false;
       "scrollback-limit" = 10000;
       "cursor-style" = "bar";

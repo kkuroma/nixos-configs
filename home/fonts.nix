@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, machineConfig, ... }:
 {
   options.rice.fonts = {
     ui = lib.mkOption { type = lib.types.str; default = "Google Sans Flex"; };
@@ -8,6 +8,8 @@
   };
 
   config = {
+    rice.fonts.uiSize = lib.mkDefault machineConfig.fonts.uiSize;
+    rice.fonts.monoSize = lib.mkDefault machineConfig.fonts.monoSize;
     xdg.dataFile."fonts/GoogleSansFlex-VariableFont.ttf".source = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
 
     # ONLYOFFICE's font picker ignores symlinks — only real file copies are scanned.

@@ -1,8 +1,33 @@
-{ lib, config, pkgs, niriParts, ... }:
+{ lib, config, pkgs, niriParts, machineConfig, ... }:
+let
+  # Renders a display attrset to a niri output {} KDL block.
+  # Required fields: output, mode, x, y
+  # Optional fields: transform, scale, defaultColumnWidth (KDL value string e.g. "proportion 1.0"),
+  #                  gaps (default 6), borderWidth (default 2), focusRingWidth (default 2)
+  renderDisplay = d:
+    let
+      gaps = d.gaps or 6;
+      bw   = d.borderWidth or 2;
+      frw  = d.focusRingWidth or 2;
+    in
+    "output \"${d.output}\" {\n"
+    + "    mode \"${d.mode}\"\n"
+    + "    position x=${toString d.x} y=${toString d.y}\n"
+    + lib.optionalString (d ? transform) "    transform \"${d.transform}\"\n"
+    + lib.optionalString (d ? scale) "    scale ${toString d.scale}\n"
+    + "    layout {\n"
+    + "        gaps ${toString gaps}\n"
+    + "        border { width ${toString bw}; }\n"
+    + "        focus-ring { width ${toString frw}; }\n"
+    + lib.optionalString (d ? defaultColumnWidth) "        default-column-width { ${d.defaultColumnWidth}; }\n"
+    + "    }\n"
+    + "}\n";
+in
 {
   options.rice.niri.extraConfig = lib.mkOption {
     type = lib.types.lines;
     default = "";
+    description = "Extra KDL appended after output blocks. Use for overrides that don't fit machineConfig.displays.";
   };
 
   config = {
@@ -18,6 +43,7 @@
         spawn-at-startup "noctalia-shell"
       '' +
       lib.concatMapStrings builtins.readFile niriParts +
+      lib.concatMapStrings renderDisplay machineConfig.displays +
       ''
         prefer-no-csd
         window-rule {

@@ -1,4 +1,4 @@
-{ ... }:
+{ username, ... }:
 {
   sops = {
     defaultSopsFile = ../secrets/secrets.yaml;
@@ -7,7 +7,7 @@
 
     secrets = {
       "nas/credentials" = { };
-      "syncthing/password" = { owner = "kuroma"; };
+      "syncthing/password" = { owner = username; };
     };
   };
 }

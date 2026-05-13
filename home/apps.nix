@@ -1,9 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 let
-  # code-launcher, my signature vscode file picker
-  # spawns a floating ghostty (formerly kitty) terminal, searches in ~, launchs in vscode
-  initShell = pkgs.writeShellScriptBin "init-shell"
-    (builtins.readFile ./scripts/init-shell.sh);
+  # Bake the locked nixpkgs rev into init-shell so generated project flakes pin to
+  # the same nixpkgs the system was built with, preventing package version skew.
+  initShell = pkgs.writeShellScriptBin "init-shell" (
+    builtins.replaceStrings ["@NIXPKGS_REV@"] [inputs.nixpkgs.rev]
+      (builtins.readFile ./scripts/init-shell.sh)
+  );
 
   codeLauncher = pkgs.writeShellScriptBin "code-launcher" ''
     path=$(${pkgs.fd}/bin/fd -H -E .git -t f -t d . ~/ \

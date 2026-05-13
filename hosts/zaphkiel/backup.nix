@@ -1,11 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 let
   mkBackup = { name, script, oncalendar }: {
     systemd.services."backup-${name}" = {
       description = "Backup ${name}";
       serviceConfig = {
         Type = "oneshot";
-        User = "kuroma";
+        User = username;
         ExecStart = pkgs.writeShellScript "backup-${name}" script;
         # Prevent concurrent runs if timer fires while previous is still running
         TimeoutStartSec = "6h";
@@ -28,7 +28,7 @@ let
       oncalendar = "*-*-* 00,06,12,18:00:00";
       script = ''
         set -euo pipefail
-        SOURCE="/home/kuroma/"
+        SOURCE="/home/${username}/"
         DEST="/mnt/NAS/backup-home/"
         MOUNT_POINT="/mnt/NAS"
 

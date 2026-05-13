@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ pkgs, inputs, username, ... }:
 {
   programs.niri.enable = true;
   programs.dconf.enable = true;
@@ -17,7 +17,7 @@
       };
       initial_session = {
         command = "niri-session";
-        user = "kuroma";
+        user = username;
       };
     };
   };

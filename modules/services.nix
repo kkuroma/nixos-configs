@@ -1,4 +1,4 @@
-{ pkgs, config, lib, ... }:
+{ pkgs, config, lib, username, ... }:
 {
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
@@ -31,22 +31,22 @@
   # syncthing
   services.syncthing = {
     enable = true;
-    user = "kuroma";
-    dataDir = "/home/kuroma";
+    user = username;
+    dataDir = "/home/${username}";
     settings.devices = {
       raziel.id   = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
       zaphkiel.id = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";
     };
     settings.folders."Documents" = {
-      path = "/home/kuroma/Documents";
+      path = "/home/${username}/Documents";
       devices = [ "raziel" "zaphkiel" ];
     };
     settings.folders."PrismInstances" = {
-      path = "/home/kuroma/.local/share/PrismLauncher/instances";
+      path = "/home/${username}/.local/share/PrismLauncher/instances";
       devices = [ "raziel" "zaphkiel" ];
     };
     settings.folders."Wallpapers" = {
-      path = "/home/kuroma/Pictures/Wallpapers";
+      path = "/home/${username}/Pictures/Wallpapers";
       devices = [ "raziel" "zaphkiel" ];
     };
   };
@@ -59,7 +59,7 @@
         sleep 1
       done
       api_key=$(${pkgs.libxml2}/bin/xmllint --xpath 'string(//apikey)' \
-        /home/kuroma/.config/syncthing/config.xml)
+        /home/${username}/.config/syncthing/config.xml)
       password=$(cat ${config.sops.secrets."syncthing/password".path})
       ${pkgs.curl}/bin/curl -sf -X PATCH \
         -H "X-API-Key: $api_key" \
@@ -76,7 +76,7 @@
   services.snapper = {
     configs = {
       home = {
-        ALLOW_USERS = [ "kuroma" ];
+        ALLOW_USERS = [ username ];
         SUBVOLUME = "/home";
         TIMELINE_CREATE = true;
         TIMELINE_CLEANUP = true;

@@ -76,10 +76,12 @@
     {
       "type": "cpu",
       "key": "\u001b[0m│ \u001b[1;34m󰻠 CPU:\u001b[0m",
+      "format" : "{1} @{7}",
     },
     {
       "type": "gpu",
       "key": "\u001b[0m│ \u001b[1;34m󰢮 GPU:\u001b[0m",
+      "format" : "{1} {2}",
     },
     {
       "type": "memory",

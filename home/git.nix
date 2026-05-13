@@ -4,7 +4,7 @@
     enable = true;
     settings = {
       user = {
-        name = "kuroma";
+        name = "kkuroma";
         email = "contact@kuroma.dev";
       };
       init.defaultBranch = "main";

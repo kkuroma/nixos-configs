@@ -13,7 +13,7 @@
     output "eDP-1" {
         mode "2880x1920@120.000"
         position x=0 y=0
-        scale 1.5
+        scale 1.66
         layout {
             gaps 6
             border { width 2; }

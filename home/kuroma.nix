@@ -1,4 +1,10 @@
-{ config, ... }:
+{ config, lib, pkgs, ... }:
+let
+  imvCopy = pkgs.writeShellScript "imv-copy" ''
+    cat "$1" | ${pkgs.wl-clipboard}/bin/wl-copy
+    ${pkgs.libnotify}/bin/notify-send -a "System" "Image Copied" "Copied $1 to clipboard" -i preferences-desktop
+  '';
+in
 {
   imports = [
     ./fonts.nix
@@ -44,4 +50,30 @@
 
   xdg.configFile."noctalia/templates/nvim-theme.lua".source =
     ../config/noctalia/templates/nvim-theme.lua;
+
+  # mpv thumbnail scripts (from config/mpv/)
+  xdg.configFile."mpv/scripts/mpv_thumbnail_script_client_osc.lua".source =
+    ../config/mpv/mpv_thumbnail_script_client_osc.lua;
+  xdg.configFile."mpv/scripts/mpv_thumbnail_script_server.lua".source =
+    ../config/mpv/mpv_thumbnail_script_server.lua;
+
+  xdg.configFile."imv/config".text = ''
+    [options]
+    overlay = true
+    overlay_font = ${config.rice.fonts.ui}:${toString config.rice.fonts.uiSize}
+    overlay_text = [$imv_current_index/$imv_file_count] [ESC: Quit] [Ctrl-C: Copy Path] [$imv_width x $imv_height] $imv_scale% $(basename "$imv_current_file")
+
+    [binds]
+    <Ctrl+c> = exec ${imvCopy} "$imv_current_file"
+    <Escape> = quit
+  '';
+
+  # Fallback noctaliarc so zathura doesn't fail before noctalia runs
+  home.activation.zathuraNoctaliarcFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ ! -f "$HOME/.config/zathura/noctaliarc" ]; then
+      mkdir -p "$HOME/.config/zathura"
+      echo "# placeholder — noctalia will overwrite this" \
+        > "$HOME/.config/zathura/noctaliarc"
+    fi
+  '';
 }

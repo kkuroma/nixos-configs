@@ -1,10 +1,5 @@
-{ pkgs, config, lib, ... }:
+{ pkgs, config, lib, machineConfig, ... }:
 {
-  options.rice.nvenc = lib.mkOption {
-    type = lib.types.bool;
-    default = false;
-  };
-
   config = {
     # Override Steam .desktop entries with StartupNotify=false to trick noctaliat to not check
     # if there's already a running instance which prevents subsequent startups
@@ -137,7 +132,7 @@
       Type=Service
       ServiceTypes=KonqPopupMenu/Plugin
       MimeType=video/mp4;video/x-matroska;video/webm;video/x-msvideo;video/quicktime;video/x-flv;video/ogg;video/mpeg;video/x-ms-wmv;video/3gpp;
-      Actions=CpuBest;CpuBal;CpuSmall;${lib.optionalString config.rice.nvenc "GpuBest;GpuBal;GpuSmall;"}
+      Actions=CpuBest;CpuBal;CpuSmall;${lib.optionalString machineConfig.nvenc "GpuBest;GpuBal;GpuSmall;"}
 
       [Desktop Action CpuBest]
       Name=Compress — CPU Good Quality
@@ -153,7 +148,7 @@
       Name=Compress — CPU Smallest
       Icon=video-x-generic
       Exec=${pkgs.bash}/bin/bash -c 'for f in "$@"; do ${pkgs.ffmpeg}/bin/ffmpeg -y -i "$f" -c:v libx264 -preset fast -crf 38 -c:a copy "''${f%.*}_cpu_small.mp4"; done' -- %F
-      ${lib.optionalString config.rice.nvenc ''
+      ${lib.optionalString machineConfig.nvenc ''
 
       [Desktop Action GpuBest]
       Name=Compress — GPU (NVENC) Good Quality

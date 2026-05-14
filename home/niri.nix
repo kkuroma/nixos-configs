@@ -84,6 +84,19 @@ in
       Install.WantedBy = [ "graphical-session.target" ];
     };
 
+    systemd.user.services.polkit-gnome = {
+      Unit = {
+        Description = "GNOME Polkit authentication agent";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+      };
+      Service = {
+        ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+        Restart = "on-failure";
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
+    };
+
     home.activation.niriNoctaliaFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
       if [ ! -f "$HOME/.config/niri/noctalia.kdl" ]; then
         echo "// placeholder — noctalia will overwrite this on first run" \

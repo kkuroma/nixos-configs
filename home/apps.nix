@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ pkgs, inputs, config, lib, machineConfig, ... }:
 let
   # Bake the locked nixpkgs rev into init-shell so generated project flakes pin to
   # the same nixpkgs the system was built with, preventing package version skew.
@@ -13,6 +13,7 @@ let
   upscaleMkv = pkgs.writeShellScriptBin "upscale-mkv"
     (builtins.readFile ./scripts/upscale-mkv.sh);
 
+  # fd -> fzf files inside a given directory (home) and launches selected file in vscodium
   codeLauncher = pkgs.writeShellScriptBin "code-launcher" ''
     path=$(${pkgs.fd}/bin/fd -H -E .git -t f -t d . ~/ \
       | ${pkgs.fzf}/bin/fzf \
@@ -53,97 +54,151 @@ let
   '';
 in
 {
-  programs.yazi = {
-    enable = true;
-    shellWrapperName = "y"; 
-  };
-  programs.mpv.enable = true;
-  programs.zathura.enable = true;
-  programs.fzf = {
-    enable = true;
-    enableZshIntegration = true;
-  };
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-  };
+  config = {
+    programs.yazi = {
+      enable = true;
+      shellWrapperName = "y";
+    };
 
-  home.packages = with pkgs; [
-    # development
-    claude-code
-    codeLauncher
-    fileLauncher
-    initShell
-    compressMkv
-    upscaleMkv
-    texliveFull
-    (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
-    uv
-    nodejs
+    programs.mpv = {
+      enable = true;
+      config = {
+        hwdec = machineConfig.hwdec; # GPU decoding & rendering
+        vo = "gpu-next";
+        gpu-api = "vulkan";
+        scale = "ewa_lanczossharp"; # playback quality
+        dscale = "mitchell";
+        cscale = "ewa_lanczossharp";
+        keep-open = "yes"; # behaviour
+        save-position-on-quit = "yes";
+        osd-font-size = 32;
+        osc = "no";
+      };
+      bindings = {
+        # Seek
+        RIGHT = "seek 5";
+        LEFT = "seek -5";
+        UP = "seek 60";
+        DOWN = "seek -60";
+        # Speed
+        "[" = "add speed -0.1";
+        "]" = "add speed 0.1";
+        "{" = "add speed -0.5";
+        "}" = "add speed 0.5";
+        BS  = "set speed 1.0";
+        # Playlist
+        PGUP = "playlist-prev";
+        PGDWN = "playlist-next";
+        # Subtitles
+        j = "cycle sub";
+        J = "cycle sub down";
+        # Audio
+        a = "cycle audio";
+        A = "cycle audio down";
+      };
+    };
 
-    # nvim formatters (used by conform-nvim)
-    nixfmt
-    black
-    stylua
-    prettier
+    programs.zathura = {
+      enable = true;
+      options = {
+        font = "${config.rice.fonts.ui} ${toString config.rice.fonts.uiSize}";
+        recolor = false;
+        scroll-step = 80;
+        zoom-min = 10;
+        zoom-max = 1000;
+        guioptions = "sv";
+      };
+      extraConfig = "include ${config.xdg.configHome}/zathura/noctaliarc";
+    };
+    
+    programs.fzf = {
+      enable = true;
+      enableZshIntegration = true;
+    };
 
-    # GUI apps
-    feishin
-    obs-studio
-    vesktop
-    vivaldi
-    networkmanagerapplet
-    kdePackages.dolphin
-    kdePackages.kdenlive
-    kdePackages.gwenview
-    kdePackages.konsole
-    prismlauncher
-    imv
-    onlyoffice-desktopeditors
-    qbittorrent
-    librewolf
-    puddletag
-    logseq
-    upscayl
+    programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
 
-    # cli tools
-    brightnessctl
-    playerctl
-    bat
-    tesseract
-    imagemagick
-    zbar
-    curl
-    ffmpeg
-    jq
-    gifski
-    grim
-    imagemagick
-    slurp
-    distrobox
-    util-linux
-    fastfetch
-    ouch
-    gamescope
-    wl-mirror
-    hyprpicker # colorpicker needs it
-    video2x
+    home.packages = with pkgs; [
+      # development
+      claude-code
+      codeLauncher
+      fileLauncher
+      initShell
+      compressMkv
+      upscaleMkv
+      texliveFull
+      (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
+      uv
+      nodejs
 
-    # themes
-    wl-screenrec
-    wl-clipboard
+      # nvim formatters (used by conform-nvim)
+      nixfmt
+      black
+      stylua
+      prettier
 
-    # desktop shell
-    papirus-icon-theme
-    kdePackages.breeze
-    qt6Packages.qt6ct
-    libsForQt5.qt5ct
-    adwaita-qt6
-    adw-gtk3
+      # GUI apps
+      feishin
+      obs-studio
+      vesktop
+      vivaldi
+      networkmanagerapplet
+      kdePackages.dolphin
+      kdePackages.kdenlive
+      kdePackages.gwenview
+      kdePackages.konsole
+      prismlauncher
+      imv
+      onlyoffice-desktopeditors
+      qbittorrent
+      librewolf
+      puddletag
+      logseq
+      upscayl
 
-    # etc
-    kdePackages.ark
-    kdePackages.kde-cli-tools
-    libnotify
-  ];
+      # cli tools
+      brightnessctl
+      playerctl
+      bat
+      tesseract
+      imagemagick
+      zbar
+      curl
+      ffmpeg
+      jq
+      gifski
+      grim
+      imagemagick
+      slurp
+      distrobox
+      util-linux
+      fastfetch
+      ouch
+      gamescope
+      wl-mirror
+      hyprpicker # colorpicker needs it
+      video2x
+
+      # themes
+      wl-screenrec
+      wl-clipboard
+
+      # desktop shell
+      papirus-icon-theme
+      kdePackages.breeze
+      qt6Packages.qt6ct
+      libsForQt5.qt5ct
+      adwaita-qt6
+      adw-gtk3
+
+      # etc
+      kdePackages.ark
+      kdePackages.kde-cli-tools
+      gnome-disk-utility
+      libnotify
+    ];
+  }; # end config
 }

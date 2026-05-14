@@ -53,38 +53,43 @@
     username = "kuroma";
     lib = nixpkgs.lib;
 
-    # Per-machine hardware profile. kernelPackages is a function pkgs: pkgs.<set>
-    # so it uses the NixOS-managed pkgs (with overlays/config) rather than a
-    # separate import. displays is structured data rendered to KDL by home/niri.nix.
+    # per machine profiles including hardware, system fonts, and video enc/dec
     machines = {
       zaphkiel = {
+        # xanmod for desktop speed, cachy means needing to import their flakes
         kernelPackages = pkgs: pkgs.linuxKernel.packages.linux_xanmod_latest;
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
-        displays = [
+        nvenc = true;
+        hwdec = "nvdec-copy";
+        displays = [ # get parsed to niri
           {
             output = "HDMI-A-1";
             mode = "1920x1080@119.879";
-            x = 0; y = 0;
+            x = 0;
+            y = 0;
             transform = "90";
             defaultColumnWidth = "proportion 1.0";
           }
           {
             output = "HDMI-A-2";
             mode = "1920x1080@119.879";
-            x = 1080; y = 700;
+            x = 1080;
+            y = 700;
           }
         ];
       };
       raziel = {
-        # linuxPackages_latest: mainline kernel, in Hydra cache (no local compilation),
-        # better AMD power management support than xanmod on battery.
+        # linuxPackages_latest: latest kernel for security patches, perf boost only hurts battery
         kernelPackages = pkgs: pkgs.linuxPackages_latest;
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 9; };
+        nvenc = false;
+        hwdec = "vaapi";
         displays = [
           {
             output = "eDP-1";
             mode = "2880x1920@120.000";
-            x = 0; y = 0;
+            x = 0;
+            y = 0;
             scale = 1.66;
           }
         ];
@@ -114,7 +119,7 @@
             useUserPackages = true;
             backupFileExtension = "backup";
             extraSpecialArgs = hmExtraArgs machines.zaphkiel;
-            users.${username} = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ./hosts/zaphkiel/home.nix ]; };
+            users.${username} = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ]; };
           };
         })
       ];
@@ -135,7 +140,15 @@
             useUserPackages = true;
             backupFileExtension = "backup";
             extraSpecialArgs = hmExtraArgs machines.raziel;
-            users.${username} = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ./hosts/raziel/home.nix ]; };
+            users.${username} = {
+              imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ];
+              # raziel-specific: lock screen before sleep via swayidle
+              services.swayidle = {
+                enable = true;
+                extraArgs = [ "-w" ];
+                events.before-sleep = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
+              };
+            };
           };
         })
       ];

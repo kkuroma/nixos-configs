@@ -7,6 +7,12 @@ let
       (builtins.readFile ./scripts/init-shell.sh)
   );
 
+  compressMkv = pkgs.writeShellScriptBin "compress-mkv"
+    (builtins.readFile ./scripts/compress-mkv.sh);
+
+  upscaleMkv = pkgs.writeShellScriptBin "upscale-mkv"
+    (builtins.readFile ./scripts/upscale-mkv.sh);
+
   codeLauncher = pkgs.writeShellScriptBin "code-launcher" ''
     path=$(${pkgs.fd}/bin/fd -H -E .git -t f -t d . ~/ \
       | ${pkgs.fzf}/bin/fzf \
@@ -68,6 +74,8 @@ in
     codeLauncher
     fileLauncher
     initShell
+    compressMkv
+    upscaleMkv
     texliveFull
     (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
     uv

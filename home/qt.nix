@@ -45,6 +45,7 @@ in
 {
   dconf.settings."org/gnome/desktop/interface" = {
     gtk-theme = lib.mkDefault "adw-gtk3";
+    icon-theme = lib.mkDefault icon;
     font-name = lib.mkDefault "${ui} ${uiSz}";
     document-font-name = lib.mkDefault "${ui} ${uiSz}";
     monospace-font-name = lib.mkDefault "${mono} ${monoSz}";

@@ -43,6 +43,10 @@
                       mountpoint = "/home";
                       mountOptions = [ "subvol=home" "compress=zstd" "noatime" ];
                     };
+                    "/home/.snapshots" = {
+                      mountpoint = "/home/.snapshots";
+                      mountOptions = [ "subvol=home/.snapshots" "compress=zstd" "noatime" ];
+                    };
                     "/nix" = {
                       mountpoint = "/nix";
                       mountOptions = [ "subvol=nix" "compress=zstd" "noatime" ];

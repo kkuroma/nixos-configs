@@ -100,7 +100,7 @@ in
   # n8n - workflow automation - will get nix'ed later
   services.n8n = {
     enable = true;
-    environment.GENERIC_TIMEZONE = "Asia/Bangkok";
+    environment.GENERIC_TIMEZONE = "Asia/Tokyo";
   };
 
   # neo4j - graphdb

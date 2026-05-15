@@ -69,7 +69,6 @@ while IFS= read -r -d '' f; do
   (( ${#fname} > 45 )) && fname="${fname:0:42}..."
   printf "\r\033[K%s  %s" "$(_bar "$scanned" "$total_files")" "$fname" >&2
 
-  # noprint_wrappers=1:nokey=1 emits a bare integer; csv emits "1080," (trailing comma bug)
   # probesize+analyzeduration limits I/O to the first 128KB — MKV headers are always there
   height=$(ffprobe -v quiet \
     -probesize 131072 -analyzeduration 0 \
@@ -83,7 +82,8 @@ while IFS= read -r -d '' f; do
     continue
   fi
 
-  if [[ "$height" -ge "$TARGET_HEIGHT" ]]; then
+  THRESHOLD=$(( TARGET_HEIGHT * 95 / 100 )) # some files are 1070p in a 1080p, 1000 is acceptable
+  if [[ "$height" -ge "$THRESHOLD" ]]; then
     to_skip+=("$f")
   else
     to_process+=("$f")

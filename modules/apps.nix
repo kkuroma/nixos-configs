@@ -34,6 +34,7 @@
     file
     xterm
     glfw
+    zellij
 
     # networking
     nmap

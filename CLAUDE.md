@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-- `flake.nix` — per-host `nixosConfigurations`. Wires inputs, `specialArgs`, home-manager, `niriParts`.
+- `flake.nix` — per-host `nixosConfigurations`. Wires inputs, `specialArgs`, home-manager, `niriParts`. Contains `machines` attrset with per-host hardware profile: `kernelPackages`, `fonts`, `displays`, `nvenc` (bool), `hwdec` (string: `"nvdec-copy"` / `"vaapi"`). Passed to HM as `machineConfig` via `hmExtraArgs`. Host-specific HM modules inlined here (e.g. raziel's swayidle).
 - `modules/` — topic-scoped NixOS modules. No aggregator — hosts import explicitly by path.
-- `hosts/<name>/` — `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `home.nix`, `fstab.nix`.
+- `hosts/<name>/` — `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `fstab.nix`. No `home.nix` — host-specific HM config is inlined in `flake.nix`.
 - `home/` — shared home-manager modules. `kuroma.nix` is a pure entry point (imports + identity only). All `.source` refs live here for traceability.
 - `config/` — raw static config files. Deployed via `.source` in `home/kuroma.nix`.
 
@@ -17,9 +17,10 @@ Hosts: `zaphkiel` (x86_64-linux, desktop, NVIDIA RTX), `raziel` (x86_64-linux, F
 - **Host-agnostic system** → `modules/`, import in each host's `configuration.nix`
 - **Host-specific system** → `hosts/<name>/configuration.nix` or host-only module
 - **Shared HM** → `home/`, import in `home/kuroma.nix`
-- **Host-specific HM** → `hosts/<name>/home.nix`
+- **Host-specific HM** → inline module in `flake.nix` `users.${username}` attrset (no separate `home.nix` files)
+- **Machine hardware values** (`nvenc`, `hwdec`, kernel, fonts, displays) → `machines.<name>` attrset in `flake.nix`, read via `machineConfig` specialArg — never as HM module options
 - **Niri config (all hosts)** → KDL file in `config/niri/`, add to `niriParts` in `flake.nix`
-- **Monitor layout** → `rice.niri.extraConfig` in `hosts/<name>/home.nix`
+- **Monitor layout** → `rice.niri.extraConfig` inline in the flake.nix host module
 - **Static files (no interpolation)** → `config/`, `.source` in `kuroma.nix` only — never scatter
 - **Files needing Nix interpolation** → `.text` in the relevant home module
 - **Never write NF icons or ANSI escapes directly in Nix strings** — use `.source` files
@@ -48,12 +49,12 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap` 88G). syst
   - `boot.extraModprobeConfig = "options nvidia NVreg_PreserveVideoMemoryAllocations=1"` — required alongside powerManagement for display to restore after hibernate. Without it: DRM flip timeouts and `Failed to apply atomic modeset` on resume.
 - **`modules/amd.nix`** (raziel): `hardware.graphics`, `amd_pstate=active` kernel param, `ryzenadj`, `lact`. Used with `nixos-hardware.nixosModules.framework-amd-ai-300-series` in flake.
 
-### raziel-specific (`hosts/raziel/laptop.nix` + `hosts/raziel/home.nix`)
+### raziel-specific (`hosts/raziel/laptop.nix` + inlined in `flake.nix`)
 Fingerprint: native libfprint 1.94+ supports Goodix 27c6:609c — do NOT add `libfprint-2-tod1-goodix` (TOD driver 0.0.6 only covers 53xc sensors and corrupts enrollment on 609c). PAM fprint enabled for `sudo` and `polkit-1`. `fwupd` for BIOS/EC/firmware updates. `fw-ectool` for charge limit control. After first boot: `fprintd-enroll $USER`. If fingerprint fails after suspend: `systemctl restart fprintd`.
 
 raziel display: `eDP-1`, 2880x1920@120, scale 1.5 (1920x1280 logical).
 
-**Lock before sleep** (`hosts/raziel/home.nix`): `services.swayidle` with `extraArgs = ["-w"]` and `events.before-sleep = "noctalia-shell ipc --any-display call lockScreen lock"`. The `-w` flag holds a systemd sleep inhibitor until the lock command exits. No timeout events — noctalia's own `IdleService` (ext-idle-notify-v1) handles screen-off/lock/suspend timers. Do NOT use system-scope systemd services or `/etc/systemd/system-sleep/` hooks for this — they lack Wayland access and the `RemainAfterExit` pattern only fires ExecStart once then stays stale.
+**Lock before sleep** (inlined in `flake.nix` raziel HM module): `services.swayidle` with `extraArgs = ["-w"]` and `events.before-sleep = "noctalia-shell ipc --any-display call lockScreen lock"`. The `-w` flag holds a systemd sleep inhibitor until the lock command exits. No timeout events — noctalia's own `IdleService` (ext-idle-notify-v1) handles screen-off/lock/suspend timers. Do NOT use system-scope systemd services or `/etc/systemd/system-sleep/` hooks for this — they lack Wayland access and the `RemainAfterExit` pattern only fires ExecStart once then stays stale.
 
 **Logind** (`hosts/raziel/laptop.nix`): `HandlePowerKey`, `HandleLidSwitch`, `HandleLidSwitchExternalPower` all set to `"suspend-then-hibernate"`. swayidle's `before-sleep` fires for all of these via the `PrepareForSleep` D-Bus signal.
 
@@ -78,9 +79,11 @@ Env vars: `XCURSOR_THEME=breeze_cursors`, `XCURSOR_SIZE=24`, `QT_QPA_PLATFORMTHE
 **WAYLAND_DISPLAY**: set at runtime by niri. Use `nohup ... &` not `systemd-run --user` when spawning Wayland apps.
 
 ### Niri config assembly (`home/niri.nix`)
-1. **Inline**: cursor, input, `spawn-at-startup "noctalia-shell"`, `ghostty.float` window-rule
+1. **Inline**: cursor, input, `spawn-at-startup "noctalia-shell"`, `ghostty.float`/`imv`/`mpv` window-rules (floating)
 2. **`niriParts`**: `config/niri/noctalia.kdl` (includes noctalia runtime kdl + overrides), `config/niri/keybinds.kdl`
-3. **`rice.niri.extraConfig`** in `hosts/<name>/home.nix`: monitor `output {}` blocks
+3. **`rice.niri.extraConfig`**: monitor `output {}` blocks — set inline in flake.nix host module
+
+**polkit-gnome**: runs as `systemd.user.services.polkit-gnome` (in `home/niri.nix`), `After = graphical-session.target`. Provides graphical authentication dialogs for GNOME Disks and other privileged GUI operations.
 
 zaphkiel monitors: two 1080p@120Hz. HDMI-A-1 portrait (rotate 90°), HDMI-A-2 landscape primary.
 
@@ -117,17 +120,18 @@ Options in `home/fonts.nix`: `config.rice.fonts.{ui,mono,uiSize,monoSize}`. Edit
 | `home/fonts.nix` | `rice.fonts` options, fontconfig, font file deployment |
 | `home/ghostty.nix` | `programs.ghostty` with `rice.fonts.mono`, noctalia config-file ref |
 | `home/konsole.nix` | Konsole profile + konsolerc via `xdg.dataFile` + `kwriteconfig6` activation |
-| `home/niri.nix` | Niri config assembly; `rice.niri.extraConfig` option |
+| `home/niri.nix` | Niri config assembly; `rice.niri.extraConfig` option; polkit-gnome systemd user service |
 | `home/nvim.nix` | nixvim — base16, LSPs, neo-tree, treesitter, telescope, oil, lualine, conform |
-| `home/apps.nix` | Packages, `programs.{yazi,btop,mpv,zathura,fzf,direnv}`, `code-launcher`, `init-shell` |
+| `home/apps.nix` | Packages, `programs.{yazi,mpv,zathura,fzf,direnv}`, `code-launcher`, `init-shell`; mpv GPU/quality config; zathura font + noctaliarc include |
 | `home/zsh.nix` | Zsh config, aliases, zoxide |
 | `home/nushell.nix` | Nushell config, same aliases |
 | `home/starship.nix` | Starship prompt (blob-style, noctalia palette, mutable toml sentinel) |
 | `home/qt.nix` | kdeglobals, qt5ct, qt6ct (`.text`), GTK dconf — all use `rice.fonts.*` |
 | `home/codium.nix` | VSCodium + extensions + settings + noctalia extension activation |
 | `home/fcitx5.nix` | fcitx5 input method (JP/ZH/TH), session service, sentinel profile |
-| `home/xdg.nix` | MIME defaults, kbuildsycoca6 service, Vivaldi CSS, Dolphin service menus (reimage, compress-video, ocr) |
-| `home/git.nix` | `programs.git` — user, email, defaultBranch, pull.rebase |
+| `home/xdg.nix` | MIME defaults, kbuildsycoca6 service, Vivaldi CSS, Dolphin service menus (reimage, compress-video, ocr); reads `machineConfig.nvenc` for GPU compress actions |
+| `home/git.nix` | `programs.git` (user, email, defaultBranch, pull.rebase) + `programs.gh` (`settings.git_protocol = "ssh"` — prevents gh CLI from rewriting remotes to HTTPS) |
+| `home/kuroma.nix` | Entry point: imports, identity, static `.source` files, mpv thumbnail scripts, imv config, zathura noctaliarc fallback activation |
 
 ### Shell (zsh + nushell)
 Shared aliases in both. Nushell uses `^` prefix on external commands (`grep`, `diff`, `ip`, etc.) to bypass builtins. `reload = "exec zsh"` not `source` (avoids NVM double-init). Zsh uses `lib.mkOrder 550` in `programs.zsh.initContent` for pre-compinit content.
@@ -189,7 +193,11 @@ Use `programs.vscodium` not `programs.vscode` (vscode targets wrong extensions d
 - **code-launcher**: launched via `ghostty --class=ghostty.float`. Uses `nohup codium ... &` not `systemd-run --user` (systemd-run misses `WAYLAND_DISPLAY`).
 - **Gnome Keyring**: `security.pam.services.greetd.enableGnomeKeyring = true` auto-unlocks at login. If stuck, delete `~/.local/share/keyrings/` and re-login.
 - **Hibernate resume**: `boot.resumeDevice = "/dev/mapper/cryptroot"` in host configuration.nix. Get offset: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile`, add as `resume_offset=<N>` kernel param. raziel uses `mem_sleep_default=s2idle`; resume offset is commented out until set up. See GPU section for NVIDIA display restoration requirements.
-- **Blueman applet**: HM auto-generates a drop-in that adds a second `ExecStart=` on top of the package unit → systemd refuses (not oneshot). Fix in `hosts/zaphkiel/home.nix`: `systemd.user.services.blueman-applet.Service.ExecStart = lib.mkForce [ "" "${pkgs.blueman}/bin/blueman-applet" ]`.
+- **Blueman applet**: HM auto-generates a drop-in that adds a second `ExecStart=` on top of the package unit → systemd refuses (not oneshot). Fix in the zaphkiel inline HM module in `flake.nix`: `systemd.user.services.blueman-applet.Service.ExecStart = lib.mkForce [ "" "${pkgs.blueman}/bin/blueman-applet" ]`.
 - **AI services (zaphkiel)**: `hosts/zaphkiel/ai-services.nix` — llama-router (port 11434), llama-embedding (port 11435), n8n (port 5678), neo4j (port 7474 HTTP / 7687 Bolt), cockpit (port 9090). Services run as `llama` system user (groups: `video`, `render`). Models at `/var/lib/llm-models/`. Neo4j: `https.enable = false; http.enable = true` (default HTTPS fails without SSL policy). Cockpit: `settings.WebService.AllowUnencrypted = "true"` + `Origins = lib.mkForce "http://localhost:9090"` + `security.pam.services.cockpit = {}` required for localhost HTTP login.
 - **MIME + terminal**: `nvim.desktop` has `Terminal=true`; `TerminalApplication=ghostty` in kdeglobals routes it to ghostty.
 - **State version**: `system.stateVersion = "25.11"`. Do not bump. Set options explicitly to silence HM upgrade warnings.
+- **MPV GPU decoding**: `machineConfig.hwdec` → `nvdec-copy` (zaphkiel) / `vaapi` (raziel). `nvdec` (zero-copy) fails on NixOS because CUDA device interop isn't wired for user processes; `nvdec-copy` decodes on NVDEC then copies back to RAM. Falls back to software on init failure — video still plays. `vo = "gpu-next"`, `gpu-api = "vulkan"`. `osc = "no"` because the thumbnail scripts replace the built-in OSC.
+- **MPV thumbnail scripts** (`config/mpv/`): `mpv_thumbnail_script_client_osc.lua` + `mpv_thumbnail_script_server.lua` deployed via `xdg.configFile` in `home/kuroma.nix`. Script is from 2018 (mpv_thumbnail_script 0.4.2) — needed a patch for mpv 0.38+ which dropped positional `--o value` syntax; fixed to `"--o="..output_path` in the server script.
+- **Zathura noctaliarc**: `programs.zathura.extraConfig = "include ~/.config/zathura/noctaliarc"` — noctalia writes colors there at runtime. A fallback activation in `home/kuroma.nix` creates an empty placeholder so zathura doesn't fail before noctalia runs.
+- **IMV config** (`home/kuroma.nix`): `overlay_font` uses `rice.fonts.ui`. Bind exec commands must not contain `<` (shell redirect) or complex inline pipelines — imv's config parser misidentifies `<` in values as a key-sequence delimiter. Use `pkgs.writeShellScript` for multi-step bind actions and reference the script path in the bind.

@@ -146,10 +146,17 @@ in
       vesktop
       vivaldi
       networkmanagerapplet
-      kdePackages.dolphin
       kdePackages.kdenlive
       kdePackages.gwenview
       kdePackages.konsole
+      ### boated ass dolphin + indexers ###
+      kdePackages.dolphin
+      kdePackages.kfilemetadata
+      kdePackages.baloo
+      kdePackages.baloo-widgets
+      kdePackages.ffmpegthumbs
+      ### end of the bloat ###
+      krita
       prismlauncher
       imv
       onlyoffice-desktopeditors

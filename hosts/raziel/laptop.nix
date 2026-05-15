@@ -9,6 +9,10 @@
     HandleLidSwitch = "suspend-then-hibernate";
     HandleLidSwitchExternalPower = "suspend-then-hibernate";
   };
+  systemd.sleep.settings.Sleep = {
+    HibernateDelaySec = "30min";
+    HibernateOnACPower = true;
+  };
 
   security.pam.services.sudo.fprintAuth = true;
   security.pam.services.polkit-1.fprintAuth = true;

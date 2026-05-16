@@ -130,7 +130,7 @@ in
       compressMkv
       upscaleMkv
       texliveFull
-      (python3.withPackages (ps: with ps; [ numpy pandas scipy matplotlib requests ipython ]))
+      (python3.withPackages (ps: with ps; [ tqdm numpy pandas scipy matplotlib requests ipython ]))
       uv
       nodejs
 
@@ -144,7 +144,7 @@ in
       feishin
       obs-studio
       vesktop
-      vivaldi
+      (vivaldi.override { proprietaryCodecs = true; enableWidevine = true; })
       networkmanagerapplet
       kdePackages.kdenlive
       kdePackages.gwenview

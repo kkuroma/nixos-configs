@@ -26,7 +26,7 @@
 
   networking.hostName = "zaphkiel";
   # networking.firewall.allowedTCPPorts = [ add temporary ports here, was 3000 ];
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 11435 ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 7474 7687 5678 11434 11435 ]; # n8n, llama, and neo4j
   boot.kernelParams = [ 
     "resume_offset=92872541" 
     "resume=/dev/mapper/cryptroot"

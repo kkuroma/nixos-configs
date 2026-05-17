@@ -3,7 +3,7 @@
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_2000GB_25301V801926";
+        device = "/dev/disk/by-id/nvme-Dahua_C900_PLUS_M.2_2280_NVMe_256GB_SSD_NBYK16A20A20307";
         content = {
           type = "gpt";
           partitions = {

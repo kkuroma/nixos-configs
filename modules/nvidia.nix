@@ -16,8 +16,7 @@
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # Required alongside powerManagement.enable for display to restore after hibernate.
-  # Without this, VRAM semaphores/plane fences are lost on resume → modeset failures.
+  # Required to make nvidia hibernation possible
   boot.extraModprobeConfig = "options nvidia NVreg_PreserveVideoMemoryAllocations=1";
   hardware.graphics.enable = true;
   hardware.graphics.enable32Bit = true;

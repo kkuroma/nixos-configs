@@ -4,6 +4,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
+    nixpkgs-stable = {
+      url = "github:nixos/nixpkgs/nixos-25.11";
+    };
+
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -12,6 +16,11 @@
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
 
     noctalia = {
@@ -47,7 +56,7 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, nixpkgs-stable, disko, home-manager, home-manager-stable, noctalia, sops-nix, nixos-hardware, ... }@inputs:
   let
     system = "x86_64-linux";
     username = "kuroma";
@@ -94,6 +103,13 @@
           }
         ];
       };
+      metatron = {
+        kernelPackages = pkgs: pkgs.linuxPackages_latest;
+        fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
+        nvenc = true; # dGPU: 1650 for transcoding
+        hwdec = "vaapi"; # iGPU
+        displays = []; # leave empty let KDE handle it
+      };
     };
 
     niriParts = [
@@ -120,6 +136,29 @@
             backupFileExtension = "backup";
             extraSpecialArgs = hmExtraArgs machines.zaphkiel;
             users.${username} = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ]; };
+          };
+        })
+      ];
+    };
+
+    nixosConfigurations.metatron = nixpkgs-stable.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs username; machineConfig = machines.metatron; };
+      modules = [
+        disko.nixosModules.disko
+        home-manager-stable.nixosModules.home-manager
+        sops-nix.nixosModules.sops
+        ./hosts/metatron/configuration.nix
+        ({ username, ... }: {
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            backupFileExtension = "backup";
+            extraSpecialArgs = (hmExtraArgs machines.metatron) // { niriParts = []; }; # no niri
+            users.${username} = {
+              imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma-server.nix ];
+              home.stateVersion = "25.11";
+            };
           };
         })
       ];

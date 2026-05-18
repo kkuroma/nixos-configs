@@ -1,4 +1,60 @@
-{ ... }:
+{ pkgs, lib, ... }:
+
+let
+  datasets = {
+    "tank/media/anime" = {
+      mountpoint = "/tank/media/anime";
+      quota = "3T";
+      reservation = "3T";
+    };
+    "tank/media/music" = {
+      mountpoint = "/tank/media/music";
+      quota = "1T";
+      reservation = "1T";
+    };
+    "tank/nas/kuroma" = {
+      mountpoint = "/tank/nas/kuroma";
+      quota = "1T";
+      reservation = "1T";
+    };
+    "tank/nas/ct" = {
+      mountpoint = "/tank/nas/ct";
+      quota = "1T";
+      reservation = "1T";
+    };
+    "tank/nas/pt" = {
+      mountpoint = "/tank/nas/pt";
+      quota = "1T";
+      reservation = "1T";
+    };
+    "tank/nas/public" = {
+      mountpoint = "/tank/nas/public";
+      quota = "2T";
+      reservation = "2T";
+    };
+    "tank/services/nextcloud" = {
+      mountpoint = "/tank/services/nextcloud";
+      quota = "1T";
+      reservation = "1T";
+    };
+    "tank/services/matrix" = {
+      mountpoint = "/tank/services/matrix";
+      quota = "512G";
+      reservation = "512G";
+    };
+    "tank/backups" = {
+      mountpoint = "/tank/backups";
+      quota = null;
+      reservation = null;
+    };
+  };
+
+  mkDataset = name: cfg: ''
+    zfs create -p -o mountpoint=${cfg.mountpoint} ${name} 2>/dev/null || true
+    ${lib.optionalString (cfg.quota != null) "zfs set quota=${cfg.quota} ${name}"}
+    ${lib.optionalString (cfg.reservation != null) "zfs set reservation=${cfg.reservation} ${name}"}
+  '';
+in
 {
   systemd.services.zfs-datasets = {
     description = "Create and configure ZFS datasets";
@@ -8,40 +64,23 @@
       Type = "oneshot";
       RemainAfterExit = true;
     };
-    script = ''
-      zfs create -p -o mountpoint=/tank/media/anime       tank/media/anime
-      zfs create -p -o mountpoint=/tank/media/music       tank/media/music
-
-      zfs create -p -o mountpoint=/tank/nas/kuroma        tank/nas/kuroma
-      zfs create -p -o mountpoint=/tank/nas/mom           tank/nas/mom
-      zfs create -p -o mountpoint=/tank/nas/dad           tank/nas/dad
-      zfs create -p -o mountpoint=/tank/nas/public        tank/nas/public
-
-      zfs create -p -o mountpoint=/tank/services/nextcloud  tank/services/nextcloud
-      zfs create -p -o mountpoint=/tank/services/matrix     tank/services/matrix
-
-      zfs create -p -o mountpoint=/tank/backups           tank/backups
-
-      zfs set quota=1T tank/nas/kuroma
-      zfs set quota=1T tank/nas/mom
-      zfs set quota=2T tank/nas/public
-      zfs set quota=1T tank/nas/dad
-    '';
+    path = [ pkgs.zfs ];
+    script = lib.concatStrings (lib.mapAttrsToList mkDataset datasets);
   };
 
   users.groups.family = {};
 
-  users.users.mom = {
+  users.users.ct = {
     uid = 1001;
     isSystemUser = true;
     group = "family";
-    description = "NAS user — SMB only, no shell";
+    description = "NAS user (smb only no shell)";
   };
 
-  users.users.dad = {
+  users.users.pt = {
     uid = 1002;
     isSystemUser = true;
     group = "family";
-    description = "NAS user — SMB only, no shell";
+    description = "NAS user (smb only no shell)";
   };
 }

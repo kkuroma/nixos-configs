@@ -12,7 +12,7 @@ let
   '';
 in
 {
-  sops.secrets."cloudflared/token" = {};
+  sops.secrets."cloudflared/token" = { mode = "0444"; };
 
   systemd.services.cloudflared = {
     description = "Cloudflare Tunnel";

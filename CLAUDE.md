@@ -5,13 +5,15 @@
 - `flake.nix` — `nixosConfigurations` + `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`). Passed to HM as `machineConfig` via `hmExtraArgs`. Host-specific HM inlined here.
 - `modules/` — NixOS modules, no aggregator — hosts import by path.
 - `hosts/<name>/` — `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `fstab.nix`.
-- `home/` — shared HM modules. `kuroma.nix` is the desktop entry point (imports + identity + noctalia/GUI extras). `kuroma-server.nix` is the minimal entry point (fonts, git, nushell, nvim, qt, starship, zsh only — used by metatron). All `.source` refs in `kuroma.nix`.
+- `home/` — shared HM modules. `kuroma.nix` is the desktop entry point (imports + identity + noctalia/GUI extras). `kuroma-server.nix` is the minimal entry point (git, nushell, zsh only — used by metatron). All `.source` refs in `kuroma.nix`.
 - `config/` — static config files, deployed via `.source` in `home/kuroma.nix`.
+- `server/nas/` — ZFS dataset management (`datasets.nix`) and Samba (`smb.nix`). Imported by metatron only.
+- `server/services/` — one file per service, imported by metatron only. No aggregator.
 
 **Hosts:**
 - `zaphkiel` — x86_64, desktop, NVIDIA RTX, nixpkgs-unstable
 - `raziel` — x86_64, Framework 13 AMD AI 300, nixpkgs-unstable
-- `metatron` — x86_64, home server/desktop, r5 8500G + GTX 1650, **nixpkgs-stable (25.05)**
+- `metatron` — x86_64, home server/desktop, r5 8500G + GTX 1650, **nixpkgs-stable (25.11)**
 
 **Inputs:** nixpkgs-unstable, nixpkgs-stable, disko, home-manager, home-manager-stable, noctalia, nix-vscode-extensions, nixvim, sops-nix, nixos-hardware, millennium, vscodium-server.
 
@@ -51,11 +53,54 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap`). systemd-
 - **`modules/nvidia-compute.nix`** (metatron): GTX 1650 as headless CUDA. `modesetting.enable = false` — AMD iGPU owns KMS/display, NVIDIA exposes `/dev/nvidia*` for CUDA only. `open = false` (Turing TU117).
 
 ### metatron-specific (`hosts/metatron/`)
-r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`). Data pool: ZFS RAIDZ1 on sda–sdd (`boot.zfs.extraPools = [ "tank" ]`). vscodium-server enabled (`modules/codiumserver.nix`). Extra users (NAS/SMB) are `isSystemUser = true` with no shell — UIDs for ACL only.
+r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`). Data pool: ZFS RAIDZ1 on 4× WD Red 12TB (sda–sdd), `boot.zfs.extraPools = [ "tank" ]`. vscodium-server enabled (`modules/codiumserver.nix`). No LUKS — boots automatically (btrfs directly on partition).
 
-**HM on metatron:** imports `kuroma-server.nix` (fonts, git, nushell, nvim, qt, starship, zsh). `home.stateVersion = "25.11"`. No noctalia, no GUI apps, no fcitx5, no niri — KDE handles media/file apps via Plasma. `qt.nix` sets kdeglobals so KDE picks up the correct fonts. `modules/apps.nix` is NOT imported (carries millennium/Steam overlay).
+**HM on metatron:** imports `kuroma-server.nix` (git, nushell, zsh). `home.stateVersion = "25.11"`. No noctalia, no GUI apps, no fcitx5, no niri, no nixvim — KDE handles everything via Plasma. `modules/apps.nix` is NOT imported (carries millennium/Steam overlay).
 
-**Post-install TODOs:** fill `networking.hostId` (`head -c8 /etc/machine-id`), `resume_offset` (btrfs map-swapfile), paste `nixos-generate-config` output into `hardware-configuration.nix`, create ZFS pool, register SSH host key in `.sops.yaml`.
+**ZFS pool (`tank`):**
+- Created with: `zpool create -f -o ashift=12 -O compression=zstd -O atime=off -O xattr=sa -O dnodesize=auto -O normalization=formD -O mountpoint=none tank raidz /dev/disk/by-id/...`
+- Datasets managed declaratively via `server/nas/datasets.nix` — systemd oneshot `zfs-datasets.service` creates, sets quota/reservation, and chmods each dataset on every boot.
+- Dataset ownership: `media` group (kuroma + jellyfin + navidrome) gets read access to `/tank/media/*`. NAS personal dirs: ct/pt own their dir (770), family group covers public (775). Service dirs owned by their respective system users.
+- `chown` in dataset script uses `|| true` — datasets for not-yet-enabled services (nextcloud, matrix-synapse) don't fail; ownership applied on next rebuild once service is enabled.
+
+**NAS / SMB (`server/nas/smb.nix`):**
+- Samba binds to `lo tailscale0` only (`bind interfaces only = yes`), nmbd disabled (`disable netbios = yes`), wsdd for discovery.
+- Shares: `anime`, `music` (kuroma rw), `kuroma`, `ct`, `pt` (personal), `public` (family group), `backups` (kuroma only).
+- Passwords stored in sops as `samba/{kuroma,ct,pt}`, set via `samba-passwords` systemd oneshot using `smbpasswd`.
+- SMB users: `ct` (uid 1001), `pt` (uid 1002) — `isSystemUser = true`, group `family`, no shell.
+
+**Services (`server/services/`):**
+
+| File | Service | Port | Access |
+|------|---------|------|--------|
+| `adguardhome.nix` | AdGuard Home | DNS :53 tailscale0, web :3000 localhost | internal only |
+| `jellyfin.nix` | Jellyfin | :8096 | internal only |
+| `navidrome.nix` | Navidrome | :4533 | internal only |
+| `searxng.nix` | SearXNG | :8888 | public + internal |
+| `privatebin.nix` | PrivateBin | :8082 (nginx) | public + internal |
+| `stirling-pdf.nix` | Stirling PDF | :8085 | public + internal |
+| `caddy.nix` | Caddy (reverse proxy) | :80 tailscale0 | routes all |
+| `cloudflared.nix` | Cloudflare Tunnel | — | public ingress |
+
+**Service access model:**
+- Internal: `http://<service>.metatron` — AdGuard resolves `*.metatron → 100.107.220.115` (tailscale IP), Caddy routes by Host header. Requires setting tailnet DNS to AdGuard in Tailscale admin console.
+- Public (kuroma.dev): `searx/pdf/pastebin.kuroma.dev` via cloudflared tunnel → localhost:80 → Caddy.
+- Matrix: `matrix.isomorphic.to` — not yet configured.
+- AdGuard password: stored as plain text in sops `adguard/password`, bcrypt-hashed at service start via `mkpasswd` + `yq` in `preStart = lib.mkAfter`.
+- SearXNG secret: sops template `searx-env` injects `SEARX_SECRET_KEY` via envsubst.
+
+**Cloudflare tunnel routing** (set in Cloudflare dashboard OR via local `tunnelConfig` in `cloudflared.nix`):
+- `searx.kuroma.dev` → `http://localhost:80`
+- `pdf.kuroma.dev` → `http://localhost:80`
+- `pastebin.kuroma.dev` → `http://localhost:80`
+
+**Domains:** `kuroma.dev` (services), `isomorphic.to` (Matrix only).
+
+**Autofs on zaphkiel/raziel (`modules/autofs.nix`):**
+- Mounts: `anime`, `music`, `kuroma` from metatron (100.107.220.115) via CIFS.
+- Credentials via sops template `nas-creds` generated from `samba/kuroma`.
+- Backup timers (zaphkiel): home → `/mnt/NAS/kuroma/home/`, songs → `/mnt/NAS/music/`, anime → `/mnt/NAS/anime/`.
+- For initial large data transfer (anime/songs), use SSH rsync directly — much faster than SMB.
 
 ### raziel-specific (`hosts/raziel/laptop.nix`)
 Fingerprint: libfprint 1.94+ native for Goodix 27c6:609c — do NOT add `libfprint-2-tod1-goodix` (corrupts enrollment). After first boot: `fprintd-enroll $USER`. If fails after suspend: `systemctl restart fprintd`.
@@ -126,7 +171,7 @@ Three rsync systemd timers every 6h (staggered 1h): home→NAS, songs→NAS, ani
 - **Dolphin "Open With" empty:** `kbuildsycoca6` oneshot service in `home/xdg.nix` must run at session start.
 - **Blueman applet** (zaphkiel): HM adds second `ExecStart` — fix with `lib.mkForce [ "" "...blueman-applet" ]` in flake.nix.
 - **zaphkiel AI services** (`hosts/zaphkiel/ai-services.nix`): llama-router :11434, llama-embedding :11435, n8n :5678, neo4j :7474/:7687, cockpit :9090. `llama` system user. Neo4j: `http.enable = true; https.enable = false`. Cockpit needs `AllowUnencrypted`, `Origins = mkForce`, `security.pam.services.cockpit = {}`.
-- **Hibernate resume:** `boot.resumeDevice = "/dev/mapper/cryptroot"`, `resume_offset` from btrfs map-swapfile. NVIDIA: needs `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1`.
+- **Hibernate resume:** zaphkiel/raziel: `boot.resumeDevice = "/dev/mapper/cryptroot"`. metatron (no LUKS): `boot.resumeDevice = "/dev/nvme0n1p2"`. All: `resume_offset` from `btrfs inspect-internal map-swapfile -r /swap/swapfile`. NVIDIA: needs `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1`.
 - **MPV:** `hwdec` from `machineConfig` (nvdec-copy/vaapi). `nvdec` (zero-copy) fails on NixOS — use `nvdec-copy`. `osc = "no"` (thumbnail scripts replace OSC). Thumbnail server script patched for mpv 0.38+ (`--o=path` not `--o path`).
 - **IMV config:** bind exec must not contain `<` (imv parses it as key-sequence). Use `pkgs.writeShellScript`.
 - **Zathura:** noctaliarc fallback activation in `kuroma.nix` creates empty placeholder so zathura doesn't fail before noctalia runs.

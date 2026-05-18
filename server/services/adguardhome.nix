@@ -4,9 +4,9 @@
 
   services.adguardhome = {
     enable = true;
-    mutableSettings = false;
+    mutableSettings = true;
+    host = "127.0.0.1";
     settings = {
-      http.address = "127.0.0.1:3000";
       dns = {
         bind_hosts = [ "100.107.220.115" ];
         port = 53;

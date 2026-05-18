@@ -1,12 +1,9 @@
-{ pkgs, lib, config, ... }:
+{ lib, config, ... }:
 {
-  sops.secrets."adguard/password" = { mode = "0444"; };
-
   services.adguardhome = {
     enable = true;
-    mutableSettings = false;
+    mutableSettings = true;
     settings = {
-      users = [];  # patched by preStart below
       http.address = "127.0.0.1:3000";
       dns = {
         bind_hosts = [ "100.107.220.115" ];  # tailscale0 only, avoids conflict with systemd-resolved
@@ -21,19 +18,6 @@
         ];
       };
     };
-  };
-
-  # Patch users into the config after the module writes it (mutableSettings=false
-  # always overwrites with empty users, so we inject the bcrypt hash every start)
-  systemd.services.adguardhome = {
-    after = [ "sops-install-secrets.service" ];
-    preStart = lib.mkAfter ''
-      password=$(cat ${config.sops.secrets."adguard/password".path})
-      hash=$(${pkgs.mkpasswd}/bin/mkpasswd -m bcrypt "$password")
-      ADGUARD_HASH="$hash" ${pkgs.yq-go}/bin/yq -i \
-        '.users = [{"name": "admin", "password": strenv("ADGUARD_HASH")}]' \
-        /var/lib/AdGuardHome/AdGuardHome.yaml
-    '';
   };
 
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 53 ];

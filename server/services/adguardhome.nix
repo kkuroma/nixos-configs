@@ -1,6 +1,6 @@
 { pkgs, lib, config, ... }:
 {
-  sops.secrets."adguard/password" = {};
+  sops.secrets."adguard/password" = { owner = "adguardhome"; };
 
   services.adguardhome = {
     enable = true;

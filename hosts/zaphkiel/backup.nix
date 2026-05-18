@@ -7,7 +7,6 @@ let
         Type = "oneshot";
         User = username;
         ExecStart = pkgs.writeShellScript "backup-${name}" script;
-        # Prevent concurrent runs if timer fires while previous is still running
         TimeoutStartSec = "6h";
       };
       path = [ pkgs.rsync ];

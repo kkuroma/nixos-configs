@@ -24,8 +24,16 @@
     { addr = "127.0.0.1"; port = 8081; ssl = false; }
   ];
 
+  # Fix ownership of subdirs that systemd-tmpfiles may create as root before zfs-datasets chowns the mountpoint
+  systemd.tmpfiles.rules = [
+    "z /tank/services/nextcloud         0700 nextcloud nextcloud -"
+    "z /tank/services/nextcloud/config  0750 nextcloud nextcloud -"
+    "z /tank/services/nextcloud/data    0750 nextcloud nextcloud -"
+    "z /tank/services/nextcloud/apps    0750 nextcloud nextcloud -"
+  ];
+
   systemd.services.nextcloud-setup = {
-    after = [ "zfs-datasets.service" ];
+    after = [ "zfs-datasets.service" "systemd-tmpfiles-setup.service" ];
     requires = [ "zfs-datasets.service" ];
   };
 }

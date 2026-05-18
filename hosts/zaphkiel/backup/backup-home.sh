@@ -1,6 +1,6 @@
 #!/bin/bash
 SOURCE="/home/kuroma/"
-DEST="/mnt/NAS/backup-home/"
+DEST="/mnt/NAS/kuroma/home/"
 MOUNT_POINT="/mnt/NAS"
 
 EXCLUDES=(

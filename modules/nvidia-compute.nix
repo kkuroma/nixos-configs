@@ -9,5 +9,4 @@
     powerManagement.enable = false;
   };
 
-  nixpkgs.config.cudaSupport = true;
 }

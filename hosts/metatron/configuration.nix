@@ -20,12 +20,9 @@
   ];
 
   networking.hostName = "metatron";
-
-  # ZFS requires a unique hostId — generate with: head -c8 /etc/machine-id
-  networking.hostId = "00000000"; # TODO: fill after first boot
+  networking.hostId = "97c79472"; # head -c8 /etc/machine-id
 
   boot.supportedFilesystems = [ "zfs" ];
-  # Data pool on sda–sdd RAIDZ1 — import post-install after: zpool create tank raidz sda sdb sdc sdd
   boot.zfs.extraPools = [ "tank" ];
 
   # Hibernate resume — fill resume_offset after install:

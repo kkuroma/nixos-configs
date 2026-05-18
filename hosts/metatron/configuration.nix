@@ -30,7 +30,7 @@
 
   # Hibernate resume — fill resume_offset after install:
   # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
-  boot.resumeDevice = "/dev/mapper/cryptroot";
+  boot.resumeDevice = ""; # TODO: set to the btrfs partition, e.g. /dev/disk/by-label/nixos
   boot.kernelParams = [
     "resume_offset=0" # TODO: set after first boot
   ];

@@ -10,7 +10,6 @@
     ../../modules/networking.nix
     ../../modules/nix.nix
     ../../modules/amd.nix # Radeon 740M iGPU display + vaapi
-    ../../modules/fonts.nix
     ../../modules/users.nix
     ../../modules/sops.nix
     ../../modules/codiumserver.nix
@@ -20,6 +19,15 @@
   ];
 
   networking.hostName = "metatron";
+
+  services.openssh = {
+    enable = true;
+    openFirewall = false; # tailscale0 only via networking.nix
+    settings = {
+      PasswordAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
   networking.hostId = "97c79472"; # head -c8 /etc/machine-id
 
   boot.supportedFilesystems = [ "zfs" ];
@@ -76,6 +84,17 @@
   # NFS/SMB service users — no shell, no interactive login, UID/GID for ACL.
   # Add per-person and per-service users here post-install, e.g.:
   # users.users.alice = { uid = 1001; isSystemUser = true; group = "users"; };
+
+  fonts.packages = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
+  ];
+  fonts.fontconfig.defaultFonts = {
+    sansSerif = [ "Noto Sans" ];
+    monospace = [ "Noto Sans Mono" ];
+    emoji = [ "Noto Color Emoji" ];
+  };
 
   system.stateVersion = "25.11";
 }

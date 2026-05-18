@@ -1,12 +1,9 @@
 { ... }:
 {
   imports = [
-    ./fonts.nix
     ./git.nix
     ./nushell.nix
     ./nvim.nix
-    ./qt.nix
-    ./starship.nix
     ./zsh.nix
   ];
 

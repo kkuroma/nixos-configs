@@ -1,5 +1,7 @@
 { ... }:
 {
+  security.pki.certificateFiles = [ ../certs/caddy-local-ca.pem ];
+
   networking.networkmanager.enable = true;
 
   networking.firewall.allowedTCPPorts = [ 22000 ];

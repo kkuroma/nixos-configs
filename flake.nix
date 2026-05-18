@@ -104,7 +104,7 @@
         ];
       };
       metatron = {
-        kernelPackages = pkgs: pkgs.linuxPackages_latest;
+        kernelPackages = pkgs: pkgs.linuxPackages; # LTS — linuxPackages_latest breaks ZFS
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
         nvenc = true; # dGPU: 1650 for transcoding
         hwdec = "vaapi"; # iGPU

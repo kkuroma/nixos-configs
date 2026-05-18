@@ -156,7 +156,7 @@
             backupFileExtension = "backup";
             extraSpecialArgs = (hmExtraArgs machines.metatron) // { niriParts = []; }; # no niri
             users.${username} = {
-              imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma-server.nix ];
+              imports = [ ./home/kuroma-server.nix ];
               home.stateVersion = "25.11";
             };
           };

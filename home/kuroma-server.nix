@@ -3,7 +3,6 @@
   imports = [
     ./git.nix
     ./nushell.nix
-    ./nvim.nix
     ./zsh.nix
   ];
 

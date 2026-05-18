@@ -1,13 +1,22 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
+  creds = config.sops.templates."nas-creds".path;
   nasMap = pkgs.writeText "auto.nas" ''
-    anime        -fstype=cifs,credentials=/run/secrets/nas/credentials,uid=1000,gid=1000 ://100.104.4.37/anime
-    songs        -fstype=cifs,credentials=/run/secrets/nas/credentials,uid=1000,gid=1000 ://100.104.4.37/songs
-    backup-home  -fstype=cifs,credentials=/run/secrets/nas/credentials,uid=1000,gid=1000 ://100.104.4.37/home
-    backup-games -fstype=cifs,credentials=/run/secrets/nas/credentials,uid=1000,gid=1000 ://100.104.4.37/games
+    anime   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/anime
+    music   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/music
+    kuroma  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/kuroma
   '';
 in
 {
+  sops.secrets."samba/kuroma" = {};
+  sops.templates."nas-creds" = {
+    content = ''
+      username=kuroma
+      password=${config.sops.placeholder."samba/kuroma"}
+    '';
+    mode = "0400";
+  };
+
   environment.systemPackages = [ pkgs.cifs-utils ];
 
   services.autofs = {
@@ -18,7 +27,7 @@ in
   };
 
   systemd.services.autofs = {
-    after = [ "tailscaled.service" ];
+    after = [ "tailscaled.service" "sops-install-secrets.service" ];
     wants = [ "tailscaled.service" ];
   };
 }

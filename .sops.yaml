@@ -5,6 +5,9 @@ keys:
   # raziel host key — derived from /etc/ssh/ssh_host_ed25519_key at activation.
   - &raziel age167ny3h9lvk4tmtreg4v0uekvqak59x03an932un9dnuq7trugy7slh2jml
 
+  # metatron host key — derived from /etc/ssh/ssh_host_ed25519_key at activation.
+  - &metatron age1h72gv2n94rsjra3urggnrc434jrcplk3m85sx629x2ljp0vqzqxqvsyj5p
+
   # Personal admin key — AGE-SECRET-KEY stored in password manager.
   - &kuroma age1fqvkw0yedz7fy4fc9ekrc88tuufaq0c9c9xukst6k08yx7vflgls0mmuec
 
@@ -14,4 +17,5 @@ creation_rules:
       - age:
           - *zaphkiel
           - *raziel
+          - *metatron
           - *kuroma

@@ -29,7 +29,7 @@ let
       script = ''
         set -euo pipefail
         SOURCE="/home/${username}/"
-        DEST="/mnt/NAS/backup-home/"
+        DEST="/mnt/NAS/kuroma/"
         MOUNT_POINT="/mnt/NAS"
 
         if ! mountpoint -q "$MOUNT_POINT"; then
@@ -55,7 +55,7 @@ let
       oncalendar = "*-*-* 01,07,13,19:00:00";
       script = ''
         set -euo pipefail
-        rsync -av --delete /mnt/Vault-Storage/songs/ /mnt/NAS/songs/
+        rsync -av --delete /mnt/Vault-Storage/songs/ /mnt/NAS/music/
       '';
     }
     {

@@ -29,7 +29,7 @@
     after = [ "sops-install-secrets.service" ];
     preStart = lib.mkAfter ''
       password=$(cat ${config.sops.secrets."adguard/password".path})
-      hash=$(${pkgs.whois}/bin/mkpasswd -m bcrypt "$password")
+      hash=$(${pkgs.mkpasswd}/bin/mkpasswd -m bcrypt "$password")
       ADGUARD_HASH="$hash" ${pkgs.yq-go}/bin/yq -i \
         '.users = [{"name": "admin", "password": strenv("ADGUARD_HASH")}]' \
         /var/lib/AdGuardHome/AdGuardHome.yaml

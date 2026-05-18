@@ -18,6 +18,14 @@
     ../../modules/virtualization.nix
     ../../server/nas/datasets.nix
     ../../server/nas/smb.nix
+    ../../server/services/adguardhome.nix
+    ../../server/services/jellyfin.nix
+    ../../server/services/navidrome.nix
+    ../../server/services/searxng.nix
+    ../../server/services/privatebin.nix
+    ../../server/services/stirling-pdf.nix
+    ../../server/services/caddy.nix
+    ../../server/services/cloudflared.nix
   ];
 
   networking.hostName = "metatron";

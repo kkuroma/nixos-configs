@@ -6,46 +6,97 @@ let
       mountpoint = "/tank/media/anime";
       quota = "3T";
       reservation = "3T";
+      owner = "kuroma";
+      group = "media";
+      mode = "775";
     };
     "tank/media/music" = {
       mountpoint = "/tank/media/music";
       quota = "1T";
       reservation = "1T";
+      owner = "kuroma";
+      group = "media";
+      mode = "775";
     };
     "tank/nas/kuroma" = {
       mountpoint = "/tank/nas/kuroma";
       quota = "1T";
       reservation = "1T";
+      owner = "kuroma";
+      group = "users";
+      mode = "700";
     };
     "tank/nas/ct" = {
       mountpoint = "/tank/nas/ct";
       quota = "1T";
       reservation = "1T";
+      owner = "ct";
+      group = "family";
+      mode = "770";
     };
     "tank/nas/pt" = {
       mountpoint = "/tank/nas/pt";
       quota = "1T";
       reservation = "1T";
+      owner = "pt";
+      group = "family";
+      mode = "770";
     };
     "tank/nas/public" = {
       mountpoint = "/tank/nas/public";
       quota = "2T";
       reservation = "2T";
+      owner = "kuroma";
+      group = "family";
+      mode = "775";
     };
     "tank/services/nextcloud" = {
       mountpoint = "/tank/services/nextcloud";
       quota = "1T";
       reservation = "1T";
+      owner = "nextcloud";
+      group = "nextcloud";
+      mode = "700";
     };
     "tank/services/matrix" = {
       mountpoint = "/tank/services/matrix";
       quota = "512G";
       reservation = "512G";
+      owner = "matrix-synapse";
+      group = "matrix-synapse";
+      mode = "700";
+    };
+    "tank/services/jellyfin" = {
+      mountpoint = "/tank/services/jellyfin";
+      quota = "50G";
+      reservation = "50G";
+      owner = "jellyfin";
+      group = "media";
+      mode = "755";
+    };
+    "tank/services/navidrome" = {
+      mountpoint = "/tank/services/navidrome";
+      quota = "5G";
+      reservation = "5G";
+      owner = "navidrome";
+      group = "navidrome";
+      mode = "700";
+    };
+    "tank/services/privatebin" = {
+      mountpoint = "/tank/services/privatebin";
+      quota = "5G";
+      reservation = "5G";
+      owner = "privatebin";
+      group = "privatebin";
+      mode = "700";
     };
     "tank/backups" = {
       mountpoint = "/tank/backups";
       quota = null;
       reservation = null;
+      owner = "kuroma";
+      group = "users";
+      mode = "700";
     };
   };
 
@@ -53,6 +104,8 @@ let
     zfs create -p -o mountpoint=${cfg.mountpoint} ${name} 2>/dev/null || true
     ${lib.optionalString (cfg.quota != null) "zfs set quota=${cfg.quota} ${name}"}
     ${lib.optionalString (cfg.reservation != null) "zfs set reservation=${cfg.reservation} ${name}"}
+    chown ${cfg.owner}:${cfg.group} ${cfg.mountpoint} 2>/dev/null || true
+    chmod ${cfg.mode} ${cfg.mountpoint}
   '';
 in
 {
@@ -69,6 +122,7 @@ in
   };
 
   users.groups.family = {};
+  users.groups.media.members = [ "kuroma" "jellyfin" "navidrome" ];
 
   users.users.ct = {
     uid = 1001;

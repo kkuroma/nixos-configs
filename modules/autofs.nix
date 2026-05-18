@@ -2,9 +2,9 @@
 let
   creds = config.sops.templates."nas-creds".path;
   nasMap = pkgs.writeText "auto.nas" ''
-    anime   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/anime
-    music   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/music
-    kuroma  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/kuroma
+    anime -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/anime
+    music -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/music
+    kuroma -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://100.107.220.115/kuroma
   '';
 in
 {
@@ -31,3 +31,4 @@ in
     wants = [ "tailscaled.service" ];
   };
 }
+

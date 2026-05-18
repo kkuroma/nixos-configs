@@ -29,7 +29,7 @@ let
       script = ''
         set -euo pipefail
         SOURCE="/home/${username}/"
-        DEST="/mnt/NAS/kuroma/"
+        DEST="/mnt/NAS/kuroma/home/"
         MOUNT_POINT="/mnt/NAS"
 
         if ! mountpoint -q "$MOUNT_POINT"; then

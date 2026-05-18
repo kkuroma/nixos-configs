@@ -1,9 +1,10 @@
 { ... }:
 {
-  services.privatebin.enable = true;
+  services.privatebin = {
+    enable = true;
+    enableNginx = true;
+  };
 
-  # privatebin uses nginx internally — restrict to localhost so Caddy can proxy it
-  services.nginx.defaultListenAddresses = [ "127.0.0.1" ];
   services.nginx.virtualHosts."localhost".listen = [
     { addr = "127.0.0.1"; port = 8082; ssl = false; }
   ];

@@ -11,7 +11,8 @@
     serviceConfig = {
       ExecStart = "${pkgs.stirling-pdf}/bin/Stirling-PDF";
       DynamicUser = true;
-      StateDirectory = "stirling-pdf";
+      RuntimeDirectory = "stirling-pdf";
+      WorkingDirectory = "/run/stirling-pdf";
       Restart = "on-failure";
     };
   };

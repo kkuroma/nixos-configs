@@ -13,27 +13,6 @@ let
 in
 {
   sops.secrets."cloudflared/token" = { mode = "0444"; };
-  sops.secrets."cloudflared/tunnel" = { mode = "0444"; };
-
-  systemd.services.cloudflare-dns = {
-    description = "Register Cloudflare tunnel DNS routes";
-    after = [ "network-online.target" "sops-install-secrets.service" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    path = [ pkgs.cloudflared ];
-    script = ''
-      TOKEN=$(cat ${config.sops.secrets."cloudflared/token".path})
-      TUNNEL=$(cat ${config.sops.secrets."cloudflared/tunnel".path})
-      for host in searx.kuroma.dev pdf.kuroma.dev pastebin.kuroma.dev; do
-        cloudflared tunnel --token "$TOKEN" route dns "$TUNNEL" "$host" || true
-      done
-    '';
-  };
-
   systemd.services.cloudflared = {
     description = "Cloudflare Tunnel";
     wantedBy = [ "multi-user.target" ];

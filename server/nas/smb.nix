@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, metatronIP, ... }:
 {
   sops.secrets."samba/kuroma" = {};
   sops.secrets."samba/ct" = {};
@@ -13,7 +13,7 @@
         "server string" = "metatron";
         "server role" = "standalone server";
         "map to guest" = "never";
-        "interfaces" = "lo tailscale0";
+        "interfaces" = "lo ${metatronIP}";
         "bind interfaces only" = "yes";
         "disable netbios" = "yes";
         "log level" = "1";
@@ -57,6 +57,8 @@
   };
 
   systemd.services.samba-nmbd.enable = false;
+  systemd.services.samba-smbd.after = [ "tailscaled.service" ];
+  systemd.services.samba-smbd.wants = [ "tailscaled.service" ];
 
   services.samba-wsdd = {
     enable = true;

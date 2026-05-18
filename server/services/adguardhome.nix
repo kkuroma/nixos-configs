@@ -1,4 +1,4 @@
-{ ... }:
+{ metatronIP, ... }:
 {
   services.adguardhome = {
     enable = true;
@@ -6,14 +6,14 @@
     host = "127.0.0.1";
     settings = {
       dns = {
-        bind_hosts = [ "100.107.220.115" ];
+        bind_hosts = [ "${metatronIP}" ];
         port = 53;
         upstream_dns = [
           "https://dns.mullvad.net/dns-query"
         ];
         bootstrap_dns = [ "1.1.1.1" "8.8.8.8" ];
         rewrites = [
-          { domain = "*.metatron"; answer = "100.107.220.115"; }
+          { domain = "*.metatron"; answer = "${metatronIP}"; }
         ];
       };
       filters = [

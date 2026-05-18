@@ -61,6 +61,7 @@
     system = "x86_64-linux";
     username = "kuroma";
     lib = nixpkgs.lib;
+    metatronIP = "100.107.220.115";
 
     # per machine profiles including hardware, system fonts, and video enc/dec
     machines = {
@@ -123,7 +124,7 @@
   in {
     nixosConfigurations.zaphkiel = lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs username; machineConfig = machines.zaphkiel; };
+      specialArgs = { inherit inputs username metatronIP; machineConfig = machines.zaphkiel; };
       modules = [
         disko.nixosModules.disko
         home-manager.nixosModules.home-manager
@@ -143,7 +144,7 @@
 
     nixosConfigurations.metatron = nixpkgs-stable.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs username; machineConfig = machines.metatron; };
+      specialArgs = { inherit inputs username metatronIP; machineConfig = machines.metatron; };
       modules = [
         disko.nixosModules.disko
         home-manager-stable.nixosModules.home-manager
@@ -166,7 +167,7 @@
 
     nixosConfigurations.raziel = lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs username; machineConfig = machines.raziel; };
+      specialArgs = { inherit inputs username metatronIP; machineConfig = machines.raziel; };
       modules = [
         nixos-hardware.nixosModules.framework-amd-ai-300-series
         disko.nixosModules.disko

@@ -1,0 +1,46 @@
+{ config, ... }:
+{
+  sops.secrets."matrix/registration-secret" = { owner = "matrix-synapse"; };
+  sops.secrets."matrix/macaroon-secret" = { owner = "matrix-synapse"; };
+  sops.secrets."matrix/form-secret" = { owner = "matrix-synapse"; };
+
+  services.matrix-synapse = {
+    enable = true;
+    settings = {
+      server_name = "matrix.isomorphic.to";
+      public_baseurl = "https://matrix.isomorphic.to";
+
+      database = {
+        name = "psycopg2";
+        args = {
+          database = "matrix-synapse";
+          host = "/run/postgresql";
+          cp_min = 5;
+          cp_max = 10;
+        };
+      };
+
+      listeners = [{
+        port = 8448;
+        bind_addresses = [ "127.0.0.1" ];
+        type = "http";
+        tls = false;
+        resources = [{
+          names = [ "client" "federation" ];
+          compress = false;
+        }];
+      }];
+
+      enable_registration = false;
+      registration_shared_secret_path = config.sops.secrets."matrix/registration-secret".path;
+      macaroon_secret_key_path = config.sops.secrets."matrix/macaroon-secret".path;
+      form_secret_path = config.sops.secrets."matrix/form-secret".path;
+      media_store_path = "/tank/services/matrix/media";
+    };
+  };
+
+  systemd.services.matrix-synapse = {
+    after = [ "zfs-datasets.service" ];
+    requires = [ "zfs-datasets.service" ];
+  };
+}

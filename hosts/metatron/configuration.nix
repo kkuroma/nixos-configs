@@ -26,6 +26,9 @@
     ../../server/services/stirling-pdf.nix
     ../../server/services/caddy.nix
     ../../server/services/cloudflared.nix
+    ../../server/services/postgresql.nix
+    ../../server/services/nextcloud.nix
+    ../../server/services/matrix.nix
   ];
 
   networking.hostName = "metatron";

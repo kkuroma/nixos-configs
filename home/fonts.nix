@@ -12,9 +12,8 @@
     rice.fonts.monoSize = lib.mkDefault machineConfig.fonts.monoSize;
     xdg.dataFile."fonts/GoogleSansFlex-VariableFont.ttf".source = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
 
-    # ONLYOFFICE's font picker ignores symlinks — only real file copies are scanned.
-    # Copy Noto fonts into ~/.local/share/fonts/onlyoffice/ so they appear in the picker.
-    # Sentinel files prevent redundant copies across rebuilds; cache is cleared to force rescan.
+    # ONLYOFFICE's dumb ass font picker ignores symlinks
+    # copy Noto fonts into ~/.local/share/fonts/onlyoffice/ so they appear in the picker
     home.activation.onlyofficeFonts = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       dest="$HOME/.local/share/fonts/onlyoffice"
       mkdir -p "$dest"

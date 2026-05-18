@@ -14,7 +14,7 @@
         "server role" = "standalone server";
         "map to guest" = "never";
         "interfaces" = "lo ${metatronIP}";
-        "bind interfaces only" = "yes";
+        "bind interfaces only" = "no";
         "disable netbios" = "yes";
         "log level" = "1";
       };

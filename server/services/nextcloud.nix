@@ -4,7 +4,7 @@
 
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud31;
+    package = pkgs.nextcloud33;
     hostName = "nextcloud.metatron";
     datadir = "/tank/services/nextcloud";
     database.createLocally = true;

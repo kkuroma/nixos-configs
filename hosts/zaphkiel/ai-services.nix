@@ -102,7 +102,6 @@ in
 
   sops.templates."n8n-env" = {
     content = "N8N_ENCRYPTION_KEY=${config.sops.placeholder."n8n/encryption-key"}";
-    owner = "n8n";
   };
 
   # n8n - workflow automation - will get nix'ed later

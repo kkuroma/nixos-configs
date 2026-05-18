@@ -1,8 +1,8 @@
 { config, ... }:
 {
-  sops.secrets."searx/secret-key" = {};
+  sops.secrets."searxng/secret-key" = {};
   sops.templates."searx-env" = {
-    content = "SEARX_SECRET_KEY=${config.sops.placeholder."searx/secret-key"}";
+    content = "SEARX_SECRET_KEY=${config.sops.placeholder."searxng/secret-key"}";
   };
 
   services.searx = {

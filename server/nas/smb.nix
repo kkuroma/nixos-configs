@@ -63,6 +63,9 @@
     interface = "tailscale0";
   };
 
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 445 139 ];
+  networking.firewall.interfaces.tailscale0.allowedUDPPorts = [ 137 138 ];
+
   systemd.services.samba-passwords = {
     description = "Set Samba user passwords";
     after = [ "samba-smbd.service" "sops-install-secrets.service" ];

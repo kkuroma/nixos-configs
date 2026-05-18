@@ -16,6 +16,8 @@
     ../../modules/kde.nix
     ../../modules/nvidia-compute.nix  # GTX 1650 headless CUDA
     ../../modules/virtualization.nix
+    ../../server/nas/datasets.nix
+    ../../server/nas/smb.nix
   ];
 
   networking.hostName = "metatron";

@@ -33,12 +33,8 @@
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "tank" ];
 
-  # Hibernate resume — fill resume_offset after install:
-  # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
-  boot.resumeDevice = ""; # TODO: set to the btrfs partition, e.g. /dev/disk/by-label/nixos
-  boot.kernelParams = [
-    "resume_offset=0" # TODO: set after first boot
-  ];
+  boot.resumeDevice = "/dev/nvme0n1p2";
+  boot.kernelParams = [ "resume_offset=533760" ];  # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 
   environment.systemPackages = with pkgs; [
     firefox

@@ -15,6 +15,7 @@
         "map to guest" = "never";
         "interfaces" = "lo tailscale0";
         "bind interfaces only" = "yes";
+        "disable netbios" = "yes";
         "log level" = "1";
       };
       anime = {
@@ -54,6 +55,8 @@
       };
     };
   };
+
+  systemd.services.samba-nmbd.enable = false;
 
   services.samba-wsdd = {
     enable = true;

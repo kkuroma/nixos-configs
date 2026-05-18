@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 
 let
 
@@ -97,11 +97,20 @@ in
     };
   };
 
+  sops.secrets."n8n/encryption-key" = {};
+  sops.secrets."neo4j/password" = {};
+
+  sops.templates."n8n-env" = {
+    content = "N8N_ENCRYPTION_KEY=${config.sops.placeholder."n8n/encryption-key"}";
+    owner = "n8n";
+  };
+
   # n8n - workflow automation - will get nix'ed later
   services.n8n = {
     enable = true;
     environment.GENERIC_TIMEZONE = "Asia/Tokyo";
   };
+  systemd.services.n8n.serviceConfig.EnvironmentFile = config.sops.templates."n8n-env".path;
 
   # neo4j - graphdb
   services.neo4j = {

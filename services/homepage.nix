@@ -7,6 +7,7 @@
   sops.secrets."homepage/${config.networking.hostName}/latitude" = { mode = "0444"; };
   sops.secrets."homepage/${config.networking.hostName}/longitude" = { mode = "0444"; };
   sops.secrets."homepage/${config.networking.hostName}/location" = { mode = "0444"; };
+  sops.secrets."homepage/${config.networking.hostName}/timezone" = { mode = "0444"; };
 
   sops.templates."homepage-env" = {
     mode = "0444";
@@ -18,6 +19,7 @@
       HOMEPAGE_VAR_LATITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/latitude"}
       HOMEPAGE_VAR_LONGITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/longitude"}
       HOMEPAGE_VAR_LOCATION=${config.sops.placeholder."homepage/${config.networking.hostName}/location"}
+      HOMEPAGE_VAR_TIMEZONE=${config.sops.placeholder."homepage/${config.networking.hostName}/timezone"}
     '';
   };
 
@@ -26,7 +28,12 @@
   systemd.services.homepage-dashboard = {
     after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
     requires = [ "zfs-datasets.service" ];
-    serviceConfig.BindReadOnlyPaths = [ "/tank" ];
+    serviceConfig.BindReadOnlyPaths = [
+      "/tank/media/anime"
+      "/tank/media/music"
+      "/tank/nas/public"
+      "/tank/backups"
+    ];
   };
 
   services.homepage-dashboard = {
@@ -83,17 +90,28 @@
         };
       }
       {
+        search = {
+          provider = "custom";
+          url = "https://searx.kuroma.dev/search?q=";
+          target = "_blank";
+          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
+          showSearchSuggestions = true;
+        };
+      }
+      {
         openmeteo = {
           label = "{{HOMEPAGE_VAR_LOCATION}}";
           latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
           longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
           units = "imperial";
+          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
           cache = 5;
         };
       }
       {
         datetime = {
           text_size = "xl";
+          locale = "ja-JP";
           format = {
             timeStyle = "short";
             dateStyle = "short";

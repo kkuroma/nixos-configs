@@ -38,7 +38,7 @@
   ];
 
   systemd.services.nextcloud-setup = {
-    after = [ "zfs-datasets.service" "systemd-tmpfiles-setup.service" ];
-    requires = [ "zfs-datasets.service" ];
+    after = [ "zfs-datasets.service" "systemd-tmpfiles-setup.service" "postgresql-setup.service" ];
+    requires = [ "zfs-datasets.service" "postgresql-setup.service" ];
   };
 }

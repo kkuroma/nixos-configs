@@ -5,6 +5,9 @@
     ./hardware-configuration.nix
     ./fstab.nix
 
+    ./datasets.nix
+    ./smb.nix
+
     ../../modules/boot.nix
     ../../modules/locale.nix
     ../../modules/networking.nix
@@ -16,20 +19,19 @@
     ../../modules/kde.nix
     ../../modules/nvidia-compute.nix  # GTX 1650 headless CUDA
     ../../modules/virtualization.nix
-    ../../server/nas/datasets.nix
-    ../../server/nas/smb.nix
-    ../../server/services/adguardhome.nix
-    ../../server/services/jellyfin.nix
-    ../../server/services/navidrome.nix
-    ../../server/services/searxng.nix
-    ../../server/services/privatebin.nix
-    ../../server/services/stirling-pdf.nix
-    ../../server/services/caddy.nix
-    ../../server/services/cloudflared.nix
-    ../../server/services/postgresql.nix
-    ../../server/services/nextcloud.nix
-    ../../server/services/matrix.nix
-    ../../server/services/filebrowser.nix
+    ../../modules/caddy.nix
+
+    ../../services/adguardhome.nix
+    ../../services/jellyfin.nix
+    ../../services/navidrome.nix
+    ../../services/searxng.nix
+    ../../services/privatebin.nix
+    ../../services/stirling-pdf.nix
+    ../../services/cloudflared.nix
+    ../../services/postgresql.nix
+    ../../services/nextcloud.nix
+    ../../services/matrix.nix
+    ../../services/filebrowser.nix
   ];
 
   networking.hostName = "metatron";
@@ -47,6 +49,7 @@
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "tank" ];
 
+  boot.hibernation.enable = true;
   boot.resumeDevice = "/dev/nvme0n1p2";
   boot.kernelParams = [ "resume_offset=533760" ];  # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 

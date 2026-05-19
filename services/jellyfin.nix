@@ -1,5 +1,7 @@
-{ ... }:
+{ config, ... }:
 {
+  services.caddy.virtualHosts."jellyfin.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8096";
+
   services.jellyfin = {
     enable = true;
     dataDir = "/tank/services/jellyfin";

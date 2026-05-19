@@ -1,5 +1,10 @@
 { config, ... }:
 {
+  services.caddy.virtualHosts = {
+    "searx.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8888";
+    "http://searx.kuroma.dev".extraConfig              = "reverse_proxy localhost:8888";
+  };
+
   sops.secrets."searxng/secret-key" = {};
   sops.templates."searx-env" = {
     content = "SEARX_SECRET_KEY=${config.sops.placeholder."searxng/secret-key"}";

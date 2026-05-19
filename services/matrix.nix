@@ -1,5 +1,23 @@
 { lib, config, ... }:
 {
+  services.caddy.virtualHosts = {
+    "matrix.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8448";
+    "http://matrix.isomorphic.to".extraConfig = ''
+      handle /.well-known/matrix/server {
+        header Content-Type application/json
+        respond `{"m.server":"matrix.isomorphic.to:443"}` 200
+      }
+      handle /.well-known/matrix/client {
+        header Content-Type application/json
+        header Access-Control-Allow-Origin *
+        respond `{"m.homeserver":{"base_url":"https://matrix.isomorphic.to"}}` 200
+      }
+      handle {
+        reverse_proxy localhost:8448
+      }
+    '';
+  };
+
   sops.secrets."matrix/registration-secret" = { owner = "matrix-synapse"; };
   sops.secrets."matrix/macaroon-secret" = { owner = "matrix-synapse"; };
   sops.secrets."matrix/form-secret" = { owner = "matrix-synapse"; };

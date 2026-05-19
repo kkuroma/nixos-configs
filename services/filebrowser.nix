@@ -74,7 +74,7 @@ in
 
   services.caddy.virtualHosts =
     lib.mapAttrs' (name: cfg:
-      lib.nameValuePair "${name}.metatron" {
+      lib.nameValuePair "${name}.${config.networking.hostName}" {
         extraConfig = "tls internal\nreverse_proxy localhost:${toString cfg.port}";
       }
     ) instances

@@ -1,5 +1,7 @@
-{ ... }:
+{ config, ... }:
 {
+  services.caddy.virtualHosts."navidrome.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:4533";
+
   services.navidrome = {
     enable = true;
     settings = {

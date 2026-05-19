@@ -7,8 +7,8 @@
 - `hosts/<name>/` — `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `fstab.nix`.
 - `home/` — shared HM modules. `kuroma.nix` is the desktop entry point (imports + identity + noctalia/GUI extras). `kuroma-server.nix` is the minimal entry point (git, nushell, zsh only — used by metatron). All `.source` refs in `kuroma.nix`.
 - `config/` — static config files, deployed via `.source` in `home/kuroma.nix`.
-- `server/nas/` — ZFS dataset management (`datasets.nix`) and Samba (`smb.nix`). Imported by metatron only.
-- `server/services/` — one file per service, imported by metatron only. No aggregator.
+- `services/` — one file per service, imported selectively per host. No aggregator. Each service file owns its Caddy vhosts (internal + public) using `config.networking.hostName`. Also contains `llama-router/` source tree.
+- `hosts/metatron/` — also contains `datasets.nix` (ZFS dataset management) and `smb.nix` (Samba) since ZFS/NAS is metatron-only.
 
 **Hosts:**
 - `zaphkiel` — x86_64, desktop, NVIDIA RTX, nixpkgs-unstable
@@ -59,37 +59,45 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 
 **ZFS pool (`tank`):**
 - Created with: `zpool create -f -o ashift=12 -O compression=zstd -O atime=off -O xattr=sa -O dnodesize=auto -O normalization=formD -O mountpoint=none tank raidz /dev/disk/by-id/...`
-- Datasets managed declaratively via `server/nas/datasets.nix` — systemd oneshot `zfs-datasets.service` creates, sets quota/reservation, and chmods each dataset on every boot.
+- Datasets managed declaratively via `hosts/metatron/datasets.nix` — systemd oneshot `zfs-datasets.service` creates, sets quota/reservation, and chmods each dataset on every boot.
 - Dataset ownership: `media` group (kuroma + jellyfin + navidrome) gets read access to `/tank/media/*`. NAS personal dirs: ct/pt own their dir (770), family group covers public (775). Service dirs owned by their respective system users.
 - `chown` in dataset script uses `|| true` — datasets for not-yet-enabled services don't fail; ownership applied on next rebuild once service is enabled. **Gotcha:** if a service's system user doesn't exist yet when `zfs-datasets.service` first runs, the chown silently fails and the mountpoint stays root-owned. Fix: restart `zfs-datasets.service` after the rebuild that enables the service, then restart the service.
 
-**NAS / SMB (`server/nas/smb.nix`):**
+**NAS / SMB (`hosts/metatron/smb.nix`):**
 - Samba binds to `lo tailscale0` only (`bind interfaces only = yes`), nmbd disabled (`disable netbios = yes`), wsdd for discovery.
 - Shares: `anime`, `music` (kuroma rw), `kuroma`, `ct`, `pt` (personal), `public` (family group), `backups` (kuroma only).
 - Passwords stored in sops as `samba/{kuroma,ct,pt}`, set via `samba-passwords` systemd oneshot using `smbpasswd`.
 - SMB users: `ct` (uid 1001), `pt` (uid 1002) — `isSystemUser = true`, group `family`, no shell.
 
-**Services (`server/services/`):**
+**Services (`services/`):**
 
-| File | Service | Port | Access |
-|------|---------|------|--------|
-| `adguardhome.nix` | AdGuard Home | DNS :53 tailscale0, web :3000 localhost | internal only |
-| `jellyfin.nix` | Jellyfin | :8096 | internal only |
-| `navidrome.nix` | Navidrome | :4533 | internal only |
-| `searxng.nix` | SearXNG | :8888 | public + internal |
-| `privatebin.nix` | PrivateBin | :8082 (nginx) | public + internal |
-| `stirling-pdf.nix` | Stirling PDF | :8085 | public + internal |
-| `nextcloud.nix` | Nextcloud | :8081 (nginx) | public + internal |
-| `matrix.nix` | Matrix Synapse | :8448 | internal + public (isomorphic.to) |
-| `postgresql.nix` | PostgreSQL | — | shared base (`enable = true` only) |
-| `caddy.nix` | Caddy (reverse proxy) | :80/:443 tailscale0 | routes all |
-| `cloudflared.nix` | Cloudflare Tunnel | — | public ingress |
+`modules/caddy.nix` — shared base (enable + tailscale0 firewall ports). Imported by metatron, zaphkiel, raziel. Each service file adds its own vhosts via `config.networking.hostName` — no central vhost registry.
+
+| File | Service | Port | Hosts | Access |
+|------|---------|------|-------|--------|
+| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron | internal only |
+| `jellyfin.nix` | Jellyfin | :8096 | metatron | internal only |
+| `navidrome.nix` | Navidrome | :4533 | metatron | internal only |
+| `searxng.nix` | SearXNG | :8888 | metatron | public + internal |
+| `privatebin.nix` | PrivateBin | :8082 (nginx) | metatron | public + internal |
+| `stirling-pdf.nix` | Stirling PDF | :8085 | metatron | public + internal |
+| `nextcloud.nix` | Nextcloud | :8081 (nginx) | metatron | public + internal |
+| `matrix.nix` | Matrix Synapse | :8448 | metatron | internal + public (isomorphic.to) |
+| `postgresql.nix` | PostgreSQL | — | metatron | shared base (`enable = true` only) |
+| `filebrowser.nix` | FileBrowser (multi-instance) | :8200+ | metatron | public + internal |
+| `cloudflared.nix` | Cloudflare Tunnel | — | metatron | public ingress |
+| `syncthing.nix` | Syncthing | :8384 | zaphkiel, raziel | internal only |
+| `cockpit.nix` | Cockpit | :9090 | zaphkiel, raziel | internal only |
+| `n8n.nix` | n8n | :5678 | zaphkiel | internal only |
+| `neo4j.nix` | Neo4j | :7474 (http), :7687 (bolt) | zaphkiel | internal only |
+| `llama.nix` | LLaMA router + embedding | :11434/:11435 | zaphkiel | tailscale (direct, no caddy) |
 
 **Service access model:**
-- Internal: `https://<service>.metatron` — AdGuard resolves `*.metatron → 100.107.220.115` (tailscale IP), Caddy routes by Host header with `tls internal` (local CA). Requires setting tailnet DNS to AdGuard in Tailscale admin console.
-- Public (kuroma.dev): `searx/pdf/pastebin/cloud.kuroma.dev` via cloudflared tunnel → localhost:80 → Caddy.
-- Matrix: `matrix.isomorphic.to` — active. Caddy handles `.well-known/matrix/*` responses and proxies to :8448.
-- AdGuard password: stored as plain text in sops `adguard/password`, bcrypt-hashed at service start via `mkpasswd` + `yq` in `preStart = lib.mkAfter`.
+- Internal: `https://<service>.<hostname>` — AdGuard resolves `*.metatron/*.zaphkiel/*.raziel` to each host's tailscale IP. Caddy routes by Host header with `tls internal` (local CA). Requires setting tailnet DNS to AdGuard in Tailscale admin console.
+- Public (kuroma.dev): `searx/pdf/pastebin/cloud/ct-dump.kuroma.dev` via cloudflared → localhost:80 → Caddy on metatron.
+- Matrix: `matrix.isomorphic.to` — active. Caddy handles `.well-known/matrix/*` and proxies to :8448.
+- AdGuard DNS rewrites: `*.metatron → 100.107.220.115`, `*.zaphkiel → 100.91.235.104`, `*.raziel → 100.79.72.120`.
+- AdGuard password: sops `adguard/password` (plain text), bcrypt-hashed at service start via `mkpasswd` + `yq` in `preStart = lib.mkAfter`.
 - SearXNG secret: sops template `searx-env` injects `SEARX_SECRET_KEY` via envsubst.
 
 **PostgreSQL (`postgresql.nix` + per-service):**
@@ -97,11 +105,26 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - Each service manages its own DB setup in its own file. Nextcloud uses `database.createLocally = true`. Matrix uses `ensureUsers` + `postStart = lib.mkAfter` to create with `LC_COLLATE='C'` (required by Synapse; `ensureDatabases` doesn't support collation). Future services follow the same per-file pattern.
 - **Matrix DB gotcha:** `ensureDBOwnership = true` requires a matching `ensureDatabases` entry — NixOS assertion fails if used without it. Omit `ensureDBOwnership` and set `WITH OWNER=` in the `CREATE DATABASE` SQL instead.
 
+**FileBrowser (`filebrowser.nix`):**
+- Multi-instance module — add entries to the `instances` attrset at the top of the file. Each entry generates: a systemd service, a `<name>.metatron` Caddy vhost (tls internal), and a `http://<name>.kuroma.dev` Caddy vhost (public via cloudflared). Also add the hostname to `cloudflared.nix` and create sops secrets `filebrowser/<name>/username` + `filebrowser/<name>/password`.
+- Ports start at :8200, increment by 1 per instance.
+- Each instance runs as its directory's owner (`user`/`group` in the attrset) so there's no ownership conflict with the served root.
+- Init: `ExecStartPre` runs `filebrowser config init`, `config set -r <root>`, `users add` from sops, then removes the default `admin` user (unless the sops username is `admin`). Only runs on first start (guards on DB file existence).
+- DB stored in `/var/lib/filebrowser-<name>/database.db` (systemd `StateDirectory`, owned by the instance user).
+- **Caddy split:** single-instance services (jellyfin, navidrome, etc.) have their vhosts in `caddy.nix`. Multi-instance modules (filebrowser) own their Caddy config internally via `mapAttrs'` — keeps port in one place and avoids drift.
+
+**Current FileBrowser instances:**
+
+| Name | Port | Root | User | Internal | Public |
+|------|------|------|------|----------|--------|
+| `ct-dump` | :8200 | `/tank/nas/ct/dump` | `ct` | `ct-dump.metatron` | `ct-dump.kuroma.dev` |
+
 **Cloudflare tunnel routing** (set in Cloudflare dashboard OR via local `tunnelConfig` in `cloudflared.nix`):
 - `searx.kuroma.dev` → `http://localhost:80`
 - `pdf.kuroma.dev` → `http://localhost:80`
 - `pastebin.kuroma.dev` → `http://localhost:80`
 - `cloud.kuroma.dev` → `http://localhost:80`
+- `ct-dump.kuroma.dev` → `http://localhost:80`
 
 **Domains:** `kuroma.dev` (services), `isomorphic.to` (Matrix only).
 
@@ -164,13 +187,15 @@ Zsh uses `lib.mkOrder 550` for pre-compinit in `programs.zsh.initContent`. `relo
 **direnv infinite loop symptoms:** `nix-direnv: Using cached dev shell` repeating. Causes: unguarded `exec zsh` in shellHook, or any `export`/`PATH_add` in `.envrc` after `use flake`.
 
 ### Networking (`modules/networking.nix`)
-SSH port 22 on `tailscale0` only. Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: TCP 3000 global; 11434+11435 on tailscale0.
+SSH port 22 on `tailscale0` only. Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (llama API + embedding); n8n/neo4j-http go through Caddy. neo4j bolt :7687 open on tailscale0.
 
-### Syncthing (`modules/services.nix`)
-Declarative. Devices: raziel + zaphkiel. Folders: Documents, PrismInstances, Wallpapers. GUI password set via `ExecStartPost` polling health endpoint then PATCHing `/rest/config/gui` with sops secret. Index reset: delete `~/.config/syncthing/index-v2/` on stale machine only.
+### Syncthing (`services/syncthing.nix`)
+Declarative. Devices: raziel + zaphkiel. Folders: Documents, PrismInstances, Wallpapers. GUI password set via `ExecStartPost` polling health endpoint then PATCHing `/rest/config/gui` with sops secret. Index reset: delete `~/.config/syncthing/index-v2/` on stale machine only. Accessible at `syncthing.<hostname>` via Caddy.
 
 ### Backups (zaphkiel, `hosts/zaphkiel/backup.nix`)
 Three rsync systemd timers every 6h (staggered 1h): home→NAS, songs→NAS, anime→NAS. `Persistent = true`.
+
+**metatron home backup: NOT configured.** metatron's `/home` is on btrfs but has no snapper policy and no rsync to tank. The obvious target would be `tank/nas/kuroma` (RAIDZ1, already exists). TODO: add either snapper snapshots, an rsync timer to tank, or both.
 
 ### Users / Auth / Secrets
 `users.mutableUsers = false`. Passwords: `mkpasswd --method=yescrypt`. SSH key-only. Sops: `nix-shell -p sops --run 'sops secrets/secrets.yaml'`. New host: add SSH host key to `.sops.yaml` after first boot.

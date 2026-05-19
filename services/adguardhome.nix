@@ -1,5 +1,7 @@
-{ metatronIP, ... }:
+{ config, metatronIP, zaphkielIP, razielIP, ... }:
 {
+  services.caddy.virtualHosts."adguard.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:3000";
+
   services.adguardhome = {
     enable = true;
     mutableSettings = true;
@@ -13,7 +15,9 @@
         ];
         bootstrap_dns = [ "1.1.1.1" "8.8.8.8" ];
         rewrites = [
-          { domain = "*.metatron"; answer = "${metatronIP}"; }
+          { domain = "*.metatron";  answer = "${metatronIP}"; }
+          { domain = "*.zaphkiel"; answer = "${zaphkielIP}"; }
+          { domain = "*.raziel";   answer = "${razielIP}"; }
         ];
       };
       filters = [

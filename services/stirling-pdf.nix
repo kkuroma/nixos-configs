@@ -1,5 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
+  services.caddy.virtualHosts = {
+    "pdf.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8085";
+    "http://pdf.kuroma.dev".extraConfig             = "reverse_proxy localhost:8085";
+  };
+
   systemd.services.stirling-pdf = {
     description = "Stirling PDF";
     wantedBy = [ "multi-user.target" ];

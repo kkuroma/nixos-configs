@@ -15,11 +15,14 @@
     ../../modules/apps.nix
     ../../modules/autofs.nix
     ../../modules/fonts.nix
+    ../../modules/caddy.nix
     ../../modules/services.nix
     ../../modules/users.nix
     ../../modules/fcitx5.nix
     ../../modules/sops.nix
     ../../modules/virtualization.nix
+    ../../services/syncthing.nix
+    ../../services/cockpit.nix
   ];
 
   networking.hostName = "raziel";

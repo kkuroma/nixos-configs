@@ -61,7 +61,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - Created with: `zpool create -f -o ashift=12 -O compression=zstd -O atime=off -O xattr=sa -O dnodesize=auto -O normalization=formD -O mountpoint=none tank raidz /dev/disk/by-id/...`
 - Datasets managed declaratively via `server/nas/datasets.nix` — systemd oneshot `zfs-datasets.service` creates, sets quota/reservation, and chmods each dataset on every boot.
 - Dataset ownership: `media` group (kuroma + jellyfin + navidrome) gets read access to `/tank/media/*`. NAS personal dirs: ct/pt own their dir (770), family group covers public (775). Service dirs owned by their respective system users.
-- `chown` in dataset script uses `|| true` — datasets for not-yet-enabled services (nextcloud, matrix-synapse) don't fail; ownership applied on next rebuild once service is enabled.
+- `chown` in dataset script uses `|| true` — datasets for not-yet-enabled services don't fail; ownership applied on next rebuild once service is enabled. **Gotcha:** if a service's system user doesn't exist yet when `zfs-datasets.service` first runs, the chown silently fails and the mountpoint stays root-owned. Fix: restart `zfs-datasets.service` after the rebuild that enables the service, then restart the service.
 
 **NAS / SMB (`server/nas/smb.nix`):**
 - Samba binds to `lo tailscale0` only (`bind interfaces only = yes`), nmbd disabled (`disable netbios = yes`), wsdd for discovery.
@@ -79,20 +79,29 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | `searxng.nix` | SearXNG | :8888 | public + internal |
 | `privatebin.nix` | PrivateBin | :8082 (nginx) | public + internal |
 | `stirling-pdf.nix` | Stirling PDF | :8085 | public + internal |
-| `caddy.nix` | Caddy (reverse proxy) | :80 tailscale0 | routes all |
+| `nextcloud.nix` | Nextcloud | :8081 (nginx) | public + internal |
+| `matrix.nix` | Matrix Synapse | :8448 | internal + public (isomorphic.to) |
+| `postgresql.nix` | PostgreSQL | — | shared base (`enable = true` only) |
+| `caddy.nix` | Caddy (reverse proxy) | :80/:443 tailscale0 | routes all |
 | `cloudflared.nix` | Cloudflare Tunnel | — | public ingress |
 
 **Service access model:**
-- Internal: `http://<service>.metatron` — AdGuard resolves `*.metatron → 100.107.220.115` (tailscale IP), Caddy routes by Host header. Requires setting tailnet DNS to AdGuard in Tailscale admin console.
-- Public (kuroma.dev): `searx/pdf/pastebin.kuroma.dev` via cloudflared tunnel → localhost:80 → Caddy.
-- Matrix: `matrix.isomorphic.to` — not yet configured.
+- Internal: `https://<service>.metatron` — AdGuard resolves `*.metatron → 100.107.220.115` (tailscale IP), Caddy routes by Host header with `tls internal` (local CA). Requires setting tailnet DNS to AdGuard in Tailscale admin console.
+- Public (kuroma.dev): `searx/pdf/pastebin/cloud.kuroma.dev` via cloudflared tunnel → localhost:80 → Caddy.
+- Matrix: `matrix.isomorphic.to` — active. Caddy handles `.well-known/matrix/*` responses and proxies to :8448.
 - AdGuard password: stored as plain text in sops `adguard/password`, bcrypt-hashed at service start via `mkpasswd` + `yq` in `preStart = lib.mkAfter`.
 - SearXNG secret: sops template `searx-env` injects `SEARX_SECRET_KEY` via envsubst.
+
+**PostgreSQL (`postgresql.nix` + per-service):**
+- `postgresql.nix` is just `services.postgresql.enable = true` — the shared base.
+- Each service manages its own DB setup in its own file. Nextcloud uses `database.createLocally = true`. Matrix uses `ensureUsers` + `postStart = lib.mkAfter` to create with `LC_COLLATE='C'` (required by Synapse; `ensureDatabases` doesn't support collation). Future services follow the same per-file pattern.
+- **Matrix DB gotcha:** `ensureDBOwnership = true` requires a matching `ensureDatabases` entry — NixOS assertion fails if used without it. Omit `ensureDBOwnership` and set `WITH OWNER=` in the `CREATE DATABASE` SQL instead.
 
 **Cloudflare tunnel routing** (set in Cloudflare dashboard OR via local `tunnelConfig` in `cloudflared.nix`):
 - `searx.kuroma.dev` → `http://localhost:80`
 - `pdf.kuroma.dev` → `http://localhost:80`
 - `pastebin.kuroma.dev` → `http://localhost:80`
+- `cloud.kuroma.dev` → `http://localhost:80`
 
 **Domains:** `kuroma.dev` (services), `isomorphic.to` (Matrix only).
 

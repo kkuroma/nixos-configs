@@ -29,6 +29,7 @@
     ../../server/services/postgresql.nix
     ../../server/services/nextcloud.nix
     ../../server/services/matrix.nix
+    ../../server/services/filebrowser.nix
   ];
 
   networking.hostName = "metatron";

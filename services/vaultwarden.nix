@@ -6,10 +6,12 @@
   };
 
   sops.secrets."vaultwarden/admin-token" = { owner = "vaultwarden"; };
+  sops.secrets."vaultwarden/smtp-password" = { owner = "vaultwarden"; };
 
   sops.templates."vaultwarden-env" = {
     content = ''
       ADMIN_TOKEN=${config.sops.placeholder."vaultwarden/admin-token"}
+      SMTP_PASSWORD=${config.sops.placeholder."vaultwarden/smtp-password"}
     '';
     owner = "vaultwarden";
   };
@@ -28,6 +30,12 @@
       ROCKET_PORT = 8222;
       SIGNUPS_ALLOWED = false;
       DATA_FOLDER = "/tank/services/vaultwarden";
+      SMTP_HOST = "smtp.zoho.com";
+      SMTP_PORT = 587;
+      SMTP_SECURITY = "starttls";
+      SMTP_USERNAME = "contact@kuroma.dev";
+      SMTP_FROM = "contact@kuroma.dev";
+      SMTP_FROM_NAME = "Vaultwarden";
     };
   };
 }

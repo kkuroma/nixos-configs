@@ -84,6 +84,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | `nextcloud.nix` | Nextcloud | :8081 (nginx) | metatron | public + internal |
 | `matrix.nix` | Matrix Synapse | :8448 | metatron | internal + public (isomorphic.to) |
 | `postgresql.nix` | PostgreSQL | — | metatron | shared base (`enable = true` only) |
+| `vaultwarden.nix` | Vaultwarden | :8222 | metatron | public + internal |
 | `filebrowser.nix` | FileBrowser (multi-instance) | :8200+ | metatron | public + internal |
 | `cloudflared.nix` | Cloudflare Tunnel | — | metatron | public ingress |
 | `syncthing.nix` | Syncthing | :8384 | zaphkiel, raziel | internal only |
@@ -101,9 +102,11 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - SearXNG secret: sops template `searx-env` injects `SEARX_SECRET_KEY` via envsubst.
 
 **PostgreSQL (`postgresql.nix` + per-service):**
-- `postgresql.nix` is just `services.postgresql.enable = true` — the shared base.
-- Each service manages its own DB setup in its own file. Nextcloud uses `database.createLocally = true`. Matrix uses `ensureUsers` + `postStart = lib.mkAfter` to create with `LC_COLLATE='C'` (required by Synapse; `ensureDatabases` doesn't support collation). Future services follow the same per-file pattern.
+- `postgresql.nix` is just `services.postgresql.enable = true` — the shared base. Also sets `dataDir = "/tank/services/postgresql"` (dataset: `tank/services/postgresql`, recordsize=8k).
+- Each service manages its own DB setup in its own file. Nextcloud uses `database.createLocally = true`. Matrix uses `ensureUsers` + `systemd.services.postgresql-setup.postStart = lib.mkAfter` to create with `LC_COLLATE='C'` (required by Synapse; `ensureDatabases` doesn't support collation). Future services follow the same per-file pattern.
+- **NixOS 25.11 postgresql-setup.service:** `ensureUsers` and `ensureDatabases` moved out of `postgresql.service`'s `postStart` into a separate `postgresql-setup.service` that runs after the main service. Any custom SQL that references roles must go in `systemd.services.postgresql-setup.postStart = lib.mkAfter`, NOT `systemd.services.postgresql.postStart`. Services that need DB users to exist (nextcloud-setup, matrix-synapse) must declare `after = [ "postgresql-setup.service" ]`.
 - **Matrix DB gotcha:** `ensureDBOwnership = true` requires a matching `ensureDatabases` entry — NixOS assertion fails if used without it. Omit `ensureDBOwnership` and set `WITH OWNER=` in the `CREATE DATABASE` SQL instead.
+- **dataDir migration gotcha:** Changing `dataDir` initializes a fresh empty cluster at the new path — old data is NOT migrated automatically. Old default path is `/var/lib/postgresql/<version>/` (e.g. `/var/lib/postgresql/17/`). Copy old data with rsync if needed, or delete it once confirmed empty. All per-service DB state (users, databases, tables) must be recreated from scratch on a fresh cluster.
 
 **FileBrowser (`filebrowser.nix`):**
 - Multi-instance module — add entries to the `instances` attrset at the top of the file. Each entry generates: a systemd service, a `<name>.metatron` Caddy vhost (tls internal), and a `http://<name>.kuroma.dev` Caddy vhost (public via cloudflared). Also add the hostname to `cloudflared.nix` and create sops secrets `filebrowser/<name>/username` + `filebrowser/<name>/password`.
@@ -125,6 +128,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - `pastebin.kuroma.dev` → `http://localhost:80`
 - `cloud.kuroma.dev` → `http://localhost:80`
 - `ct-dump.kuroma.dev` → `http://localhost:80`
+- `vault.kuroma.dev` → `http://localhost:80`
 
 **Domains:** `kuroma.dev` (services), `isomorphic.to` (Matrix only).
 
@@ -212,3 +216,5 @@ Three rsync systemd timers every 6h (staggered 1h): home→NAS, songs→NAS, ani
 - **code-launcher:** `nohup codium ... &` not `systemd-run --user` (misses WAYLAND_DISPLAY).
 - **Gnome Keyring:** `security.pam.services.greetd.enableGnomeKeyring = true`. If stuck: delete `~/.local/share/keyrings/`.
 - **State versions:** all hosts `stateVersion = "25.11"`. Do not bump.
+- **Vaultwarden `ProtectSystem=strict`:** The NixOS vaultwarden module sets `ProtectSystem=strict`, making the whole filesystem read-only except `StateDirectory` (`/var/lib/vaultwarden`). If `DATA_FOLDER` is outside that (e.g. `/tank/services/vaultwarden`), add `systemd.services.vaultwarden.serviceConfig.ReadWritePaths = [ "/tank/services/vaultwarden" ]` or vaultwarden exits with EROFS (errno 30) on startup.
+- **Nextcloud fresh install recovery:** If `nextcloud-setup` fails mid-install (e.g. race condition against `postgresql-setup.service`), it leaves partial state. To retry cleanly: drop and recreate the `nextcloud` DB (`sudo -u postgres psql -c 'DROP DATABASE "nextcloud";'` + `CREATE DATABASE "nextcloud" OWNER nextcloud;`), then delete both `config.php` and the `data/` dir (`sudo rm -rf /tank/services/nextcloud/data /tank/services/nextcloud/config/config.php`). The error `Login is invalid because files already exist for this user` means `data/admin/` exists from a prior failed run — clear `data/` entirely.

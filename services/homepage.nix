@@ -2,12 +2,16 @@
 {
   sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
   sops.secrets."adguard/password" = { mode = "0444"; };
+  sops.secrets."homepage/navidrome-token" = { mode = "0444"; };
+  sops.secrets."homepage/navidrome-salt" = { mode = "0444"; };
 
   sops.templates."homepage-env" = {
     mode = "0444";
     content = ''
       HOMEPAGE_VAR_JELLYFIN_API_KEY=${config.sops.placeholder."homepage/jellyfin-api-key"}
       HOMEPAGE_VAR_ADGUARD_PASSWORD=${config.sops.placeholder."adguard/password"}
+      HOMEPAGE_VAR_NAVIDROME_TOKEN=${config.sops.placeholder."homepage/navidrome-token"}
+      HOMEPAGE_VAR_NAVIDROME_SALT=${config.sops.placeholder."homepage/navidrome-salt"}
     '';
   };
 
@@ -28,7 +32,8 @@
         Media = { style = "row"; columns = 2; };
         Productivity = { style = "row"; columns = 3; };
         Tools = { style = "row"; columns = 3; };
-        Infrastructure = { style = "row"; columns = 3; };
+        Infrastructure = { style = "row"; columns = 2; };
+        FileBrowsers = { style = "row"; columns = 4; };
       };
     };
 
@@ -80,7 +85,13 @@
               href = "https://navidrome.metatron";
               description = "Music streaming";
               icon = "navidrome.png";
-              ping = "https://navidrome.metatron";
+              widget = {
+                type = "navidrome";
+                url = "http://localhost:4533";
+                user = "kuroma";
+                token = "{{HOMEPAGE_VAR_NAVIDROME_TOKEN}}";
+                salt = "{{HOMEPAGE_VAR_NAVIDROME_SALT}}";
+              };
             };
           }
         ];
@@ -145,7 +156,7 @@
         "Infrastructure" = [
           {
             "AdGuard Home" = {
-              href = "https://adguardhome.metatron";
+              href = "https://adguard.metatron";
               description = "DNS + ad blocking";
               icon = "adguard-home.png";
               widget = {
@@ -164,10 +175,14 @@
               ping = "https://matrix.metatron";
             };
           }
+        ];
+      }
+      {
+        "FileBrowsers" = [
           {
-            FileBrowser = {
+            "ct-dump" = {
               href = "https://ct-dump.metatron";
-              description = "Files";
+              description = "CT's files";
               icon = "filebrowser.png";
               ping = "https://ct-dump.metatron";
             };

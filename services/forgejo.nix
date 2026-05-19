@@ -5,8 +5,8 @@
   sops.secrets."forgejo/oauth2-jwt-secret" = { owner = "forgejo"; };
 
   services.caddy.virtualHosts = {
-    "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:3000";
-    "http://git.kuroma.dev".extraConfig = "reverse_proxy localhost:3000";
+    "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:1412";
+    "http://git.kuroma.dev".extraConfig = "reverse_proxy localhost:1412";
   };
 
   services.forgejo = {
@@ -29,7 +29,7 @@
       server = {
         DOMAIN = "git.kuroma.dev";
         ROOT_URL = "https://git.kuroma.dev";
-        HTTP_PORT = 3000;
+        HTTP_PORT = 1412;
         SSH_PORT = 2222;
         SSH_DOMAIN = "metatron";
       };

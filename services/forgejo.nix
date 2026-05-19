@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   sops.secrets."forgejo/secret-key" = { owner = "forgejo"; };
   sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
@@ -18,11 +18,11 @@
     };
     secrets = {
       security = {
-        SECRET_KEY = config.sops.secrets."forgejo/secret-key".path;
-        INTERNAL_TOKEN = config.sops.secrets."forgejo/internal-token".path;
+        SECRET_KEY = lib.mkForce config.sops.secrets."forgejo/secret-key".path;
+        INTERNAL_TOKEN = lib.mkForce config.sops.secrets."forgejo/internal-token".path;
       };
       oauth2 = {
-        JWT_SECRET = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
+        JWT_SECRET = lib.mkForce config.sops.secrets."forgejo/oauth2-jwt-secret".path;
       };
     };
     settings = {

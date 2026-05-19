@@ -106,6 +106,14 @@ let
       group = "vaultwarden";
       mode = "700";
     };
+    "tank/services/forgejo" = {
+      mountpoint = "/tank/services/forgejo";
+      quota = "256G";
+      reservation = "256G";
+      owner = "forgejo";
+      group = "forgejo";
+      mode = "750";
+    };
     "tank/backups" = {
       mountpoint = "/tank/backups";
       quota = null;

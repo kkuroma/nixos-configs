@@ -17,9 +17,13 @@
       createDatabase = true;
     };
     secrets = {
-      "FORGEJO__SECURITY__SECRET_KEY__FILE" = config.sops.secrets."forgejo/secret-key".path;
-      "FORGEJO__SECURITY__INTERNAL_TOKEN__FILE" = config.sops.secrets."forgejo/internal-token".path;
-      "FORGEJO__OAUTH2__JWT_SECRET__FILE" = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
+      security = {
+        SECRET_KEY = config.sops.secrets."forgejo/secret-key".path;
+        INTERNAL_TOKEN = config.sops.secrets."forgejo/internal-token".path;
+      };
+      oauth2 = {
+        JWT_SECRET = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
+      };
     };
     settings = {
       server = {
@@ -30,6 +34,12 @@
         SSH_DOMAIN = "metatron";
       };
     };
+  };
+
+  # forgejo-secrets.service generates secrets if missing — needs zfs + sops first
+  systemd.services.forgejo-secrets = {
+    after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
+    requires = [ "zfs-datasets.service" ];
   };
 
   systemd.services.forgejo = {

@@ -1,4 +1,4 @@
-{ config, ... }:
+{ lib, config, ... }:
 {
   sops.secrets."matrix/registration-secret" = { owner = "matrix-synapse"; };
   sops.secrets."matrix/macaroon-secret" = { owner = "matrix-synapse"; };
@@ -38,6 +38,17 @@
       media_store_path = "/tank/services/matrix/media";
     };
   };
+
+  services.postgresql.ensureUsers = [{
+    name = "matrix-synapse";
+    ensureDBOwnership = true;
+  }];
+
+  # Synapse requires LC_COLLATE=C; ensureDatabases doesn't support collation
+  systemd.services.postgresql.postStart = lib.mkAfter ''
+    $PSQL -tAc "SELECT 1 FROM pg_database WHERE datname='matrix-synapse'" | grep -q 1 || \
+      $PSQL -tAc "CREATE DATABASE \"matrix-synapse\" WITH OWNER=\"matrix-synapse\" TEMPLATE=template0 LC_COLLATE='C' LC_CTYPE='C' ENCODING='UTF8'"
+  '';
 
   systemd.tmpfiles.rules = [
     "d /tank/services/matrix/media 0700 matrix-synapse matrix-synapse -"

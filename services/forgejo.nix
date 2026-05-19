@@ -36,10 +36,11 @@
     };
   };
 
-  # forgejo-secrets.service generates secrets if missing — needs zfs + sops first
+  # forgejo-secrets.service only writes if files are empty — sops secrets never are,
+  # so it's a no-op. Clear ReadWritePaths so it doesn't need customDir to exist first.
   systemd.services.forgejo-secrets = {
-    after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
-    requires = [ "zfs-datasets.service" ];
+    after = [ "sops-install-secrets.service" ];
+    serviceConfig.ReadWritePaths = lib.mkForce [];
   };
 
   systemd.services.forgejo = {

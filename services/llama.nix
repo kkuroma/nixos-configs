@@ -39,6 +39,11 @@ let
   });
 in
 {
+  services.caddy.virtualHosts = {
+    "llama.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:11434";
+    "llama-emb.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:11435";
+  };
+
   users.users.llama = {
     isSystemUser = true;
     group = "llama";

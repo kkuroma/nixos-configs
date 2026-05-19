@@ -27,7 +27,7 @@
     ../../services/searxng.nix
     ../../services/privatebin.nix
     ../../services/stirling-pdf.nix
-    ../../services/cloudflared.nix
+    ./cloudflared.nix
     ../../services/postgresql.nix
     ../../services/nextcloud.nix
     ../../services/matrix.nix

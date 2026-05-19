@@ -92,6 +92,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | `n8n.nix` | n8n | :5678 | zaphkiel | internal only |
 | `neo4j.nix` | Neo4j | :7474 (http), :7687 (bolt) | zaphkiel | internal only |
 | `llama.nix` | LLaMA router + embedding | :11434/:11435 | zaphkiel | tailscale (direct, no caddy) |
+| `forgejo.nix` | Forgejo | :1412 | metatron | public + internal |
 
 **Service access model:**
 - Internal: `https://<service>.<hostname>` — AdGuard resolves `*.metatron/*.zaphkiel/*.raziel` to each host's tailscale IP. Caddy routes by Host header with `tls internal` (local CA). Requires setting tailnet DNS to AdGuard in Tailscale admin console.
@@ -122,6 +123,15 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 |------|------|------|------|----------|--------|
 | `ct-dump` | :8200 | `/tank/nas/ct/dump` | `ct` | `ct-dump.metatron` | `ct-dump.kuroma.dev` |
 
+**Forgejo (`forgejo.nix`):**
+- Port :1412 (AdGuard owns :3000). SSH for git on port 2222, tailscale only (`SSH_DOMAIN = "metatron"`). HTTPS clone via `git.kuroma.dev` works publicly. State at `/tank/services/forgejo` (dataset: `tank/services/forgejo`, 256G).
+- `services.forgejo.secrets` is `attrsOf (attrsOf path)` mirroring `settings` structure — `{ section.KEY = path; }`, NOT a flat attrset of credential names. Use `lib.mkForce` to override the module's defaults which point to `customDir/conf/`.
+- `forgejo-secrets.service` uses `ReadWritePaths = [ customDir ]` — since sops secrets are never empty the script is a no-op, so clear with `serviceConfig.ReadWritePaths = lib.mkForce []` to avoid needing `customDir` to exist before the service starts.
+- `customDir` (`/tank/services/forgejo/custom`) and `customDir/conf/` don't exist on a fresh ZFS dataset. Use a `forgejo-init-dirs` oneshot service (`After=zfs-datasets.service`, `install -d -m 750 -o forgejo`) and add it to `forgejo.service`'s `after`/`requires`.
+- **Forgejo 11.x app.ini write gotcha:** `loadOAuth2From()` tries to write to `app.ini` on startup, but the pre-start sets it read-only (`chmod u-w`). Fix: `systemd.services.forgejo.serviceConfig.ExecStartPre = lib.mkAfter [ "+${pkgs.coreutils}/bin/chmod u+w .../app.ini" ]`.
+- `forgejo.service` needs `After=postgresql-setup.service` (NixOS 25.11 — same as other pg-dependent services).
+- sops secrets: `forgejo/secret-key`, `forgejo/internal-token`, `forgejo/oauth2-jwt-secret` (metatron has no LUKS so ZFS is unencrypted — store these in sops).
+
 **Cloudflare tunnel routing** (set in Cloudflare dashboard OR via local `tunnelConfig` in `cloudflared.nix`):
 - `searx.kuroma.dev` → `http://localhost:80`
 - `pdf.kuroma.dev` → `http://localhost:80`
@@ -129,6 +139,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - `cloud.kuroma.dev` → `http://localhost:80`
 - `ct-dump.kuroma.dev` → `http://localhost:80`
 - `vault.kuroma.dev` → `http://localhost:80`
+- `git.kuroma.dev` → `http://localhost:80`
 
 **Domains:** `kuroma.dev` (services), `isomorphic.to` (Matrix only).
 

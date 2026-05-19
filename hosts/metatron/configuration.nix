@@ -34,6 +34,7 @@
     ../../services/filebrowser.nix
     ../../services/vaultwarden.nix
     ../../services/forgejo.nix
+    ../../services/homepage.nix
   ];
 
   networking.hostName = "metatron";

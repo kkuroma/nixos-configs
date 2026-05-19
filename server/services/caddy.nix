@@ -17,7 +17,8 @@
       "http://searx.kuroma.dev".extraConfig    = "reverse_proxy localhost:8888";
       "http://pdf.kuroma.dev".extraConfig      = "reverse_proxy localhost:8085";
       "http://pastebin.kuroma.dev".extraConfig = "reverse_proxy localhost:8082";
-      "http://cloud.kuroma.dev".extraConfig    = "reverse_proxy localhost:8081";
+      "http://cloud.kuroma.dev".extraConfig      = "reverse_proxy localhost:8081";
+      "http://ct-dump.kuroma.dev".extraConfig   = "reverse_proxy localhost:8200";
       "http://matrix.isomorphic.to".extraConfig = ''
         handle /.well-known/matrix/server {
           header Content-Type application/json

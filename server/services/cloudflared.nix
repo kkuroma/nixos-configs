@@ -10,6 +10,8 @@ let
         service: http://localhost:80
       - hostname: cloud.kuroma.dev
         service: http://localhost:80
+      - hostname: ct-dump.kuroma.dev
+        service: http://localhost:80
       - hostname: matrix.isomorphic.to
         service: http://localhost:80
       - service: http_status:404

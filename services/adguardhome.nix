@@ -8,7 +8,7 @@
     host = "127.0.0.1";
     settings = {
       dns = {
-        bind_hosts = [ "${metatronIP}" ];
+        bind_hosts = [ "0.0.0.0" ];
         port = 53;
         upstream_dns = [
           "https://dns.mullvad.net/dns-query"

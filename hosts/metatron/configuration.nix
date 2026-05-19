@@ -5,8 +5,8 @@
     ./hardware-configuration.nix
     ./fstab.nix
 
-    ./datasets.nix
-    ./smb.nix
+    ./nas/datasets.nix
+    ./nas/smb.nix
 
     ../../modules/boot.nix
     ../../modules/locale.nix

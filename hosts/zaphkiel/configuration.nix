@@ -21,6 +21,7 @@
     ../../modules/sops.nix
     ../../modules/virtualization.nix
     ../../modules/codiumserver.nix
+    ../../services/adguardhome.nix
     ../../services/syncthing.nix
     ../../services/cockpit.nix
     ../../services/n8n.nix

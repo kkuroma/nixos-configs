@@ -1,4 +1,18 @@
 { config, ... }:
+let
+  wallpaper = ../homepage-wallpaper.png;
+
+  # Natsumikan dark palette
+  bg      = "#0D1017";
+  surface = "#171D26";
+  primary = "#F5803E";
+  # secondary = "#C792EA";
+  tertiary = "#39BAE6";
+  text    = "#D1D1C7";
+  muted   = "#8E959E";
+  border  = "#242C3A";
+  green   = "#AAD94C";
+in
 {
   sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
   sops.secrets."adguard/password" = { mode = "0444"; };
@@ -23,7 +37,16 @@
     '';
   };
 
-  services.caddy.virtualHosts."homepage.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8083";
+  # Serve the wallpaper from the Nix store via a Caddy handle block
+  services.caddy.virtualHosts."homepage.${config.networking.hostName}".extraConfig = ''
+    tls internal
+    handle /wallpaper.png {
+      root * /
+      rewrite * ${wallpaper}
+      file_server
+    }
+    reverse_proxy localhost:8083
+  '';
 
   systemd.services.homepage-dashboard = {
     after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
@@ -48,8 +71,13 @@
       color = "slate";
       headerStyle = "clean";
       cardBlur = "md";
-      # To add a wallpaper, set: background.image = "https://...";
-      # background = { image = ""; blur = "sm"; brightness = 50; opacity = 80; };
+      background = {
+        image = "/wallpaper.png";
+        blur = "sm";
+        saturate = 100;
+        brightness = 60;
+        opacity = 85;
+      };
       layout = {
         Media        = { style = "row"; columns = 2; };
         Productivity = { style = "row"; columns = 3; };
@@ -60,63 +88,117 @@
     };
 
     customCSS = ''
-      /* ── top widget bar: search fills left, date+weather pin right ── */
-      #information-widgets {
+      /* ── Natsumikan palette ── */
+      :root {
+        --n-bg:      ${bg};
+        --n-surface: ${surface};
+        --n-primary: ${primary};
+        --n-tertiary:${tertiary};
+        --n-text:    ${text};
+        --n-muted:   ${muted};
+        --n-border:  ${border};
+        --n-green:   ${green};
+      }
+
+      /* ── page base ── */
+      body {
+        background-color: var(--n-bg);
+        color: var(--n-text);
+      }
+
+      /* ── glassmorphism cards (.service confirmed) ── */
+      .service {
+        background: rgba(23, 29, 38, 0.72) !important;
+        border: 1px solid ${border} !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      /* ── theme color overrides with Natsumikan palette ── */
+      .primary-text,
+      .text-theme-800,
+      .text-theme-900,
+      .dark .dark\:text-theme-200 { color: ${text} !important; }
+      .secondary-text,
+      .text-theme-700,
+      .dark .dark\:text-theme-300 { color: ${muted} !important; }
+
+      /* ── links ── */
+      a { color: var(--n-text); transition: color 0.15s ease; }
+      a:hover { color: ${primary} !important; }
+
+      /* ── search input ── */
+      input[type="text"],
+      input[type="search"] {
+        background: rgba(23, 29, 38, 0.9) !important;
+        border: 1px solid ${border} !important;
+        color: ${text} !important;
+        border-radius: 0.5rem;
+      }
+      .placeholder-theme-900::placeholder { color: ${muted} !important; }
+      input:focus {
+        border-color: ${primary} !important;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(245, 128, 62, 0.25);
+      }
+
+      /* ── widget bar: both halves share layout ── */
+      #widgets-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+      }
+      #information-widgets,
+      #information-widgets-right {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 0.75rem;
-        padding: 0.75rem 1rem;
       }
 
-      /* search bar stretches to fill available space */
-      #information-widgets .search-widget {
-        flex: 1 1 300px;
+      /* ── datetime: full-width title row with hostname prefix ── */
+      .information-widget-datetime {
+        flex: 0 0 100% !important;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid ${border};
+      }
+      .information-widget-datetime::before {
+        content: "metatron \2014\0020";
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: ${primary};
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
 
-      /* date + weather stay compact on the right */
-      #information-widgets .datetime-widget,
-      #information-widgets .openmeteo-widget {
-        flex: 0 0 auto;
+      /* ── resource monitors: even row ── */
+      .information-widget-resource {
+        flex: 1 1 140px !important;
       }
 
-      /* resource widgets sit on their own row below */
-      #information-widgets .resources-widget {
-        flex: 1 1 160px;
-      }
+      /* ── search expands, weather compact ── */
+      .information-widget-search { flex: 1 1 300px !important; }
+      .information-widget-openmeteo { flex: 0 0 auto !important; }
 
-      /* ── center all service sections on the page ── */
-      #services-container {
+      /* ── center services ── */
+      #page_wrapper {
         max-width: 1400px;
         margin: 0 auto;
       }
 
-      /* ── subtle glassmorphism on cards ── */
-      .card {
-        background: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(148, 163, 184, 0.08) !important;
-      }
-
-      /* ── section headers ── */
-      .service-category-title {
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        opacity: 0.5;
-      }
+      /* ── scrollbar ── */
+      ::-webkit-scrollbar       { width: 5px; }
+      ::-webkit-scrollbar-track { background: ${bg}; }
+      ::-webkit-scrollbar-thumb { background: ${border}; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: ${primary}; }
     '';
 
     widgets = [
-      # ── top row ──
-      {
-        search = {
-          provider = "custom";
-          url = "https://searx.kuroma.dev/search?q=";
-          target = "_blank";
-          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
-          showSearchSuggestions = true;
-        };
-      }
+      # ── 1st: title row (hostname + datetime via CSS ::before) ──
       {
         datetime = {
           text_size = "xl";
@@ -128,17 +210,7 @@
           };
         };
       }
-      {
-        openmeteo = {
-          label = "{{HOMEPAGE_VAR_LOCATION}}";
-          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
-          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
-          units = "imperial";
-          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
-          cache = 5;
-        };
-      }
-      # ── system monitors ──
+      # ── 2nd–6th: system monitors ──
       {
         resources = {
           label = "System";
@@ -169,6 +241,26 @@
         resources = {
           label = "Backups";
           disk = "/tank/backups";
+        };
+      }
+      # ── 7th–8th: search + weather ──
+      {
+        search = {
+          provider = "custom";
+          url = "https://searx.kuroma.dev/search?q=";
+          target = "_blank";
+          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
+          showSearchSuggestions = true;
+        };
+      }
+      {
+        openmeteo = {
+          label = "{{HOMEPAGE_VAR_LOCATION}}";
+          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
+          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
+          units = "imperial";
+          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
+          cache = 5;
         };
       }
     ];

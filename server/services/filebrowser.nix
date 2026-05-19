@@ -37,7 +37,11 @@ let
           if [ ! -f "$DB" ]; then
             USERNAME="$(cat ${config.sops.secrets."filebrowser/${name}/username".path})"
             PASSWORD="$(cat ${config.sops.secrets."filebrowser/${name}/password".path})"
+            ${fb} config init -d "$DB"
+            ${fb} config set -d "$DB" -r ${lib.escapeShellArg cfg.root}
             ${fb} users add "$USERNAME" "$PASSWORD" --perm.admin -d "$DB"
+            # remove the default admin/admin created by config init, unless our user IS admin
+            [ "$USERNAME" != "admin" ] && ${fb} users rm admin -d "$DB" || true
           fi
         '';
         ExecStart = "${fb} --config ${configFile}";

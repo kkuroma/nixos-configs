@@ -9,16 +9,15 @@
       "adguard.metatron".extraConfig = "tls internal\nreverse_proxy localhost:3000";
       "searx.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8888";
       "pdf.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8085";
-      "pastebin.metatron".extraConfig  = "tls internal\nreverse_proxy localhost:8082";
+      "pastebin.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8082";
       "nextcloud.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8081";
-      "matrix.metatron".extraConfig    = "tls internal\nreverse_proxy localhost:8448";
+      "matrix.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8448";
 
       # Public: cloudflared tunnels to localhost:80, Caddy routes by Host
-      "http://searx.kuroma.dev".extraConfig    = "reverse_proxy localhost:8888";
-      "http://pdf.kuroma.dev".extraConfig      = "reverse_proxy localhost:8085";
+      "http://searx.kuroma.dev".extraConfig = "reverse_proxy localhost:8888";
+      "http://pdf.kuroma.dev".extraConfig = "reverse_proxy localhost:8085";
       "http://pastebin.kuroma.dev".extraConfig = "reverse_proxy localhost:8082";
-      "http://cloud.kuroma.dev".extraConfig      = "reverse_proxy localhost:8081";
-      "http://ct-dump.kuroma.dev".extraConfig   = "reverse_proxy localhost:8200";
+      "http://cloud.kuroma.dev".extraConfig = "reverse_proxy localhost:8081";
       "http://matrix.isomorphic.to".extraConfig = ''
         handle /.well-known/matrix/server {
           header Content-Type application/json
@@ -34,6 +33,10 @@
         }
       '';
     };
+
+    # Filebrowser: 1 instances per port (8200++)
+    "ct-dump.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8200";
+    "http://ct-dump.kuroma.dev".extraConfig = "reverse_proxy localhost:8200";
   };
 
   # 80 for cloudflared public ingress, 443 for internal HTTPS

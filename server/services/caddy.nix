@@ -33,10 +33,6 @@
         }
       '';
     };
-
-    # Filebrowser: 1 instances per port (8200++)
-    "ct-dump.metatron".extraConfig = "tls internal\nreverse_proxy localhost:8200";
-    "http://ct-dump.kuroma.dev".extraConfig = "reverse_proxy localhost:8200";
   };
 
   # 80 for cloudflared public ingress, 443 for internal HTTPS

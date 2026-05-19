@@ -72,9 +72,16 @@ in
     lib.nameValuePair "filebrowser-${name}" (mkService name cfg)
   ) instances;
 
-  services.caddy.virtualHosts = lib.mapAttrs' (name: cfg:
-    lib.nameValuePair "${name}.metatron" {
-      extraConfig = "tls internal\nreverse_proxy localhost:${toString cfg.port}";
-    }
-  ) instances;
+  services.caddy.virtualHosts =
+    lib.mapAttrs' (name: cfg:
+      lib.nameValuePair "${name}.metatron" {
+        extraConfig = "tls internal\nreverse_proxy localhost:${toString cfg.port}";
+      }
+    ) instances
+    //
+    lib.mapAttrs' (name: cfg:
+      lib.nameValuePair "http://${name}.kuroma.dev" {
+        extraConfig = "reverse_proxy localhost:${toString cfg.port}";
+      }
+    ) instances;
 }

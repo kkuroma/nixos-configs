@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 {
   sops.secrets."forgejo/secret-key" = { owner = "forgejo"; };
   sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
@@ -43,9 +43,20 @@
     serviceConfig.ReadWritePaths = lib.mkForce [];
   };
 
+  # Create custom/conf dirs on ZFS after dataset is mounted
+  systemd.services.forgejo-init-dirs = {
+    description = "Create Forgejo directory structure on ZFS";
+    after = [ "zfs-datasets.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.coreutils}/bin/install -d -m 750 -o forgejo -g forgejo /tank/services/forgejo/custom /tank/services/forgejo/custom/conf";
+    };
+  };
+
   systemd.services.forgejo = {
-    after = [ "zfs-datasets.service" "postgresql-setup.service" ];
-    requires = [ "zfs-datasets.service" "postgresql-setup.service" ];
+    after = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
+    requires = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
   };
 
   # git SSH on port 2222, tailscale only

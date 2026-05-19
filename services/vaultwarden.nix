@@ -21,7 +21,6 @@
       DOMAIN = "https://vault.kuroma.dev";
       ROCKET_PORT = 8222;
       SIGNUPS_ALLOWED = false;
-      SMTP_FROM = "contact@kuroma.dev";
     };
   };
 }

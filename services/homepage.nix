@@ -1,11 +1,23 @@
 { config, ... }:
 {
+  sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
+  sops.secrets."adguard/password" = { mode = "0444"; };
+
+  sops.templates."homepage-env" = {
+    mode = "0444";
+    content = ''
+      HOMEPAGE_VAR_JELLYFIN_API_KEY=${config.sops.placeholder."homepage/jellyfin-api-key"}
+      HOMEPAGE_VAR_ADGUARD_PASSWORD=${config.sops.placeholder."adguard/password"}
+    '';
+  };
+
   services.caddy.virtualHosts."homepage.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8083";
 
   services.homepage-dashboard = {
     enable = true;
     listenPort = 8083;
     allowedHosts = "localhost:8083,homepage.${config.networking.hostName}";
+    environmentFile = config.sops.templates."homepage-env".path;
 
     settings = {
       title = "metatron";
@@ -55,7 +67,12 @@
               href = "https://jellyfin.metatron";
               description = "Media server";
               icon = "jellyfin.png";
-              ping = "https://jellyfin.metatron";
+              widget = {
+                type = "jellyfin";
+                url = "http://localhost:8096";
+                key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
+                enableBlocks = true;
+              };
             };
           }
           {
@@ -131,7 +148,12 @@
               href = "https://adguardhome.metatron";
               description = "DNS + ad blocking";
               icon = "adguard-home.png";
-              ping = "https://adguardhome.metatron";
+              widget = {
+                type = "adguard";
+                url = "http://localhost:3000";
+                username = "adguard-admin";
+                password = "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}";
+              };
             };
           }
           {

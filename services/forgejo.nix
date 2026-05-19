@@ -17,9 +17,9 @@
       createDatabase = true;
     };
     secrets = {
-      secretKeyFile = config.sops.secrets."forgejo/secret-key".path;
-      internalTokenFile = config.sops.secrets."forgejo/internal-token".path;
-      jwtSecretFile = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
+      "FORGEJO__SECURITY__SECRET_KEY__FILE" = config.sops.secrets."forgejo/secret-key".path;
+      "FORGEJO__SECURITY__INTERNAL_TOKEN__FILE" = config.sops.secrets."forgejo/internal-token".path;
+      "FORGEJO__OAUTH2__JWT_SECRET__FILE" = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
     };
     settings = {
       server = {

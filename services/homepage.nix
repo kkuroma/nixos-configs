@@ -47,16 +47,98 @@
       theme = "dark";
       color = "slate";
       headerStyle = "clean";
+      cardBlur = "md";
+      # To add a wallpaper, set: background.image = "https://...";
+      # background = { image = ""; blur = "sm"; brightness = 50; opacity = 80; };
       layout = {
-        Media = { style = "row"; columns = 2; };
+        Media        = { style = "row"; columns = 2; };
         Productivity = { style = "row"; columns = 3; };
-        Tools = { style = "row"; columns = 3; };
+        Tools        = { style = "row"; columns = 3; };
         Infrastructure = { style = "row"; columns = 2; };
         FileBrowsers = { style = "row"; columns = 4; };
       };
     };
 
+    customCSS = ''
+      /* ── top widget bar: search fills left, date+weather pin right ── */
+      #information-widgets {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+      }
+
+      /* search bar stretches to fill available space */
+      #information-widgets .search-widget {
+        flex: 1 1 300px;
+      }
+
+      /* date + weather stay compact on the right */
+      #information-widgets .datetime-widget,
+      #information-widgets .openmeteo-widget {
+        flex: 0 0 auto;
+      }
+
+      /* resource widgets sit on their own row below */
+      #information-widgets .resources-widget {
+        flex: 1 1 160px;
+      }
+
+      /* ── center all service sections on the page ── */
+      #services-container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* ── subtle glassmorphism on cards ── */
+      .card {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(148, 163, 184, 0.08) !important;
+      }
+
+      /* ── section headers ── */
+      .service-category-title {
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        opacity: 0.5;
+      }
+    '';
+
     widgets = [
+      # ── top row ──
+      {
+        search = {
+          provider = "custom";
+          url = "https://searx.kuroma.dev/search?q=";
+          target = "_blank";
+          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
+          showSearchSuggestions = true;
+        };
+      }
+      {
+        datetime = {
+          text_size = "xl";
+          locale = "ja-JP";
+          format = {
+            timeStyle = "short";
+            dateStyle = "short";
+            hour12 = false;
+          };
+        };
+      }
+      {
+        openmeteo = {
+          label = "{{HOMEPAGE_VAR_LOCATION}}";
+          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
+          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
+          units = "imperial";
+          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
+          cache = 5;
+        };
+      }
+      # ── system monitors ──
       {
         resources = {
           label = "System";
@@ -87,36 +169,6 @@
         resources = {
           label = "Backups";
           disk = "/tank/backups";
-        };
-      }
-      {
-        search = {
-          provider = "custom";
-          url = "https://searx.kuroma.dev/search?q=";
-          target = "_blank";
-          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
-          showSearchSuggestions = true;
-        };
-      }
-      {
-        openmeteo = {
-          label = "{{HOMEPAGE_VAR_LOCATION}}";
-          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
-          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
-          units = "imperial";
-          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
-          cache = 5;
-        };
-      }
-      {
-        datetime = {
-          text_size = "xl";
-          locale = "ja-JP";
-          format = {
-            timeStyle = "short";
-            dateStyle = "short";
-            hour12 = false;
-          };
         };
       }
     ];
@@ -213,7 +265,7 @@
         "Infrastructure" = [
           {
             "AdGuard Home" = {
-              href = "https://adguard.metatron";
+              href = "https://adguardhome.metatron";
               description = "DNS + ad blocking";
               icon = "adguard-home.png";
               widget = {

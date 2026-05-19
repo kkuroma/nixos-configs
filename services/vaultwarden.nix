@@ -21,6 +21,7 @@
       DOMAIN = "https://vault.kuroma.dev";
       ROCKET_PORT = 8222;
       SIGNUPS_ALLOWED = false;
+      DATA_FOLDER = "/tank/services/vaultwarden";
     };
   };
 }

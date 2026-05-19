@@ -90,6 +90,22 @@ let
       group = "privatebin";
       mode = "700";
     };
+    "tank/services/postgresql" = {
+      mountpoint = "/tank/services/postgresql";
+      quota = "32G";
+      reservation = "32G";
+      owner = "postgres";
+      group = "postgres";
+      mode = "700";
+    };
+    "tank/services/vaultwarden" = {
+      mountpoint = "/tank/services/vaultwarden";
+      quota = "2G";
+      reservation = "2G";
+      owner = "vaultwarden";
+      group = "vaultwarden";
+      mode = "700";
+    };
     "tank/backups" = {
       mountpoint = "/tank/backups";
       quota = null;
@@ -104,6 +120,7 @@ let
     zfs create -p -o mountpoint=${cfg.mountpoint} ${name} 2>/dev/null || true
     ${lib.optionalString (cfg.quota != null) "zfs set quota=${cfg.quota} ${name}"}
     ${lib.optionalString (cfg.reservation != null) "zfs set reservation=${cfg.reservation} ${name}"}
+    ${lib.optionalString (name == "tank/services/postgresql") "zfs set recordsize=8k ${name}"}
     chown ${cfg.owner}:${cfg.group} ${cfg.mountpoint} 2>/dev/null || true
     chmod ${cfg.mode} ${cfg.mountpoint}
   '';

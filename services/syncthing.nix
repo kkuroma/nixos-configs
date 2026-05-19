@@ -6,6 +6,7 @@
     enable = true;
     user = username;
     dataDir = "/home/${username}";
+    settings.gui.insecureSkipHostcheck = true;
     settings.devices = {
       raziel.id   = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
       zaphkiel.id = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";

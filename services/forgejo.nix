@@ -57,6 +57,11 @@
   systemd.services.forgejo = {
     after = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
     requires = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
+    # Forgejo 11.x writes to app.ini on startup (oauth2 init); the pre-start sets
+    # it read-only after injecting secrets, so we re-enable writes before ExecStart.
+    serviceConfig.ExecStartPre = lib.mkAfter [
+      "+${pkgs.coreutils}/bin/chmod u+w /tank/services/forgejo/custom/conf/app.ini"
+    ];
   };
 
   # git SSH on port 2222, tailscale only

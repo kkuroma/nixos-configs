@@ -17,6 +17,12 @@
 
   services.caddy.virtualHosts."homepage.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8083";
 
+  systemd.services.homepage-dashboard = {
+    after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
+    requires = [ "zfs-datasets.service" ];
+    serviceConfig.BindReadOnlyPaths = [ "/tank" ];
+  };
+
   services.homepage-dashboard = {
     enable = true;
     listenPort = 8083;
@@ -48,8 +54,26 @@
       }
       {
         resources = {
-          label = "Tank (ZFS)";
-          disk = "/tank";
+          label = "Anime";
+          disk = "/tank/media/anime";
+        };
+      }
+      {
+        resources = {
+          label = "Music";
+          disk = "/tank/media/music";
+        };
+      }
+      {
+        resources = {
+          label = "Public NAS";
+          disk = "/tank/nas/public";
+        };
+      }
+      {
+        resources = {
+          label = "Backups";
+          disk = "/tank/backups";
         };
       }
       {

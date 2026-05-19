@@ -50,6 +50,7 @@
   boot.zfs.extraPools = [ "tank" ];
 
   boot.zfs.allowHibernation = true;
+  boot.zfs.forceImportAll = false;
   boot.resumeDevice = "/dev/nvme0n1p2";
   boot.kernelParams = [ "resume_offset=533760" ];  # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 

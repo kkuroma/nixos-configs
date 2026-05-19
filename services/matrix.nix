@@ -61,8 +61,9 @@
     name = "matrix-synapse";
   }];
 
-  # Synapse requires LC_COLLATE=C; ensureDatabases doesn't support collation
-  systemd.services.postgresql.postStart = lib.mkAfter ''
+  # Synapse requires LC_COLLATE=C; ensureDatabases doesn't support collation.
+  # Must run after postgresql-setup.service (NixOS 25.11+) which creates the matrix-synapse role.
+  systemd.services.postgresql-setup.postStart = lib.mkAfter ''
     psql -tAc "SELECT 1 FROM pg_database WHERE datname='matrix-synapse'" | grep -q 1 || psql -tAc "CREATE DATABASE \"matrix-synapse\" WITH OWNER=\"matrix-synapse\" TEMPLATE=template0 LC_COLLATE='C' LC_CTYPE='C' ENCODING='UTF8'"
   '';
 

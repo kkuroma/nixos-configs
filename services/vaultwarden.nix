@@ -17,6 +17,7 @@
   systemd.services.vaultwarden = {
     after = [ "zfs-datasets.service" ];
     requires = [ "zfs-datasets.service" ];
+    serviceConfig.ReadWritePaths = [ "/tank/services/vaultwarden" ];
   };
 
   services.vaultwarden = {

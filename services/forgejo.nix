@@ -1,5 +1,9 @@
 { config, ... }:
 {
+  sops.secrets."forgejo/secret-key" = { owner = "forgejo"; };
+  sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
+  sops.secrets."forgejo/oauth2-jwt-secret" = { owner = "forgejo"; };
+
   services.caddy.virtualHosts = {
     "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:3000";
     "http://git.kuroma.dev".extraConfig = "reverse_proxy localhost:3000";
@@ -11,6 +15,11 @@
     database = {
       type = "postgres";
       createDatabase = true;
+    };
+    secrets = {
+      secretKeyFile = config.sops.secrets."forgejo/secret-key".path;
+      internalTokenFile = config.sops.secrets."forgejo/internal-token".path;
+      jwtSecretFile = config.sops.secrets."forgejo/oauth2-jwt-secret".path;
     };
     settings = {
       server = {

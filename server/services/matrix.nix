@@ -41,13 +41,11 @@
 
   services.postgresql.ensureUsers = [{
     name = "matrix-synapse";
-    ensureDBOwnership = true;
   }];
 
   # Synapse requires LC_COLLATE=C; ensureDatabases doesn't support collation
   systemd.services.postgresql.postStart = lib.mkAfter ''
-    $PSQL -tAc "SELECT 1 FROM pg_database WHERE datname='matrix-synapse'" | grep -q 1 || \
-      $PSQL -tAc "CREATE DATABASE \"matrix-synapse\" WITH OWNER=\"matrix-synapse\" TEMPLATE=template0 LC_COLLATE='C' LC_CTYPE='C' ENCODING='UTF8'"
+    psql -tAc "SELECT 1 FROM pg_database WHERE datname='matrix-synapse'" | grep -q 1 || psql -tAc "CREATE DATABASE \"matrix-synapse\" WITH OWNER=\"matrix-synapse\" TEMPLATE=template0 LC_COLLATE='C' LC_CTYPE='C' ENCODING='UTF8'"
   '';
 
   systemd.tmpfiles.rules = [

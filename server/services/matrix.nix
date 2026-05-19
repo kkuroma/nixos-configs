@@ -41,6 +41,7 @@
 
   systemd.tmpfiles.rules = [
     "d /tank/services/matrix/media 0700 matrix-synapse matrix-synapse -"
+    "z /tank/services/matrix/media 0700 matrix-synapse matrix-synapse -"
   ];
 
   systemd.services.matrix-synapse = {

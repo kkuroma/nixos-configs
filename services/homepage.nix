@@ -4,6 +4,9 @@
   sops.secrets."adguard/password" = { mode = "0444"; };
   sops.secrets."homepage/navidrome-token" = { mode = "0444"; };
   sops.secrets."homepage/navidrome-salt" = { mode = "0444"; };
+  sops.secrets."homepage/${config.networking.hostName}/latitude" = { mode = "0444"; };
+  sops.secrets."homepage/${config.networking.hostName}/longitude" = { mode = "0444"; };
+  sops.secrets."homepage/${config.networking.hostName}/location" = { mode = "0444"; };
 
   sops.templates."homepage-env" = {
     mode = "0444";
@@ -12,6 +15,9 @@
       HOMEPAGE_VAR_ADGUARD_PASSWORD=${config.sops.placeholder."adguard/password"}
       HOMEPAGE_VAR_NAVIDROME_TOKEN=${config.sops.placeholder."homepage/navidrome-token"}
       HOMEPAGE_VAR_NAVIDROME_SALT=${config.sops.placeholder."homepage/navidrome-salt"}
+      HOMEPAGE_VAR_LATITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/latitude"}
+      HOMEPAGE_VAR_LONGITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/longitude"}
+      HOMEPAGE_VAR_LOCATION=${config.sops.placeholder."homepage/${config.networking.hostName}/location"}
     '';
   };
 
@@ -74,6 +80,15 @@
         resources = {
           label = "Backups";
           disk = "/tank/backups";
+        };
+      }
+      {
+        openmeteo = {
+          label = "{{HOMEPAGE_VAR_LOCATION}}";
+          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
+          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
+          units = "imperial";
+          cache = 5;
         };
       }
       {

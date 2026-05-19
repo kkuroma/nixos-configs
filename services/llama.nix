@@ -90,8 +90,8 @@ in
         "--embedding --pooling cls"
         "--ctx-size 2048 --parallel 4 --n-gpu-layers -1"
       ];
-      User       = "llama";
-      Restart    = "on-failure";
+      User = "llama";
+      Restart = "on-failure";
       RestartSec = "5s";
     };
   };

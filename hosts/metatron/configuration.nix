@@ -32,6 +32,7 @@
     ../../services/nextcloud.nix
     ../../services/matrix.nix
     ../../services/filebrowser.nix
+    ../../services/vaultwarden.nix
   ];
 
   networking.hostName = "metatron";

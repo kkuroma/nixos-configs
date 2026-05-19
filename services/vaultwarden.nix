@@ -14,6 +14,11 @@
     owner = "vaultwarden";
   };
 
+  systemd.services.vaultwarden = {
+    after = [ "zfs-datasets.service" ];
+    requires = [ "zfs-datasets.service" ];
+  };
+
   services.vaultwarden = {
     enable = true;
     environmentFile = config.sops.templates."vaultwarden-env".path;

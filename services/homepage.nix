@@ -1,6 +1,21 @@
 { config, ... }:
 let
   wallpaper = ../homepage-wallpaper.png;
+
+  # Natsumikan dark palette
+  bg        = "#0D1017";
+  surface   = "#171D26";
+  overlay   = "#1E2433";
+  text      = "#D1D1C7";
+  muted     = "#8E959E";
+  border    = "#242C3A";
+  primary   = "#F5803E";   # orange
+  secondary = "#C792EA";   # purple
+  tertiary  = "#39BAE6";   # cyan
+  green     = "#AAD94C";
+  red       = "#FF5370";
+  yellow    = "#FFB454";
+  blue      = "#82AAFF";
 in
 {
   sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
@@ -26,7 +41,6 @@ in
     '';
   };
 
-  # Serve the wallpaper from the Nix store via a Caddy handle block
   services.caddy.virtualHosts."homepage.${config.networking.hostName}".extraConfig = ''
     tls internal
     handle /wallpaper.png {
@@ -62,6 +76,7 @@ in
       iconStyle = "theme";
       cardBlur = "md";
       statusStyle = "dot";
+      hideVersion = true;
       background = {
         image = "/wallpaper.png";
         blur = "md";
@@ -70,151 +85,121 @@ in
         opacity = 85;
       };
       layout = {
-        Media        = { style = "row"; columns = 2; };
-        Productivity = { style = "row"; columns = 3; };
-        Tools        = { style = "row"; columns = 3; };
+        Stats          = { style = "row"; columns = 3; };
         Infrastructure = { style = "row"; columns = 2; };
-        FileBrowsers = { style = "row"; columns = 4; };
+        Productivity   = { style = "column"; };
+        Tools          = { style = "column"; };
+        FileBrowsers   = { style = "row"; columns = 4; };
       };
     };
 
     customCSS = ''
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz@9..40&family=Fira+Code&family=Poppins&family=Source+Code+Pro&family=Work+Sans&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz@9..40&display=swap');
 
+      /* ── Natsumikan palette mapped onto catppuccin's .theme-gray structure ── */
       .theme-gray {
         font-family: 'DM Sans', sans-serif;
-        zoom: 1.15;
+        zoom: 1.1;
 
-        --catppuccin-background: #181825;
-        --catppuccin-background-dark: #11111b;
-        --catppuccin-foreground: #1e1e2e;
-        --catppuccin-text: #cdd6f4;
-        --catppuccin-surface: #6272a4;
-        --catppuccin-cyan: #89dceb;
-        --catppuccin-teal: #94e2d5;
-        --catppuccin-green: #a6e3a1;
-        --catppuccin-orange: #fab387;
-        --catppuccin-pink: #f5c2e7;
-        --catppuccin-purple: #cba6f7;
-        --catppuccin-lavender: #b4befe;
-        --catppuccin-red: #f38ba8;
-        --catppuccin-maroon: #eba0ac;
-        --catppuccin-yellow: #f9e2af;
+        --n-bg:        ${bg};
+        --n-surface:   ${surface};
+        --n-overlay:   ${overlay};
+        --n-text:      ${text};
+        --n-muted:     ${muted};
+        --n-border:    ${border};
+        --n-primary:   ${primary};
+        --n-secondary: ${secondary};
+        --n-tertiary:  ${tertiary};
+        --n-green:     ${green};
+        --n-red:       ${red};
+        --n-yellow:    ${yellow};
+        --n-blue:      ${blue};
 
-        --color-50: 249 250 251 !important;
-        --color-100: 243 244 246 !important;
-        --color-200: 215 214 244 !important;
-        --color-300: 209 213 219 !important;
-        --color-400: 156 163 175 !important;
-        --color-500: 107 114 128 !important;
-        --color-600: 75 85 99 !important;
-        --color-700: 55 65 81 !important;
-        --color-800: 30 30 46 !important;
-        --color-900: 17 17 27 !important;
-        --color-logo-start: 156 163 175 !important;
-        --color-logo-stop: 55 65 81 !important;
+        /* homepage theme-color CSS variables (RGB triplets, no #) */
+        --color-200: 209 209 199 !important;   /* text */
+        --color-700: 36 44 58 !important;      /* border */
+        --color-800: 23 29 38 !important;      /* surface */
+        --color-900: 13 16 23 !important;      /* bg */
+        --color-logo-start: 142 149 158 !important;
+        --color-logo-stop:  36 44 58 !important;
 
-        --standard-bg: #44475a8e;
-        --info-widgets: var(--catppuccin-purple);
-        --resource-bar-bg: var(--standard-bg);
-        --resource-bar-fg: var(--catppuccin-green);
-        --widget-border: var(--catppuccin-foreground);
-        --service-group: var(--catppuccin-purple);
-        --service-name: var(--catppuccin-text);
-        --service-description: var(--catppuccin-maroon);
-        --service-block-bg: #1e1e2e;
-        --service-block-text: var(--catppuccin-pink);
-        --card-color: #181825;
-        --card-color-hover: #232336;
-        --footer-items: var(--catppuccin-pink);
-        --scrollbar-fg: var(--catppuccin-purple);
+        --standard-bg: rgba(36, 44, 58, 0.55);
+
+        /* widget / resource bars */
+        --info-widgets:      var(--n-primary);
+        --resource-bar-bg:   var(--standard-bg);
+        --resource-bar-fg:   var(--n-green);
+        --widget-border:     var(--n-overlay);
+
+        /* service cards */
+        --service-group:       var(--n-secondary);
+        --service-name:        var(--n-text);
+        --service-description: var(--n-primary);
+        --service-block-bg:    var(--n-surface);
+        --service-block-text:  var(--n-secondary);
+        --card-color:          ${surface};
+        --card-color-hover:    ${overlay};
+
+        /* footer / scrollbar */
+        --footer-items: var(--n-secondary);
+        --scrollbar-fg: var(--n-secondary);
         --scrollbar-bg: var(--standard-bg);
 
-        .service-tags .dark\:bg-theme-900\/50 {
-          background-color: rgb(var(--color-900) / 0.3) !important;
-        }
-
+        /* ── information widgets ── */
         #information-widgets {
           border-color: var(--widget-border);
         }
         #information-widgets * {
-          color: var(--info-widgets);
+          color: var(--n-primary);
         }
 
-        .resource-usage {
-          background-color: var(--resource-bar-bg);
-        }
-        .resource-usage > div {
-          background-color: var(--resource-bar-fg);
-        }
+        .resource-usage { background-color: var(--resource-bar-bg); }
+        .resource-usage > div { background-color: var(--resource-bar-fg); }
 
-        .service-group-icon > div {
-          background: var(--service-group) !important;
-        }
-        .service-group-name {
-          color: var(--service-group) !important;
-        }
-        .services-group > button > svg {
-          color: var(--service-group);
-        }
-        .service-card {
-          background-color: var(--card-color) !important;
-        }
-        .service-card:hover {
-          background-color: var(--card-color-hover) !important;
-        }
-        .service-name.text-sm {
-          font-size: 0.95rem;
-          color: var(--service-name);
-        }
-        .service-description.text-xs {
-          font-size: 0.75rem;
-          color: var(--service-description);
-        }
-        .service img {
-          border-radius: 25%;
-        }
-        .service-block {
-          background: var(--service-block-bg);
-        }
-        .service-block .uppercase {
-          color: var(--service-block-text);
-        }
-        .service-block .font-thin {
-          color: var(--catppuccin-text);
-        }
+        /* ── service groups ── */
+        .service-group-icon > div { background: var(--service-group) !important; }
+        .service-group-name       { color: var(--service-group) !important; }
+        .services-group > button > svg { color: var(--service-group); }
 
-        #footer svg {
-          color: var(--footer-items);
-        }
+        .service-card       { background-color: var(--card-color) !important; }
+        .service-card:hover { background-color: var(--card-color-hover) !important; }
 
+        .service-name.text-sm        { font-size: 0.95rem; color: var(--service-name); }
+        .service-description.text-xs { font-size: 0.75rem; color: var(--service-description); }
+
+        .service img { border-radius: 25%; }
+
+        .service-block          { background: var(--service-block-bg); }
+        .service-block .uppercase { color: var(--service-block-text); }
+        .service-block .font-thin  { color: var(--n-text); }
+
+        /* ── footer ── */
+        #footer svg { color: var(--footer-items); }
+
+        /* ── scrollbar ── */
         * {
           --scrollbar-thumb: var(--scrollbar-fg);
           --scrollbar-track: var(--scrollbar-bg);
         }
 
-        .bg-amber-500  { background-color: var(--catppuccin-orange); }
-        .bg-blue-500   { background-color: var(--catppuccin-cyan); }
-        .bg-cyan-500   { background-color: var(--catppuccin-cyan); }
-        .bg-emerald-500 { background-color: var(--catppuccin-green); }
-        .bg-fuchsia-500 { background-color: var(--catppuccin-pink); }
-        .bg-green-500  { background-color: var(--catppuccin-green); }
-        .bg-indigo-500 { background-color: var(--catppuccin-purple); }
-        .bg-orange-500 { background-color: var(--catppuccin-orange); }
-        .bg-pink-500   { background-color: var(--catppuccin-pink); }
-        .bg-purple-500 { background-color: var(--catppuccin-purple); }
-        .bg-red-500    { background-color: var(--catppuccin-red); }
-        .bg-rose-500   { background-color: var(--catppuccin-red); }
-        .bg-sky-500    { background-color: var(--catppuccin-cyan); }
-        .bg-teal-500   { background-color: #94e2d5; }
-        .bg-violet-500 { background-color: var(--catppuccin-purple); }
-        .bg-yellow-500 { background-color: var(--catppuccin-yellow); }
-        .bg-white      { background-color: var(--catppuccin-text); }
-        .text-white    { color: var(--catppuccin-text); }
-        .text-red-400  { color: var(--catppuccin-red); }
-        .text-red-500  { color: var(--catppuccin-red); }
-        .text-green-500 { color: var(--catppuccin-green); }
-        .text-emerald-300 { color: var(--catppuccin-green); }
+        /* ── Tailwind color overrides → Natsumikan ── */
+        .bg-amber-500, .bg-orange-400, .bg-orange-500 { background-color: ${primary}; }
+        .bg-blue-500, .bg-sky-500, .bg-cyan-500       { background-color: ${tertiary}; }
+        .bg-emerald-500, .bg-green-500, .bg-lime-500  { background-color: ${green}; }
+        .bg-fuchsia-500, .bg-pink-500, .bg-violet-500,
+        .bg-purple-500, .bg-indigo-500                { background-color: ${secondary}; }
+        .bg-red-500, .bg-rose-500                     { background-color: ${red}; }
+        .bg-yellow-500                                { background-color: ${yellow}; }
+        .bg-teal-500                                  { background-color: ${tertiary}; }
+        .bg-white                                     { background-color: ${text}; }
+
+        .text-white                 { color: ${text}; }
+        .text-red-400, .text-red-500, .text-rose-300,
+        .text-rose-500, .text-rose-900 { color: ${red}; }
+        .text-green-500, .text-emerald-300 { color: ${green}; }
+        .text-amber-800             { color: ${primary}; }
+        .text-blue-500\/80          { color: ${tertiary}; }
+        .text-emerald-500\/80       { color: ${green}; }
       }
 
       /* ── widget bar layout ── */
@@ -229,46 +214,52 @@ in
         gap: 0.75rem;
       }
 
-      /* ── hostname title above datetime ── */
+      /* Row 1: hostname above datetime, spans full width */
       .information-widget-datetime {
         flex: 0 0 100% !important;
       }
       .information-widget-datetime::before {
         display: block;
-        content: "metatron";
+        content: "${config.networking.hostName}";
         font-size: 1.6rem;
         font-weight: 700;
-        color: var(--catppuccin-purple);
-        letter-spacing: 0.04em;
+        color: ${primary};
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 0.1rem;
+        margin-bottom: 0.15rem;
       }
 
-      /* ── search + weather row ── */
-      .information-widget-search { flex: 1 1 300px !important; }
+      /* Row 2: search expands, weather anchors right */
+      .information-widget-search    { flex: 1 1 300px !important; }
       .information-widget-openmeteo { flex: 0 0 auto !important; }
 
-      /* ── resource monitors: all on one row ── */
+      /* Row 3: resource monitors share one row equally */
       .information-widget-resource {
         flex: 1 1 0 !important;
-        min-width: 120px;
+        min-width: 110px;
       }
 
-      /* ── background: centered cover ── */
+      /* Background: centered cover */
       .fixed.min-h-screen {
         background-position: center center !important;
         background-size: cover !important;
       }
 
-      /* ── center services ── */
+      /* Center page content */
       #page_wrapper {
         max-width: 1400px;
         margin: 0 auto;
       }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar       { width: 5px; }
+      ::-webkit-scrollbar-track { background: ${bg}; }
+      ::-webkit-scrollbar-thumb { background: ${border}; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: ${secondary}; }
     '';
 
     widgets = [
-      # ── 1: title row (datetime, hostname injected via CSS ::before) ──
+      # Row 1 — hostname (via CSS ::before) + datetime
       {
         datetime = {
           text_size = "xl";
@@ -280,7 +271,7 @@ in
           };
         };
       }
-      # ── 2–3: search + weather ──
+      # Row 2 — search + weather
       {
         search = {
           provider = "custom";
@@ -300,7 +291,7 @@ in
           cache = 5;
         };
       }
-      # ── 4–8: system monitors (all one row) ──
+      # Row 3 — system + disk usage (SMART health not natively available without glances)
       {
         resources = {
           label = "System";
@@ -336,8 +327,22 @@ in
     ];
 
     services = [
+      # Stats row — services with live widget data
       {
-        "Media" = [
+        "Stats" = [
+          {
+            "AdGuard Home" = {
+              href = "https://adguardhome.metatron";
+              description = "DNS + ad blocking";
+              icon = "adguard-home.png";
+              widget = {
+                type = "adguard";
+                url = "http://localhost:3000";
+                username = "adguard-admin";
+                password = "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}";
+              };
+            };
+          }
           {
             Jellyfin = {
               href = "https://jellyfin.metatron";
@@ -367,6 +372,20 @@ in
           }
         ];
       }
+      # Infrastructure row
+      {
+        "Infrastructure" = [
+          {
+            Matrix = {
+              href = "https://matrix.metatron";
+              description = "Chat";
+              icon = "matrix-light.png";
+              ping = "https://matrix.metatron";
+            };
+          }
+        ];
+      }
+      # Columns — Productivity
       {
         "Productivity" = [
           {
@@ -395,6 +414,7 @@ in
           }
         ];
       }
+      # Columns — Tools
       {
         "Tools" = [
           {
@@ -423,31 +443,7 @@ in
           }
         ];
       }
-      {
-        "Infrastructure" = [
-          {
-            "AdGuard Home" = {
-              href = "https://adguardhome.metatron";
-              description = "DNS + ad blocking";
-              icon = "adguard-home.png";
-              widget = {
-                type = "adguard";
-                url = "http://localhost:3000";
-                username = "adguard-admin";
-                password = "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}";
-              };
-            };
-          }
-          {
-            Matrix = {
-              href = "https://matrix.metatron";
-              description = "Chat";
-              icon = "matrix-light.png";
-              ping = "https://matrix.metatron";
-            };
-          }
-        ];
-      }
+      # FileBrowsers row — bottom
       {
         "FileBrowsers" = [
           {

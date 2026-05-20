@@ -28,6 +28,7 @@
     ../../services/neo4j.nix
     ../../services/llama.nix
     ./backup.nix
+    ./homepage.nix
   ];
 
   networking.hostName = "zaphkiel";

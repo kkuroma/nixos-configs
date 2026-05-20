@@ -17,10 +17,7 @@ let
   yellow    = "#FFB454";
 in
 {
-  sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
   sops.secrets."adguard/password" = { mode = "0444"; };
-  sops.secrets."homepage/navidrome-token" = { mode = "0444"; };
-  sops.secrets."homepage/navidrome-salt" = { mode = "0444"; };
   sops.secrets."homepage/${config.networking.hostName}/latitude" = { mode = "0444"; };
   sops.secrets."homepage/${config.networking.hostName}/longitude" = { mode = "0444"; };
   sops.secrets."homepage/${config.networking.hostName}/location" = { mode = "0444"; };
@@ -29,10 +26,7 @@ in
   sops.templates."homepage-env" = {
     mode = "0444";
     content = ''
-      HOMEPAGE_VAR_JELLYFIN_API_KEY=${config.sops.placeholder."homepage/jellyfin-api-key"}
       HOMEPAGE_VAR_ADGUARD_PASSWORD=${config.sops.placeholder."adguard/password"}
-      HOMEPAGE_VAR_NAVIDROME_TOKEN=${config.sops.placeholder."homepage/navidrome-token"}
-      HOMEPAGE_VAR_NAVIDROME_SALT=${config.sops.placeholder."homepage/navidrome-salt"}
       HOMEPAGE_VAR_LATITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/latitude"}
       HOMEPAGE_VAR_LONGITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/longitude"}
       HOMEPAGE_VAR_LOCATION=${config.sops.placeholder."homepage/${config.networking.hostName}/location"}
@@ -50,22 +44,6 @@ in
     reverse_proxy localhost:8083
   '';
 
-  systemd.services.homepage-dashboard = {
-    after = [ "zfs-datasets.service" "sops-install-secrets.service" ];
-    requires = [ "zfs-datasets.service" ];
-    serviceConfig.BindReadOnlyPaths = [
-      "/tank/media/anime"
-      "/tank/media/music"
-      "/tank/nas/public"
-      "/tank/backups"
-      "/tank/services/nextcloud"
-      "/tank/services/jellyfin"
-      "/tank/services/navidrome"
-      "/tank/services/postgresql"
-      "/tank/services/forgejo"
-    ];
-  };
-
   services.homepage-dashboard = {
     enable = true;
     listenPort = 8083;
@@ -73,7 +51,7 @@ in
     environmentFile = config.sops.templates."homepage-env".path;
 
     settings = {
-      title = "metatron";
+      title = "zaphkiel";
       theme = "dark";
       color = "gray";
       headerStyle = "underlined";
@@ -88,25 +66,20 @@ in
         brightness = 50;
         opacity = 85;
       };
-      # List preserves order; attrset would sort alphabetically.
       layout = [
         { Infrastructure = { style = "row";    columns = 2; }; }
-        { Media          = { style = "column"; }; }
-        { Productivity   = { style = "column"; }; }
+        { AI             = { style = "row";    columns = 3; }; }
         { Tools          = { style = "column"; }; }
-        { FileBrowsers   = { style = "row";    columns = 4; }; }
       ];
     };
 
     customCSS = ''
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz@9..40&display=swap');
 
-      /* Natsumikan palette via catppuccin .theme-gray structure */
       .theme-gray {
         font-family: 'DM Sans', sans-serif;
         zoom: 1.1;
 
-        /* homepage theme-color RGB triplets */
         --color-200: 209 209 199 !important;
         --color-700: 36 44 58 !important;
         --color-800: 23 29 38 !important;
@@ -154,30 +127,6 @@ in
         #footer svg { color: ${secondary}; }
         * { --scrollbar-thumb: ${secondary}; --scrollbar-track: var(--standard-bg); }
 
-        /* glances widget charts */
-        li[id^='glances-'] .recharts-surface > g:nth-of-type(1) path:nth-child(1) {
-          fill: ${primary}; fill-opacity: 0.35;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(1) path:nth-child(2) {
-          stroke: ${primary}; stroke-opacity: 0.5;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(1) {
-          fill: ${secondary}; fill-opacity: 0.35;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(2) {
-          stroke: ${secondary}; stroke-opacity: 0.5;
-        }
-        li[id^='glances-'] .bottom-3.left-3 { color: ${primary}; }
-        li[id^='glances-'] .bottom-3.right-3 .opacity-75 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
-        li[id^='glances-'] .top-3.right-3 .opacity-50    { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
-        li[id^='glances-'] .flex.items-center.text-xs .text-right { color: ${tertiary}; }
-        li[id^='glances-'] .flex.items-center .opacity-25.w-14.text-right { color: ${secondary}; opacity: 0.85; }
-        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .w-3.h-3.mr-1\.5.opacity-50 > div {
-          background: ${green} !important; opacity: 1;
-        }
-        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .opacity-75.grow { color: ${primary} !important; }
-
-        /* Tailwind color → Natsumikan */
         .bg-amber-500, .bg-orange-400, .bg-orange-500 { background-color: ${primary}; }
         .bg-blue-500, .bg-sky-500, .bg-cyan-500 { background-color: ${tertiary}; }
         .bg-emerald-500, .bg-green-500, .bg-lime-500 { background-color: ${green}; }
@@ -192,7 +141,6 @@ in
         .service-tags .dark\:bg-theme-900\/50 { background-color: rgb(var(--color-900) / 0.3) !important; }
       }
 
-      /* ── info widget bar layout ── */
       #widgets-wrap { padding: 0.75rem 1.5rem; }
       #information-widgets,
       #information-widgets-right {
@@ -202,7 +150,6 @@ in
         gap: 0.75rem;
       }
 
-      /* Row 1: hostname + datetime on the same line */
       .information-widget-datetime {
         flex: 0 0 100% !important;
         order: 0;
@@ -220,26 +167,21 @@ in
         flex-shrink: 0;
       }
 
-      /* Row 2: search + weather */
       .information-widget-search    { flex: 1 1 300px !important; order: 1; }
       .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
 
-      /* Row 3: resource monitors — left-aligned, natural width, after search/weather */
       .information-widget-resource {
         flex: 0 0 auto !important;
         order: 3;
       }
 
-      /* background: centered cover */
       .fixed.min-h-screen {
         background-position: center center !important;
         background-size: cover !important;
       }
 
-      /* center page */
       #page_wrapper { max-width: 1400px; margin: 0 auto; }
 
-      /* scrollbar */
       ::-webkit-scrollbar { width: 5px; }
       ::-webkit-scrollbar-track { background: ${bg}; }
       ::-webkit-scrollbar-thumb { background: ${border}; border-radius: 3px; }
@@ -247,7 +189,6 @@ in
     '';
 
     widgets = [
-      # Row 1: hostname (::before) + datetime
       {
         datetime = {
           text_size = "xl";
@@ -259,7 +200,6 @@ in
           };
         };
       }
-      # Row 2: search + weather
       {
         search = {
           provider = "custom";
@@ -279,26 +219,17 @@ in
           cache = 5;
         };
       }
-      # Row 3: disk usage (left-aligned via CSS order: 3 + flex: 0 0 auto)
-      { resources = { label = "System";      cpu = true; memory = true; disk = "/"; }; }
-      { resources = { label = "Anime";       disk = "/tank/media/anime"; }; }
-      { resources = { label = "Music";       disk = "/tank/media/music"; }; }
-      { resources = { label = "Public NAS";  disk = "/tank/nas/public"; }; }
-      { resources = { label = "Backups";     disk = "/tank/backups"; }; }
-      { resources = { label = "Nextcloud";   disk = "/tank/services/nextcloud"; }; }
-      { resources = { label = "Jellyfin";    disk = "/tank/services/jellyfin"; }; }
-      { resources = { label = "Navidrome";   disk = "/tank/services/navidrome"; }; }
-      { resources = { label = "PostgreSQL";  disk = "/tank/services/postgresql"; }; }
-      { resources = { label = "Forgejo";     disk = "/tank/services/forgejo"; }; }
+      { resources = { label = "System"; cpu = true; memory = true; disk = "/"; }; }
+      { resources = { label = "Home";   disk = "/home"; }; }
+      { resources = { label = "Nix";    disk = "/nix"; }; }
     ];
 
     services = [
-      # Infrastructure
       {
         "Infrastructure" = [
           {
             "AdGuard Home" = {
-              href = "https://adguardhome.metatron";
+              href = "https://adguardhome.zaphkiel";
               description = "DNS + ad blocking";
               icon = "adguard-home.png";
               widget = {
@@ -310,114 +241,51 @@ in
             };
           }
           {
-            Matrix = {
-              href = "https://matrix.metatron";
-              description = "Chat";
-              icon = "matrix-light.png";
-              ping = "https://matrix.metatron";
+            Syncthing = {
+              href = "https://syncthing.zaphkiel";
+              description = "File sync";
+              icon = "syncthing.png";
+              ping = "https://syncthing.zaphkiel";
             };
           }
         ];
       }
-      # Media (column — sits alongside Productivity and Tools)
       {
-        "Media" = [
+        "AI" = [
           {
-            Jellyfin = {
-              href = "https://jellyfin.metatron";
-              description = "Media server";
-              icon = "jellyfin.png";
-              widget = {
-                type = "jellyfin";
-                url = "http://localhost:8096";
-                key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
-                enableBlocks = true;
-              };
+            "LLaMA Router" = {
+              href = "http://zaphkiel:11434";
+              description = "Local LLM API";
+              icon = "ollama.png";
+              ping = "http://localhost:11434";
             };
           }
           {
-            Navidrome = {
-              href = "https://navidrome.metatron";
-              description = "Music streaming";
-              icon = "navidrome.png";
-              widget = {
-                type = "navidrome";
-                url = "http://localhost:4533";
-                user = "kuroma";
-                token = "{{HOMEPAGE_VAR_NAVIDROME_TOKEN}}";
-                salt = "{{HOMEPAGE_VAR_NAVIDROME_SALT}}";
-              };
+            n8n = {
+              href = "https://n8n.zaphkiel";
+              description = "Workflow automation";
+              icon = "n8n.png";
+              ping = "https://n8n.zaphkiel";
+            };
+          }
+          {
+            Neo4j = {
+              href = "https://neo4j.zaphkiel";
+              description = "Graph database";
+              icon = "neo4j.png";
+              ping = "https://neo4j.zaphkiel";
             };
           }
         ];
       }
-      # Productivity (column)
-      {
-        "Productivity" = [
-          {
-            Nextcloud = {
-              href = "https://cloud.kuroma.dev";
-              description = "Cloud storage";
-              icon = "nextcloud.png";
-              ping = "https://cloud.kuroma.dev";
-            };
-          }
-          {
-            Vaultwarden = {
-              href = "https://vault.kuroma.dev";
-              description = "Passwords";
-              icon = "bitwarden.png";
-              ping = "https://vault.kuroma.dev";
-            };
-          }
-          {
-            Forgejo = {
-              href = "https://git.kuroma.dev";
-              description = "Git";
-              icon = "forgejo.png";
-              ping = "https://git.kuroma.dev";
-            };
-          }
-        ];
-      }
-      # Tools (column)
       {
         "Tools" = [
           {
-            SearXNG = {
-              href = "https://searx.kuroma.dev";
-              description = "Search";
-              icon = "searxng.png";
-              ping = "https://searx.kuroma.dev";
-            };
-          }
-          {
-            "Stirling PDF" = {
-              href = "https://pdf.kuroma.dev";
-              description = "PDF tools";
-              icon = "stirling-pdf.png";
-              ping = "https://pdf.kuroma.dev";
-            };
-          }
-          {
-            PrivateBin = {
-              href = "https://pastebin.kuroma.dev";
-              description = "Pastebin";
-              icon = "privatebin.png";
-              ping = "https://pastebin.kuroma.dev";
-            };
-          }
-        ];
-      }
-      # FileBrowsers row — bottom
-      {
-        "FileBrowsers" = [
-          {
-            "ct-dump" = {
-              href = "https://ct-dump.metatron";
-              description = "CT's files";
-              icon = "filebrowser.png";
-              ping = "https://ct-dump.metatron";
+            Cockpit = {
+              href = "https://cockpit.zaphkiel";
+              description = "System management";
+              icon = "cockpit.png";
+              ping = "https://cockpit.zaphkiel";
             };
           }
         ];

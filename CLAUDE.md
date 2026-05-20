@@ -93,6 +93,8 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | `neo4j.nix` | Neo4j | :7474 (http), :7687 (bolt) | zaphkiel | internal only |
 | `llama.nix` | LLaMA router + embedding | :11434/:11435 | zaphkiel | tailscale (direct, no caddy) |
 | `forgejo.nix` | Forgejo | :1412 | metatron | public + internal |
+| `glances.nix` | Glances | :61208 | metatron | internal only |
+| `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | internal only |
 
 **Service access model:**
 - Internal: `https://<service>.<hostname>` — AdGuard resolves `*.metatron/*.zaphkiel/*.raziel` to each host's tailscale IP. Caddy routes by Host header with `tls internal` (local CA). Requires setting tailnet DNS to AdGuard in Tailscale admin console.
@@ -122,6 +124,31 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | Name | Port | Root | User | Internal | Public |
 |------|------|------|------|----------|--------|
 | `ct-dump` | :8200 | `/tank/nas/ct/dump` | `ct` | `ct-dump.metatron` | `ct-dump.kuroma.dev` |
+
+**Homepage (`hosts/<name>/homepage.nix`):**
+- Host-specific — NOT in `services/`. Each host gets its own file at `hosts/<name>/homepage.nix`, imported in `hosts/<name>/configuration.nix`. `services/homepage.nix` no longer exists.
+- Version: homepage-dashboard 1.7.0 (nixpkgs 25.11). Port :8083. Caddy vhost `homepage.<hostname>` with `tls internal`.
+- **Layout ordering:** `settings.layout` must be a Nix **list** of single-key attrsets — NOT an attrset. Attrsets sort alphabetically. List serializes to YAML sequence; homepage source normalizes it back to object preserving insertion order.
+  ```nix
+  layout = [
+    { Infrastructure = { style = "row"; columns = 2; }; }
+    { Media          = { style = "column"; }; }
+  ];
+  ```
+- **Theming:** `color = "gray"` required — CSS scoped to `.theme-gray {}`. Natsumikan dark palette applied via CSS custom properties. Font: DM Sans (Google Fonts import). Uses catppuccin CSS structure.
+- **Info widget bar layout (CSS):** `#information-widgets` is a flex container. `order` property reorders visually regardless of Nix list order. Pattern: datetime (order 0, `display:flex` with `::before` for hostname), search (order 1), openmeteo (order 2), resource (order 3, `flex: 0 0 auto` keeps natural width — do NOT use `flex: 1` or resources stretch full width).
+- **Hostname in header:** `.information-widget-datetime::before { content: "${config.networking.hostName}"; }` with `.information-widget-datetime { display: flex; align-items: baseline; }` places hostname and time on the same line (`:before` becomes first flex sibling).
+- **Glances service widget broken in 1.7.0:** Service cards with `type = "glances"` look up the Glances URL from `widgets.yaml` by index — the `url` field in `services.yaml` is completely ignored by the server route (`W4("glances", index)` — undefined if no matching info widget). Do not use glances service cards unless you also add a matching glances info widget.
+- **Glances info widget API:** Boolean flags, not `metric:` style. Options: `cpu = true`, `mem = true`, `disk = "/mount"` (string or list), `cputemp`, `uptime`, `expanded`, `diskUnits`.
+- **Sops keys:** `homepage/${config.networking.hostName}/{latitude,longitude,location,timezone}` — hostname-namespaced so same pattern works across hosts. Template `homepage-env` injects as `HOMEPAGE_VAR_*`.
+- **metatron BindReadOnlyPaths:** ZFS child datasets are separate mounts — bind each individually, not just `/tank`. Current list: `/tank/media/anime`, `/tank/media/music`, `/tank/nas/public`, `/tank/backups`, `/tank/services/{nextcloud,jellyfin,navidrome,postgresql,forgejo}`.
+- **zaphkiel sops keys needed:** `homepage/zaphkiel/{latitude,longitude,location,timezone}` — add via `sops secrets/secrets.yaml` before deploying.
+
+**Glances (`services/glances.nix`):**
+- `services.glances.enable = true; services.glances.port = 61208;`. Version 4.3.3 in nixpkgs 25.11, API v4 at `/api/4/`.
+- Caddy vhost `glances.<hostname>` (internal only, `tls internal`).
+- Metatron disks visible via API: nvme0n1 (boot), sda/sdb/sdc/sdd (RAIDZ1 members — no separate mount points, only visible as raw disk I/O).
+- Disk health (S.M.A.R.T.) is NOT exposed by homepage 1.7.0 glances widget — no `smart` metric type. Use Cockpit or smartmontools CLI for SMART checks.
 
 **Forgejo (`forgejo.nix`):**
 - Port :1412 (AdGuard owns :3000). SSH for git on port 2222, tailscale only (`SSH_DOMAIN = "metatron"`). HTTPS clone via `git.kuroma.dev` works publicly. State at `/tank/services/forgejo` (dataset: `tank/services/forgejo`, 256G).

@@ -33,6 +33,7 @@
         SSH_PORT = 2222;
         SSH_DOMAIN = "metatron";
       };
+      actions.ENABLED = true;
     };
   };
 

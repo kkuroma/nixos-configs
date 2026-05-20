@@ -359,6 +359,7 @@ in
         HTTP_PORT = 1412;
         SSH_PORT = 22;
         SSH_DOMAIN = "metatron";
+        SSH_USER = "forgejo";
       };
       actions.ENABLED = true;
       service.DISABLE_REGISTRATION = true;

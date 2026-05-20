@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   upsName = "ups";
-  recipientEmail = "laoganma960@gmail.com";
+  recipientEmail = "contact@kuroma.dev";
 
   notifyScript = pkgs.writeShellScript "ups-notify-email" ''
     msg="$*"
@@ -62,11 +62,11 @@ in
     upsmon.settings = {
       NOTIFYCMD = "${notifyScript}";
       NOTIFYFLAG = [
-        [ "ONBATT"   "SYSLOG+EXEC" ]
-        [ "ONLINE"   "SYSLOG+EXEC" ]
-        [ "LOWBATT"  "SYSLOG+EXEC" ]
-        [ "COMMBAD"  "SYSLOG+EXEC" ]
-        [ "COMMOK"   "SYSLOG+EXEC" ]
+        [ "ONBATT" "SYSLOG+EXEC" ]
+        [ "ONLINE" "SYSLOG+EXEC" ]
+        [ "LOWBATT" "SYSLOG+EXEC" ]
+        [ "COMMBAD" "SYSLOG+EXEC" ]
+        [ "COMMOK" "SYSLOG+EXEC" ]
         [ "SHUTDOWN" "SYSLOG+EXEC" ]
       ];
     };

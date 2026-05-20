@@ -357,7 +357,7 @@ in
         DOMAIN = "git.kuroma.dev";
         ROOT_URL = "https://git.kuroma.dev";
         HTTP_PORT = 1412;
-        SSH_PORT = 2222;
+        SSH_PORT = 22;
         SSH_DOMAIN = "metatron";
       };
       actions.ENABLED = true;
@@ -399,8 +399,7 @@ in
     ];
   };
 
-  # git SSH on port 2222, tailscale only
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 2222 ];
+  # git SSH uses system sshd on port 22 (already open on tailscale0 via networking.nix)
 
   # Actions runner — register token from https://git.kuroma.dev/-/admin/runners then add to sops
   services.gitea-actions-runner.instances."metatron" = {

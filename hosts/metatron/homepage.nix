@@ -130,7 +130,10 @@ in
         --scrollbar-bg:        var(--standard-bg);
 
         #information-widgets { border-color: ${overlay}; }
-        #information-widgets * { color: ${primary}; }
+        .information-widget-datetime * { color: ${primary}; }
+        .information-widget-openmeteo * { color: ${tertiary}; }
+        .information-widget-search svg  { color: ${secondary}; }
+        .information-widget-resource    { color: ${muted}; }
 
         .resource-usage { background-color: var(--standard-bg); }
         .resource-usage > div { background-color: ${green}; }
@@ -167,33 +170,8 @@ in
         .service-tags .dark\:bg-theme-900\/50 { background-color: rgb(var(--color-900) / 0.3) !important; }
       }
 
-      /* ── info widget bar layout ── */
-      /* flex-column stacks #information-widgets above #information-widgets-right */
-      #widgets-wrap {
-        padding: 0.75rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      #information-widgets {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem;
-        order: 0;
-      }
-      #information-widgets-right {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem;
-        order: 1;
-      }
-
-      /* Row 1: hostname + datetime on the same line */
+      /* hostname inline with datetime; search grows to fill row */
       .information-widget-datetime {
-        flex: 0 0 100% !important;
-        order: 0;
         display: flex;
         align-items: baseline;
         gap: 1.25rem;
@@ -207,16 +185,7 @@ in
         text-transform: uppercase;
         flex-shrink: 0;
       }
-
-      /* Row 2: search + weather */
-      .information-widget-search    { flex: 1 1 300px !important; order: 1; }
-      .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
-
-      /* Row 3: resource monitors — left-aligned, natural width */
-      .information-widget-resource {
-        flex: 0 0 auto !important;
-        order: 3;
-      }
+      .information-widget-search { flex: 1 1 300px !important; }
 
       /* background: centered cover */
       .fixed.min-h-screen {

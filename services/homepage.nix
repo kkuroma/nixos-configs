@@ -142,11 +142,8 @@ in
         box-shadow: 0 0 0 2px rgba(245, 128, 62, 0.25);
       }
 
-      /* ── widget bar: both halves share layout ── */
+      /* ── widget bar layout ── */
       #widgets-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
         padding: 0.75rem 1.5rem;
       }
       #information-widgets,
@@ -157,32 +154,36 @@ in
         gap: 0.75rem;
       }
 
-      /* ── datetime: full-width title row with hostname prefix ── */
+      /* ── datetime: full-width title row, hostname above it via ::before ── */
       .information-widget-datetime {
         flex: 0 0 100% !important;
-        display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid ${border};
       }
       .information-widget-datetime::before {
-        content: "metatron \2014\0020";
+        display: block;
+        content: "metatron";
         font-size: 1.6rem;
         font-weight: 700;
         color: ${primary};
         letter-spacing: 0.04em;
         text-transform: uppercase;
-      }
-
-      /* ── resource monitors: even row ── */
-      .information-widget-resource {
-        flex: 1 1 140px !important;
+        margin-bottom: 0.1rem;
       }
 
       /* ── search expands, weather compact ── */
       .information-widget-search { flex: 1 1 300px !important; }
       .information-widget-openmeteo { flex: 0 0 auto !important; }
+
+      /* ── resource monitors: all on one row ── */
+      .information-widget-resource {
+        flex: 1 1 0 !important;
+        min-width: 120px;
+      }
+
+      /* ── background: centered cover ── */
+      .fixed.min-h-screen {
+        background-position: center center !important;
+        background-size: cover !important;
+      }
 
       /* ── center services ── */
       #page_wrapper {
@@ -198,7 +199,7 @@ in
     '';
 
     widgets = [
-      # ── 1st: title row (hostname + datetime via CSS ::before) ──
+      # ── 1: title row (datetime, hostname injected via CSS ::before) ──
       {
         datetime = {
           text_size = "xl";
@@ -210,7 +211,27 @@ in
           };
         };
       }
-      # ── 2nd–6th: system monitors ──
+      # ── 2–3: search + weather ──
+      {
+        search = {
+          provider = "custom";
+          url = "https://searx.kuroma.dev/search?q=";
+          target = "_blank";
+          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
+          showSearchSuggestions = true;
+        };
+      }
+      {
+        openmeteo = {
+          label = "{{HOMEPAGE_VAR_LOCATION}}";
+          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
+          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
+          units = "imperial";
+          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
+          cache = 5;
+        };
+      }
+      # ── 4–8: system monitors (all one row) ──
       {
         resources = {
           label = "System";
@@ -241,26 +262,6 @@ in
         resources = {
           label = "Backups";
           disk = "/tank/backups";
-        };
-      }
-      # ── 7th–8th: search + weather ──
-      {
-        search = {
-          provider = "custom";
-          url = "https://searx.kuroma.dev/search?q=";
-          target = "_blank";
-          suggestionUrl = "https://searx.kuroma.dev/autocomplete?q=";
-          showSearchSuggestions = true;
-        };
-      }
-      {
-        openmeteo = {
-          label = "{{HOMEPAGE_VAR_LOCATION}}";
-          latitude = "{{HOMEPAGE_VAR_LATITUDE}}";
-          longitude = "{{HOMEPAGE_VAR_LONGITUDE}}";
-          units = "imperial";
-          timezone = "{{HOMEPAGE_VAR_TIMEZONE}}";
-          cache = 5;
         };
       }
     ];

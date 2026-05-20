@@ -4,7 +4,8 @@ let
   nasMap = pkgs.writeText "auto.nas" ''
     anime  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/anime
     music  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/music
-    kuroma -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/kuroma
+    kuroma   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/kuroma
+    research -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/research
   '';
 in
 {

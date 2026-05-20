@@ -48,6 +48,11 @@
         "read only" = "no";
         "valid users" = "@family";
       };
+      research = {
+        "path" = "/tank/research";
+        "read only" = "no";
+        "valid users" = "kuroma";
+      };
       backups = {
         "path" = "/tank/backups";
         "read only" = "no";

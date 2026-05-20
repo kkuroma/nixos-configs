@@ -63,6 +63,7 @@ in
       "/tank/services/navidrome"
       "/tank/services/postgresql"
       "/tank/services/forgejo"
+      "/tank/research"
     ];
   };
 
@@ -247,6 +248,7 @@ in
       { resources = { label = "Navidrome";   disk = "/tank/services/navidrome"; }; }
       { resources = { label = "PostgreSQL";  disk = "/tank/services/postgresql"; }; }
       { resources = { label = "Forgejo";     disk = "/tank/services/forgejo"; }; }
+      { resources = { label = "Research";    disk = "/tank/research"; }; }
     ];
 
     services = [

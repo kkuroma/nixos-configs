@@ -114,6 +114,14 @@ let
       group = "forgejo";
       mode = "750";
     };
+    "tank/research" = {
+      mountpoint = "/tank/research";
+      quota = "12T";
+      reservation = "12T";
+      owner = "kuroma";
+      group = "users";
+      mode = "700";
+    };
     "tank/backups" = {
       mountpoint = "/tank/backups";
       quota = null;

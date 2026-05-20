@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  wallpaper = ../homepage-wallpaper.png;
+  wallpaper = ../../homepage-wallpaper.png;
 
   # Natsumikan dark palette
   bg        = "#0D1017";
@@ -83,15 +83,14 @@ in
         brightness = 50;
         opacity = 85;
       };
-      # List (not attrset) so layout serializes as ordered YAML sequence,
-      # preserving display order instead of being sorted alphabetically.
+      # List preserves order; attrset would sort alphabetically.
       layout = [
-        { Stats          = { style = "row"; columns = 3; }; }
-        { Infrastructure = { style = "row"; columns = 2; }; }
-        { Media          = { style = "row"; columns = 2; }; }
+        { Stats          = { style = "row";    columns = 2; }; }
+        { Infrastructure = { style = "row";    columns = 2; }; }
+        { Media          = { style = "column"; }; }
         { Productivity   = { style = "column"; }; }
         { Tools          = { style = "column"; }; }
-        { FileBrowsers   = { style = "row"; columns = 4; }; }
+        { FileBrowsers   = { style = "row";    columns = 4; }; }
       ];
     };
 
@@ -113,20 +112,20 @@ in
 
         --standard-bg: rgba(36, 44, 58, 0.55);
 
-        --info-widgets:      ${primary};
-        --resource-bar-bg:   var(--standard-bg);
-        --resource-bar-fg:   ${green};
-        --widget-border:     ${overlay};
-        --service-group:     ${secondary};
-        --service-name:      ${text};
+        --info-widgets:        ${primary};
+        --resource-bar-bg:     var(--standard-bg);
+        --resource-bar-fg:     ${green};
+        --widget-border:       ${overlay};
+        --service-group:       ${secondary};
+        --service-name:        ${text};
         --service-description: ${primary};
-        --service-block-bg:  ${surface};
-        --service-block-text: ${secondary};
-        --card-color:        ${surface};
-        --card-color-hover:  ${overlay};
-        --footer-items:      ${secondary};
-        --scrollbar-fg:      ${secondary};
-        --scrollbar-bg:      var(--standard-bg);
+        --service-block-bg:    ${surface};
+        --service-block-text:  ${secondary};
+        --card-color:          ${surface};
+        --card-color-hover:    ${overlay};
+        --footer-items:        ${secondary};
+        --scrollbar-fg:        ${secondary};
+        --scrollbar-bg:        var(--standard-bg);
 
         #information-widgets { border-color: ${overlay}; }
         #information-widgets * { color: ${primary}; }
@@ -151,7 +150,7 @@ in
         #footer svg { color: ${secondary}; }
         * { --scrollbar-thumb: ${secondary}; --scrollbar-track: var(--standard-bg); }
 
-        /* glances widget charts (catppuccin ids: glances-*) */
+        /* glances widget charts */
         li[id^='glances-'] .recharts-surface > g:nth-of-type(1) path:nth-child(1) {
           fill: ${primary}; fill-opacity: 0.35;
         }
@@ -166,7 +165,7 @@ in
         }
         li[id^='glances-'] .bottom-3.left-3 { color: ${primary}; }
         li[id^='glances-'] .bottom-3.right-3 .opacity-75 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
-        li[id^='glances-'] .top-3.right-3 .opacity-50 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
+        li[id^='glances-'] .top-3.right-3 .opacity-50    { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
         li[id^='glances-'] .flex.items-center.text-xs .text-right { color: ${tertiary}; }
         li[id^='glances-'] .flex.items-center .opacity-25.w-14.text-right { color: ${secondary}; opacity: 0.85; }
         li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .w-3.h-3.mr-1\.5.opacity-50 > div {
@@ -178,14 +177,14 @@ in
         .bg-amber-500, .bg-orange-400, .bg-orange-500 { background-color: ${primary}; }
         .bg-blue-500, .bg-sky-500, .bg-cyan-500 { background-color: ${tertiary}; }
         .bg-emerald-500, .bg-green-500, .bg-lime-500 { background-color: ${green}; }
-        .bg-fuchsia-500, .bg-pink-500, .bg-violet-500, .bg-purple-500, .bg-indigo-500 { background-color: ${secondary}; }
+        .bg-fuchsia-500, .bg-pink-500, .bg-violet-500,
+        .bg-purple-500, .bg-indigo-500 { background-color: ${secondary}; }
         .bg-red-500, .bg-rose-500 { background-color: ${red}; }
         .bg-yellow-500 { background-color: ${yellow}; }
         .bg-white { background-color: ${text}; }
         .text-white { color: ${text}; }
         .text-red-400, .text-red-500, .text-rose-300, .text-rose-500 { color: ${red}; }
         .text-green-500, .text-emerald-300 { color: ${green}; }
-
         .service-tags .dark\:bg-theme-900\/50 { background-color: rgb(var(--color-900) / 0.3) !important; }
       }
 
@@ -217,14 +216,13 @@ in
         flex-shrink: 0;
       }
 
-      /* Row 2: search bar + weather */
+      /* Row 2: search + weather */
       .information-widget-search    { flex: 1 1 300px !important; order: 1; }
       .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
 
-      /* Row 3: resource monitors — pushed after search/weather via order */
+      /* Row 3: resource monitors — left-aligned, natural width, after search/weather */
       .information-widget-resource {
-        flex: 1 1 0 !important;
-        min-width: 110px;
+        flex: 0 0 auto !important;
         order: 3;
       }
 
@@ -277,7 +275,7 @@ in
           cache = 5;
         };
       }
-      # Row 3: disk usage (CSS order: 3 pushes these below search/weather)
+      # Row 3: disk usage (left-aligned via CSS order: 3 + flex: 0 0 auto)
       {
         resources = {
           label = "System";
@@ -313,41 +311,34 @@ in
     ];
 
     services = [
-      # Stats: glances system metrics (cpu + memory as graph cards)
+      # Stats — glances: CPU card + memory card
+      # homepage 1.7.0 glances widget: options are cpu/mem/disk/cputemp/uptime booleans,
+      # NOT metric: "cpu" (that's a newer API). Use separate entries to get separate cards.
       {
         "Stats" = [
           {
             CPU = {
+              id = "glances-cpu";
               widget = {
                 type = "glances";
                 url = "http://localhost:61208";
-                metric = "cpu";
                 version = 4;
+                cpu = true;
+                mem = false;
+                uptime = true;
               };
-              id = "glances-cpu";
             };
           }
           {
             Memory = {
-              widget = {
-                type = "glances";
-                url = "http://localhost:61208";
-                metric = "mem";
-                version = 4;
-              };
               id = "glances-memory";
-            };
-          }
-          {
-            "Disk I/O" = {
               widget = {
                 type = "glances";
                 url = "http://localhost:61208";
-                metric = "disk";
-                disk = "sda";
                 version = 4;
+                cpu = false;
+                mem = true;
               };
-              id = "glances-sda";
             };
           }
         ];
@@ -378,7 +369,7 @@ in
           }
         ];
       }
-      # Media
+      # Media (column — sits alongside Productivity and Tools)
       {
         "Media" = [
           {
@@ -410,7 +401,7 @@ in
           }
         ];
       }
-      # Productivity (columns)
+      # Productivity (column)
       {
         "Productivity" = [
           {
@@ -439,7 +430,7 @@ in
           }
         ];
       }
-      # Tools (columns)
+      # Tools (column)
       {
         "Tools" = [
           {

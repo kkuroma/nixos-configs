@@ -362,6 +362,7 @@ in
       };
       actions.ENABLED = true;
       service.DISABLE_REGISTRATION = true;
+      DEFAULT.APP_NAME = "Kuroma's Vault of Code";
       ui = {
         DEFAULT_THEME = "natsumikan";
         THEMES = "gitea,arc-green,forgejo-dark,forgejo-light,forgejo-auto,natsumikan";

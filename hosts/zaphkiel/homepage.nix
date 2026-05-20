@@ -68,7 +68,7 @@ in
       };
       layout = [
         { Infrastructure = { style = "row"; columns = 2; }; }
-        { AI = { style = "row"; columns = 3; }; }
+        { AI = { style = "row"; columns = 4; }; }
         { Tools  = { style = "column"; }; }
       ];
     };
@@ -246,6 +246,14 @@ in
               description = "Local LLM API";
               icon = "ollama.png";
               ping = "http://localhost:11434";
+            };
+          }
+          {
+            "LLaMA Embeddings" = {
+              href = "http://zaphkiel:11435";
+              description = "Embedding API";
+              icon = "ollama.png";
+              ping = "http://localhost:11435";
             };
           }
           {

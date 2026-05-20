@@ -62,6 +62,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - Datasets managed declaratively via `hosts/metatron/datasets.nix` — systemd oneshot `zfs-datasets.service` creates, sets quota/reservation, and chmods each dataset on every boot.
 - Dataset ownership: `media` group (kuroma + jellyfin + navidrome) gets read access to `/tank/media/*`. NAS personal dirs: ct/pt own their dir (770), family group covers public (775). Service dirs owned by their respective system users.
 - `chown` in dataset script uses `|| true` — datasets for not-yet-enabled services don't fail; ownership applied on next rebuild once service is enabled. **Gotcha:** if a service's system user doesn't exist yet when `zfs-datasets.service` first runs, the chown silently fails and the mountpoint stays root-owned. Fix: restart `zfs-datasets.service` after the rebuild that enables the service, then restart the service.
+- **Quota/reservation reduction gotcha:** ZFS refuses to set a quota lower than the current reservation (`cannot set property: size is less than current used or reserved space`). The dataset script sets quota before reservation — lowering both together fails. Fix: manually run `zfs set reservation=none tank/<dataset>` first, then rebuild. Never reduce quota/reservation without checking current usage with `zfs list -o name,used,avail,reservation,quota <dataset>`.
 
 **NAS / SMB (`hosts/metatron/smb.nix`):**
 - Samba binds to `lo tailscale0` only (`bind interfaces only = yes`), nmbd disabled (`disable netbios = yes`), wsdd for discovery.
@@ -93,7 +94,6 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 | `neo4j.nix` | Neo4j | :7474 (http), :7687 (bolt) | zaphkiel | internal only |
 | `llama.nix` | LLaMA router + embedding | :11434/:11435 | zaphkiel | tailscale (direct, no caddy) |
 | `forgejo.nix` | Forgejo | :1412 | metatron | public + internal |
-| `glances.nix` | Glances | :61208 | metatron | internal only |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | internal only |
 
 **Service access model:**
@@ -128,27 +128,26 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 **Homepage (`hosts/<name>/homepage.nix`):**
 - Host-specific — NOT in `services/`. Each host gets its own file at `hosts/<name>/homepage.nix`, imported in `hosts/<name>/configuration.nix`. `services/homepage.nix` no longer exists.
 - Version: homepage-dashboard 1.7.0 (nixpkgs 25.11). Port :8083. Caddy vhost `homepage.<hostname>` with `tls internal`.
+- **Wallpaper:** per-host at `hosts/<name>/homepage.png` — must be `git add`ed before building. Served via Caddy `handle /wallpaper.png { root * /; rewrite * ${wallpaper}; file_server }`.
+- **Palettes:** metatron = Everforest dark, zaphkiel = Catppuccin Mocha. Color variables (`bg`, `surface`, `overlay`, `text`, `muted`, `border`, `primary`, `secondary`, `tertiary`, `green`, `red`, `yellow`) in the `let` block; RGB triplets for `--color-200/700/800/900` must match.
 - **Layout ordering:** `settings.layout` must be a Nix **list** of single-key attrsets — NOT an attrset. Attrsets sort alphabetically. List serializes to YAML sequence; homepage source normalizes it back to object preserving insertion order.
-  ```nix
-  layout = [
-    { Infrastructure = { style = "row"; columns = 2; }; }
-    { Media          = { style = "column"; }; }
-  ];
+- **Info widget DOM structure (critical):** `#information-widgets` → `#widgets-wrap` → [resource widgets (direct children, rendered first), `#information-widgets-right` (contains datetime+search+weather — the `eo` array: `["weatherapi","openweathermap","weather","openmeteo","search","datetime"]`)]. Resources and datetime/search/weather are in **separate flex containers** — CSS `order` does NOT work across them. Do NOT manipulate `#widgets-wrap`, `#information-widgets`, or `#information-widgets-right` layout. Accept default positions; only apply colors.
+- **`#page_wrapper` gotcha:** Do NOT set `max-width` on `#page_wrapper` — it clips the `backdrop-blur` on `#inner_wrapper` causing an unblurred gap on the right. Use `#page_wrapper { width: 100%; }` instead.
+- **CSS pattern (correct):** Only target individual widget classes for color + hostname injection. Do not touch container layout:
+  ```css
+  .information-widget-datetime { display: flex; align-items: baseline; gap: 1.25rem; }
+  .information-widget-datetime::before { content: "hostname"; ... } /* hostname label */
+  .information-widget-search { flex: 1 1 300px !important; }        /* search grows */
+  .information-widget-datetime * { color: ${primary}; }
+  .information-widget-openmeteo * { color: ${tertiary}; }
+  .information-widget-search svg  { color: ${secondary}; }
+  .information-widget-resource    { color: ${muted}; }
   ```
-- **Theming:** `color = "gray"` required — CSS scoped to `.theme-gray {}`. Natsumikan dark palette applied via CSS custom properties. Font: DM Sans (Google Fonts import). Uses catppuccin CSS structure.
-- **Info widget bar layout (CSS):** `#information-widgets` is a flex container. `order` property reorders visually regardless of Nix list order. Pattern: datetime (order 0, `display:flex` with `::before` for hostname), search (order 1), openmeteo (order 2), resource (order 3, `flex: 0 0 auto` keeps natural width — do NOT use `flex: 1` or resources stretch full width).
-- **Hostname in header:** `.information-widget-datetime::before { content: "${config.networking.hostName}"; }` with `.information-widget-datetime { display: flex; align-items: baseline; }` places hostname and time on the same line (`:before` becomes first flex sibling).
-- **Glances service widget broken in 1.7.0:** Service cards with `type = "glances"` look up the Glances URL from `widgets.yaml` by index — the `url` field in `services.yaml` is completely ignored by the server route (`W4("glances", index)` — undefined if no matching info widget). Do not use glances service cards unless you also add a matching glances info widget.
-- **Glances info widget API:** Boolean flags, not `metric:` style. Options: `cpu = true`, `mem = true`, `disk = "/mount"` (string or list), `cputemp`, `uptime`, `expanded`, `diskUnits`.
-- **Sops keys:** `homepage/${config.networking.hostName}/{latitude,longitude,location,timezone}` — hostname-namespaced so same pattern works across hosts. Template `homepage-env` injects as `HOMEPAGE_VAR_*`.
-- **metatron BindReadOnlyPaths:** ZFS child datasets are separate mounts — bind each individually, not just `/tank`. Current list: `/tank/media/anime`, `/tank/media/music`, `/tank/nas/public`, `/tank/backups`, `/tank/services/{nextcloud,jellyfin,navidrome,postgresql,forgejo}`.
-- **zaphkiel sops keys needed:** `homepage/zaphkiel/{latitude,longitude,location,timezone}` — add via `sops secrets/secrets.yaml` before deploying.
-
-**Glances (`services/glances.nix`):**
-- `services.glances.enable = true; services.glances.port = 61208;`. Version 4.3.3 in nixpkgs 25.11, API v4 at `/api/4/`.
-- Caddy vhost `glances.<hostname>` (internal only, `tls internal`).
-- Metatron disks visible via API: nvme0n1 (boot), sda/sdb/sdc/sdd (RAIDZ1 members — no separate mount points, only visible as raw disk I/O).
-- Disk health (S.M.A.R.T.) is NOT exposed by homepage 1.7.0 glances widget — no `smart` metric type. Use Cockpit or smartmontools CLI for SMART checks.
+- **Hostname in header:** `.information-widget-datetime::before` with `display: flex` on the parent places hostname inline with the time.
+- **Glances service widget broken in 1.7.0:** Service cards with `type = "glances"` look up URL from `widgets.yaml` by index — `url` in `services.yaml` is ignored. Both metatron and zaphkiel have glances disabled/removed.
+- **Sops keys:** `homepage/${config.networking.hostName}/{latitude,longitude,location,timezone}` — hostname-namespaced. Template `homepage-env` injects as `HOMEPAGE_VAR_*`. **zaphkiel sops keys still need to be added** via `sops secrets/secrets.yaml`.
+- **metatron BindReadOnlyPaths:** ZFS child datasets are separate mounts — bind each individually. Current list: `/tank/media/anime`, `/tank/media/music`, `/tank/nas/public`, `/tank/backups`, `/tank/services/{nextcloud,jellyfin,navidrome,postgresql,forgejo}`.
+- **zaphkiel resource widgets:** System (cpu+mem+/), Home (/home), Nix (/nix), Storage/Academics/Entertainment (/mnt/Vault-*).
 
 **Forgejo (`forgejo.nix`):**
 - Port :1412 (AdGuard owns :3000). SSH for git on port 2222, tailscale only (`SSH_DOMAIN = "metatron"`). HTTPS clone via `git.kuroma.dev` works publicly. State at `/tank/services/forgejo` (dataset: `tank/services/forgejo`, 256G).
@@ -158,6 +157,7 @@ r5 8500G + GTX 1650 (headless). KDE Plasma 6 + SDDM Wayland (`modules/kde.nix`).
 - **Forgejo 11.x app.ini write gotcha:** `loadOAuth2From()` tries to write to `app.ini` on startup, but the pre-start sets it read-only (`chmod u-w`). Fix: `systemd.services.forgejo.serviceConfig.ExecStartPre = lib.mkAfter [ "+${pkgs.coreutils}/bin/chmod u+w .../app.ini" ]`.
 - `forgejo.service` needs `After=postgresql-setup.service` (NixOS 25.11 — same as other pg-dependent services).
 - sops secrets: `forgejo/secret-key`, `forgejo/internal-token`, `forgejo/oauth2-jwt-secret` (metatron has no LUKS so ZFS is unencrypted — store these in sops).
+- **Actions:** `settings.actions.ENABLED = true` added. Runner setup pending — needs registration token from `/-/admin/runners` after rebuild, stored in sops, then `services.gitea-actions-runner` configured on metatron.
 
 **Cloudflare tunnel routing** (set in Cloudflare dashboard OR via local `tunnelConfig` in `cloudflared.nix`):
 - `searx.kuroma.dev` → `http://localhost:80`

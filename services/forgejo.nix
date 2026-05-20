@@ -163,13 +163,10 @@ in
     name = "metatron";
     url = "https://git.kuroma.dev";
     tokenFile = config.sops.secrets."forgejo/runner-token".path;
+    labels = [ "native:host" "ubuntu-latest:docker://ubuntu:latest" ];
     settings = {
       log.level = "warn";
-      runner = {
-        # "native:host" runs jobs directly on metatron; add docker:// labels later for containerized jobs
-        labels = [ "native:host" "ubuntu-latest:docker://ubuntu:latest" ];
-        capacity = 2;
-      };
+      runner.capacity = 2;
       cache.enabled = false;
     };
   };

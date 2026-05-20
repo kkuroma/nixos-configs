@@ -11,7 +11,7 @@ let
     <style>
     @font-face {
       font-family: 'Google Sans Flex';
-      src: url('/-/custom/fonts/GoogleSansFlex-VariableFont.ttf') format('truetype');
+      src: url('/assets/fonts/GoogleSansFlex-VariableFont.ttf') format('truetype');
       font-weight: 100 900;
       font-style: normal;
       font-display: swap;
@@ -140,18 +140,19 @@ in
           ${customDir}/templates \
           ${customDir}/templates/custom \
           ${customDir}/public \
-          ${customDir}/public/fonts \
-          ${customDir}/public/img
+          ${customDir}/public/assets \
+          ${customDir}/public/assets/fonts \
+          ${customDir}/public/assets/img
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
           ${footerTemplate} \
           ${customDir}/templates/custom/footer.tmpl
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
           ${fontFile} \
-          ${customDir}/public/fonts/GoogleSansFlex-VariableFont.ttf
+          ${customDir}/public/assets/fonts/GoogleSansFlex-VariableFont.ttf
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
-          ${iconPng} ${customDir}/public/img/favicon.png
+          ${iconPng} ${customDir}/public/assets/img/favicon.png
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
-          ${iconPng} ${customDir}/public/img/logo.png
+          ${iconPng} ${customDir}/public/assets/img/logo.png
       '';
     };
   };

@@ -64,7 +64,7 @@ in
   sops.secrets."forgejo/secret-key" = { owner = "forgejo"; };
   sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
   sops.secrets."forgejo/oauth2-jwt-secret" = { owner = "forgejo"; };
-  sops.secrets."forgejo/runner-token" = { owner = "gitea-runner-metatron"; mode = "0440"; };
+  sops.secrets."forgejo/runner-token" = { mode = "0444"; };
 
   services.caddy.virtualHosts = {
     "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:1412";

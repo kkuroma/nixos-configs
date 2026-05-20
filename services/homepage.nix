@@ -9,13 +9,12 @@ let
   text      = "#D1D1C7";
   muted     = "#8E959E";
   border    = "#242C3A";
-  primary   = "#F5803E";   # orange
-  secondary = "#C792EA";   # purple
-  tertiary  = "#39BAE6";   # cyan
+  primary   = "#F5803E";
+  secondary = "#C792EA";
+  tertiary  = "#39BAE6";
   green     = "#AAD94C";
   red       = "#FF5370";
   yellow    = "#FFB454";
-  blue      = "#82AAFF";
 in
 {
   sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
@@ -84,128 +83,114 @@ in
         brightness = 50;
         opacity = 85;
       };
-      layout = {
-        Stats          = { style = "row"; columns = 3; };
-        Infrastructure = { style = "row"; columns = 2; };
-        Productivity   = { style = "column"; };
-        Tools          = { style = "column"; };
-        FileBrowsers   = { style = "row"; columns = 4; };
-      };
+      # List (not attrset) so layout serializes as ordered YAML sequence,
+      # preserving display order instead of being sorted alphabetically.
+      layout = [
+        { Stats          = { style = "row"; columns = 3; }; }
+        { Infrastructure = { style = "row"; columns = 2; }; }
+        { Media          = { style = "row"; columns = 2; }; }
+        { Productivity   = { style = "column"; }; }
+        { Tools          = { style = "column"; }; }
+        { FileBrowsers   = { style = "row"; columns = 4; }; }
+      ];
     };
 
     customCSS = ''
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz@9..40&display=swap');
 
-      /* ── Natsumikan palette mapped onto catppuccin's .theme-gray structure ── */
+      /* Natsumikan palette via catppuccin .theme-gray structure */
       .theme-gray {
         font-family: 'DM Sans', sans-serif;
         zoom: 1.1;
 
-        --n-bg:        ${bg};
-        --n-surface:   ${surface};
-        --n-overlay:   ${overlay};
-        --n-text:      ${text};
-        --n-muted:     ${muted};
-        --n-border:    ${border};
-        --n-primary:   ${primary};
-        --n-secondary: ${secondary};
-        --n-tertiary:  ${tertiary};
-        --n-green:     ${green};
-        --n-red:       ${red};
-        --n-yellow:    ${yellow};
-        --n-blue:      ${blue};
-
-        /* homepage theme-color CSS variables (RGB triplets, no #) */
-        --color-200: 209 209 199 !important;   /* text */
-        --color-700: 36 44 58 !important;      /* border */
-        --color-800: 23 29 38 !important;      /* surface */
-        --color-900: 13 16 23 !important;      /* bg */
+        /* homepage theme-color RGB triplets */
+        --color-200: 209 209 199 !important;
+        --color-700: 36 44 58 !important;
+        --color-800: 23 29 38 !important;
+        --color-900: 13 16 23 !important;
         --color-logo-start: 142 149 158 !important;
-        --color-logo-stop:  36 44 58 !important;
+        --color-logo-stop: 36 44 58 !important;
 
         --standard-bg: rgba(36, 44, 58, 0.55);
 
-        /* widget / resource bars */
-        --info-widgets:      var(--n-primary);
+        --info-widgets:      ${primary};
         --resource-bar-bg:   var(--standard-bg);
-        --resource-bar-fg:   var(--n-green);
-        --widget-border:     var(--n-overlay);
+        --resource-bar-fg:   ${green};
+        --widget-border:     ${overlay};
+        --service-group:     ${secondary};
+        --service-name:      ${text};
+        --service-description: ${primary};
+        --service-block-bg:  ${surface};
+        --service-block-text: ${secondary};
+        --card-color:        ${surface};
+        --card-color-hover:  ${overlay};
+        --footer-items:      ${secondary};
+        --scrollbar-fg:      ${secondary};
+        --scrollbar-bg:      var(--standard-bg);
 
-        /* service cards */
-        --service-group:       var(--n-secondary);
-        --service-name:        var(--n-text);
-        --service-description: var(--n-primary);
-        --service-block-bg:    var(--n-surface);
-        --service-block-text:  var(--n-secondary);
-        --card-color:          ${surface};
-        --card-color-hover:    ${overlay};
+        #information-widgets { border-color: ${overlay}; }
+        #information-widgets * { color: ${primary}; }
 
-        /* footer / scrollbar */
-        --footer-items: var(--n-secondary);
-        --scrollbar-fg: var(--n-secondary);
-        --scrollbar-bg: var(--standard-bg);
+        .resource-usage { background-color: var(--standard-bg); }
+        .resource-usage > div { background-color: ${green}; }
 
-        /* ── information widgets ── */
-        #information-widgets {
-          border-color: var(--widget-border);
-        }
-        #information-widgets * {
-          color: var(--n-primary);
-        }
+        .service-group-icon > div { background: ${secondary} !important; }
+        .service-group-name       { color: ${secondary} !important; }
+        .services-group > button > svg { color: ${secondary}; }
 
-        .resource-usage { background-color: var(--resource-bar-bg); }
-        .resource-usage > div { background-color: var(--resource-bar-fg); }
-
-        /* ── service groups ── */
-        .service-group-icon > div { background: var(--service-group) !important; }
-        .service-group-name       { color: var(--service-group) !important; }
-        .services-group > button > svg { color: var(--service-group); }
-
-        .service-card       { background-color: var(--card-color) !important; }
-        .service-card:hover { background-color: var(--card-color-hover) !important; }
-
-        .service-name.text-sm        { font-size: 0.95rem; color: var(--service-name); }
-        .service-description.text-xs { font-size: 0.75rem; color: var(--service-description); }
-
+        .service-card       { background-color: ${surface} !important; }
+        .service-card:hover { background-color: ${overlay} !important; }
+        .service-name.text-sm        { font-size: 0.95rem; color: ${text}; }
+        .service-description.text-xs { font-size: 0.75rem; color: ${primary}; }
         .service img { border-radius: 25%; }
 
-        .service-block          { background: var(--service-block-bg); }
-        .service-block .uppercase { color: var(--service-block-text); }
-        .service-block .font-thin  { color: var(--n-text); }
+        .service-block { background: ${surface}; }
+        .service-block .uppercase { color: ${secondary}; }
+        .service-block .font-thin  { color: ${text}; }
 
-        /* ── footer ── */
-        #footer svg { color: var(--footer-items); }
+        #footer svg { color: ${secondary}; }
+        * { --scrollbar-thumb: ${secondary}; --scrollbar-track: var(--standard-bg); }
 
-        /* ── scrollbar ── */
-        * {
-          --scrollbar-thumb: var(--scrollbar-fg);
-          --scrollbar-track: var(--scrollbar-bg);
+        /* glances widget charts (catppuccin ids: glances-*) */
+        li[id^='glances-'] .recharts-surface > g:nth-of-type(1) path:nth-child(1) {
+          fill: ${primary}; fill-opacity: 0.35;
         }
+        li[id^='glances-'] .recharts-surface g:nth-of-type(1) path:nth-child(2) {
+          stroke: ${primary}; stroke-opacity: 0.5;
+        }
+        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(1) {
+          fill: ${secondary}; fill-opacity: 0.35;
+        }
+        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(2) {
+          stroke: ${secondary}; stroke-opacity: 0.5;
+        }
+        li[id^='glances-'] .bottom-3.left-3 { color: ${primary}; }
+        li[id^='glances-'] .bottom-3.right-3 .opacity-75 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
+        li[id^='glances-'] .top-3.right-3 .opacity-50 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
+        li[id^='glances-'] .flex.items-center.text-xs .text-right { color: ${tertiary}; }
+        li[id^='glances-'] .flex.items-center .opacity-25.w-14.text-right { color: ${secondary}; opacity: 0.85; }
+        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .w-3.h-3.mr-1\.5.opacity-50 > div {
+          background: ${green} !important; opacity: 1;
+        }
+        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .opacity-75.grow { color: ${primary} !important; }
 
-        /* ── Tailwind color overrides → Natsumikan ── */
+        /* Tailwind color → Natsumikan */
         .bg-amber-500, .bg-orange-400, .bg-orange-500 { background-color: ${primary}; }
-        .bg-blue-500, .bg-sky-500, .bg-cyan-500       { background-color: ${tertiary}; }
-        .bg-emerald-500, .bg-green-500, .bg-lime-500  { background-color: ${green}; }
-        .bg-fuchsia-500, .bg-pink-500, .bg-violet-500,
-        .bg-purple-500, .bg-indigo-500                { background-color: ${secondary}; }
-        .bg-red-500, .bg-rose-500                     { background-color: ${red}; }
-        .bg-yellow-500                                { background-color: ${yellow}; }
-        .bg-teal-500                                  { background-color: ${tertiary}; }
-        .bg-white                                     { background-color: ${text}; }
-
-        .text-white                 { color: ${text}; }
-        .text-red-400, .text-red-500, .text-rose-300,
-        .text-rose-500, .text-rose-900 { color: ${red}; }
+        .bg-blue-500, .bg-sky-500, .bg-cyan-500 { background-color: ${tertiary}; }
+        .bg-emerald-500, .bg-green-500, .bg-lime-500 { background-color: ${green}; }
+        .bg-fuchsia-500, .bg-pink-500, .bg-violet-500, .bg-purple-500, .bg-indigo-500 { background-color: ${secondary}; }
+        .bg-red-500, .bg-rose-500 { background-color: ${red}; }
+        .bg-yellow-500 { background-color: ${yellow}; }
+        .bg-white { background-color: ${text}; }
+        .text-white { color: ${text}; }
+        .text-red-400, .text-red-500, .text-rose-300, .text-rose-500 { color: ${red}; }
         .text-green-500, .text-emerald-300 { color: ${green}; }
-        .text-amber-800             { color: ${primary}; }
-        .text-blue-500\/80          { color: ${tertiary}; }
-        .text-emerald-500\/80       { color: ${green}; }
+
+        .service-tags .dark\:bg-theme-900\/50 { background-color: rgb(var(--color-900) / 0.3) !important; }
       }
 
-      /* ── widget bar layout ── */
-      #widgets-wrap {
-        padding: 0.75rem 1.5rem;
-      }
+      /* ── info widget bar layout ── */
+      #widgets-wrap { padding: 0.75rem 1.5rem; }
       #information-widgets,
       #information-widgets-right {
         display: flex;
@@ -214,52 +199,53 @@ in
         gap: 0.75rem;
       }
 
-      /* Row 1: hostname above datetime, spans full width */
+      /* Row 1: hostname + datetime on the same line */
       .information-widget-datetime {
         flex: 0 0 100% !important;
+        order: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 1.25rem;
       }
       .information-widget-datetime::before {
-        display: block;
         content: "${config.networking.hostName}";
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: ${primary};
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 0.15rem;
+        flex-shrink: 0;
       }
 
-      /* Row 2: search expands, weather anchors right */
-      .information-widget-search    { flex: 1 1 300px !important; }
-      .information-widget-openmeteo { flex: 0 0 auto !important; }
+      /* Row 2: search bar + weather */
+      .information-widget-search    { flex: 1 1 300px !important; order: 1; }
+      .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
 
-      /* Row 3: resource monitors share one row equally */
+      /* Row 3: resource monitors — pushed after search/weather via order */
       .information-widget-resource {
         flex: 1 1 0 !important;
         min-width: 110px;
+        order: 3;
       }
 
-      /* Background: centered cover */
+      /* background: centered cover */
       .fixed.min-h-screen {
         background-position: center center !important;
         background-size: cover !important;
       }
 
-      /* Center page content */
-      #page_wrapper {
-        max-width: 1400px;
-        margin: 0 auto;
-      }
+      /* center page */
+      #page_wrapper { max-width: 1400px; margin: 0 auto; }
 
-      /* Scrollbar */
-      ::-webkit-scrollbar       { width: 5px; }
+      /* scrollbar */
+      ::-webkit-scrollbar { width: 5px; }
       ::-webkit-scrollbar-track { background: ${bg}; }
       ::-webkit-scrollbar-thumb { background: ${border}; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: ${secondary}; }
     '';
 
     widgets = [
-      # Row 1 — hostname (via CSS ::before) + datetime
+      # Row 1: hostname (::before) + datetime
       {
         datetime = {
           text_size = "xl";
@@ -271,7 +257,7 @@ in
           };
         };
       }
-      # Row 2 — search + weather
+      # Row 2: search + weather
       {
         search = {
           provider = "custom";
@@ -291,7 +277,7 @@ in
           cache = 5;
         };
       }
-      # Row 3 — system + disk usage (SMART health not natively available without glances)
+      # Row 3: disk usage (CSS order: 3 pushes these below search/weather)
       {
         resources = {
           label = "System";
@@ -327,9 +313,48 @@ in
     ];
 
     services = [
-      # Stats row — services with live widget data
+      # Stats: glances system metrics (cpu + memory as graph cards)
       {
         "Stats" = [
+          {
+            CPU = {
+              widget = {
+                type = "glances";
+                url = "http://localhost:61208";
+                metric = "cpu";
+                version = 4;
+              };
+              id = "glances-cpu";
+            };
+          }
+          {
+            Memory = {
+              widget = {
+                type = "glances";
+                url = "http://localhost:61208";
+                metric = "mem";
+                version = 4;
+              };
+              id = "glances-memory";
+            };
+          }
+          {
+            "Disk I/O" = {
+              widget = {
+                type = "glances";
+                url = "http://localhost:61208";
+                metric = "disk";
+                disk = "sda";
+                version = 4;
+              };
+              id = "glances-sda";
+            };
+          }
+        ];
+      }
+      # Infrastructure
+      {
+        "Infrastructure" = [
           {
             "AdGuard Home" = {
               href = "https://adguardhome.metatron";
@@ -343,6 +368,19 @@ in
               };
             };
           }
+          {
+            Matrix = {
+              href = "https://matrix.metatron";
+              description = "Chat";
+              icon = "matrix-light.png";
+              ping = "https://matrix.metatron";
+            };
+          }
+        ];
+      }
+      # Media
+      {
+        "Media" = [
           {
             Jellyfin = {
               href = "https://jellyfin.metatron";
@@ -372,20 +410,7 @@ in
           }
         ];
       }
-      # Infrastructure row
-      {
-        "Infrastructure" = [
-          {
-            Matrix = {
-              href = "https://matrix.metatron";
-              description = "Chat";
-              icon = "matrix-light.png";
-              ping = "https://matrix.metatron";
-            };
-          }
-        ];
-      }
-      # Columns — Productivity
+      # Productivity (columns)
       {
         "Productivity" = [
           {
@@ -414,7 +439,7 @@ in
           }
         ];
       }
-      # Columns — Tools
+      # Tools (columns)
       {
         "Tools" = [
           {

@@ -105,7 +105,6 @@ in
       actions.ENABLED = true;
       service.DISABLE_REGISTRATION = true;
       ui.DEFAULT_THEME = "forgejo-dark";
-      "".APP_NAME = "Kuroma's Vault of Code";
     };
   };
 

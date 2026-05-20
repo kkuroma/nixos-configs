@@ -1,9 +1,41 @@
 { config, lib, pkgs, ... }:
 let
   upsName = "ups";
+  recipientEmail = "laoganma960@gmail.com";
+
+  notifyScript = pkgs.writeShellScript "ups-notify-email" ''
+    msg="$*"
+    {
+      printf 'From: Metatron UPS Monitor <noreply@metatron>\r\n'
+      printf 'To: ${recipientEmail}\r\n'
+      printf 'Subject: [Metatron] your UPS is cooked: %s\r\n' "$msg"
+      printf 'Content-Type: text/plain\r\n'
+      printf '\r\n'
+      printf '%s\n\n-- metatron UPS monitor\n' "$msg"
+    } | ${pkgs.msmtp}/bin/msmtp \
+          --file=${config.sops.templates."msmtp-config".path} \
+          "${recipientEmail}"
+  '';
 in
 {
-  sops.secrets."nut/monitor-password" = { mode = "0444"; };
+  sops.secrets."nut/monitor-password"      = { mode = "0444"; };
+  sops.secrets."vaultwarden/smtp-password" = { mode = "0444"; };
+
+  sops.templates."msmtp-config" = {
+    mode = "0444";
+    content = ''
+      account default
+      host smtp.zoho.com
+      port 587
+      tls on
+      tls_starttls on
+      auth on
+      user contact@kuroma.dev
+      password ${config.sops.placeholder."vaultwarden/smtp-password"}
+      from contact@kuroma.dev
+      logfile /var/log/msmtp-ups.log
+    '';
+  };
 
   power.ups = {
     enable = true;
@@ -26,10 +58,21 @@ in
       system = "${upsName}@localhost";
       user = "monitor";
     };
+
+    upsmon.settings = {
+      NOTIFYCMD = "${notifyScript}";
+      NOTIFYFLAG = [
+        [ "ONBATT"   "SYSLOG+EXEC" ]
+        [ "ONLINE"   "SYSLOG+EXEC" ]
+        [ "LOWBATT"  "SYSLOG+EXEC" ]
+        [ "COMMBAD"  "SYSLOG+EXEC" ]
+        [ "COMMOK"   "SYSLOG+EXEC" ]
+        [ "SHUTDOWN" "SYSLOG+EXEC" ]
+      ];
+    };
   };
 
   # Shutdown when battery < 70% while on battery (OB status).
-  # upsc reads are unauthenticated — no credentials needed here.
   systemd.services.ups-low-battery-shutdown = {
     description = "Initiate poweroff when UPS battery < 70% while on battery";
     after = [ "upsd.service" ];

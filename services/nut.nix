@@ -10,7 +10,7 @@ in
     mode = "standalone";
 
     ups.${upsName} = {
-      driver = "usbhid-ups";
+      driver = "blazer_usb";
       port = "auto";
       description = "Main UPS";
     };

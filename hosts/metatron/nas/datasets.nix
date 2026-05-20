@@ -60,8 +60,8 @@ let
     };
     "tank/services/matrix" = {
       mountpoint = "/tank/services/matrix";
-      quota = "512G";
-      reservation = "512G";
+      quota = "256G";
+      reservation = "256G";
       owner = "matrix-synapse";
       group = "matrix-synapse";
       mode = "700";

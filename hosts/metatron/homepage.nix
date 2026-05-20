@@ -1,20 +1,20 @@
 { config, ... }:
 let
-  wallpaper = ../../homepage-wallpaper.png;
+  wallpaper = ./homepage.png;
 
-  # Natsumikan dark palette
-  bg        = "#0D1017";
-  surface   = "#171D26";
-  overlay   = "#1E2433";
-  text      = "#D1D1C7";
-  muted     = "#8E959E";
-  border    = "#242C3A";
-  primary   = "#F5803E";
-  secondary = "#C792EA";
-  tertiary  = "#39BAE6";
-  green     = "#AAD94C";
-  red       = "#FF5370";
-  yellow    = "#FFB454";
+  # Everforest dark palette
+  bg        = "#2D353B";
+  surface   = "#343F44";
+  overlay   = "#3D484D";
+  text      = "#D3C6AA";
+  muted     = "#859289";
+  border    = "#475258";
+  primary   = "#A7C080";
+  secondary = "#D699B6";
+  tertiary  = "#83C092";
+  green     = "#A7C080";
+  red       = "#E67E80";
+  yellow    = "#DBBC7F";
 in
 {
   sops.secrets."homepage/jellyfin-api-key" = { mode = "0444"; };
@@ -101,20 +101,18 @@ in
     customCSS = ''
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz@9..40&display=swap');
 
-      /* Natsumikan palette via catppuccin .theme-gray structure */
       .theme-gray {
         font-family: 'DM Sans', sans-serif;
         zoom: 1.1;
 
-        /* homepage theme-color RGB triplets */
-        --color-200: 209 209 199 !important;
-        --color-700: 36 44 58 !important;
-        --color-800: 23 29 38 !important;
-        --color-900: 13 16 23 !important;
-        --color-logo-start: 142 149 158 !important;
-        --color-logo-stop: 36 44 58 !important;
+        --color-200: 211 198 170 !important;
+        --color-700: 71 82 88 !important;
+        --color-800: 52 63 68 !important;
+        --color-900: 45 53 59 !important;
+        --color-logo-start: 133 146 137 !important;
+        --color-logo-stop: 71 82 88 !important;
 
-        --standard-bg: rgba(36, 44, 58, 0.55);
+        --standard-bg: rgba(61, 72, 77, 0.55);
 
         --info-widgets:        ${primary};
         --resource-bar-bg:     var(--standard-bg);
@@ -154,30 +152,7 @@ in
         #footer svg { color: ${secondary}; }
         * { --scrollbar-thumb: ${secondary}; --scrollbar-track: var(--standard-bg); }
 
-        /* glances widget charts */
-        li[id^='glances-'] .recharts-surface > g:nth-of-type(1) path:nth-child(1) {
-          fill: ${primary}; fill-opacity: 0.35;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(1) path:nth-child(2) {
-          stroke: ${primary}; stroke-opacity: 0.5;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(1) {
-          fill: ${secondary}; fill-opacity: 0.35;
-        }
-        li[id^='glances-'] .recharts-surface g:nth-of-type(2) path:nth-child(2) {
-          stroke: ${secondary}; stroke-opacity: 0.5;
-        }
-        li[id^='glances-'] .bottom-3.left-3 { color: ${primary}; }
-        li[id^='glances-'] .bottom-3.right-3 .opacity-75 { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
-        li[id^='glances-'] .top-3.right-3 .opacity-50    { color: ${tertiary}; opacity: 1; font-size: 0.8rem; }
-        li[id^='glances-'] .flex.items-center.text-xs .text-right { color: ${tertiary}; }
-        li[id^='glances-'] .flex.items-center .opacity-25.w-14.text-right { color: ${secondary}; opacity: 0.85; }
-        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .w-3.h-3.mr-1\.5.opacity-50 > div {
-          background: ${green} !important; opacity: 1;
-        }
-        li[id^='glances-'] .bottom-4.right-3.left-3.z-20 .opacity-75.grow { color: ${primary} !important; }
-
-        /* Tailwind color → Natsumikan */
+        /* Tailwind color → Everforest */
         .bg-amber-500, .bg-orange-400, .bg-orange-500 { background-color: ${primary}; }
         .bg-blue-500, .bg-sky-500, .bg-cyan-500 { background-color: ${tertiary}; }
         .bg-emerald-500, .bg-green-500, .bg-lime-500 { background-color: ${green}; }
@@ -193,13 +168,26 @@ in
       }
 
       /* ── info widget bar layout ── */
-      #widgets-wrap { padding: 0.75rem 1.5rem; }
-      #information-widgets,
+      /* flex-column stacks #information-widgets above #information-widgets-right */
+      #widgets-wrap {
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      #information-widgets {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        order: 0;
+      }
       #information-widgets-right {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 0.75rem;
+        order: 1;
       }
 
       /* Row 1: hostname + datetime on the same line */
@@ -224,7 +212,7 @@ in
       .information-widget-search    { flex: 1 1 300px !important; order: 1; }
       .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
 
-      /* Row 3: resource monitors — left-aligned, natural width, after search/weather */
+      /* Row 3: resource monitors — left-aligned, natural width */
       .information-widget-resource {
         flex: 0 0 auto !important;
         order: 3;
@@ -237,7 +225,7 @@ in
       }
 
       /* center page */
-      #page_wrapper { max-width: 1400px; margin: 0 auto; }
+      #page_wrapper { width: 100%; }
 
       /* scrollbar */
       ::-webkit-scrollbar { width: 5px; }

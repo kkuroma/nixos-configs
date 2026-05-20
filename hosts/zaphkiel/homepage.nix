@@ -1,20 +1,20 @@
 { config, ... }:
 let
-  wallpaper = ../../homepage-wallpaper.png;
+  wallpaper = ./homepage.png;
 
-  # Natsumikan dark palette
-  bg        = "#0D1017";
-  surface   = "#171D26";
-  overlay   = "#1E2433";
-  text      = "#D1D1C7";
-  muted     = "#8E959E";
-  border    = "#242C3A";
-  primary   = "#F5803E";
-  secondary = "#C792EA";
-  tertiary  = "#39BAE6";
-  green     = "#AAD94C";
-  red       = "#FF5370";
-  yellow    = "#FFB454";
+  # Catppuccin Mocha palette
+  bg        = "#1E1E2E";
+  surface   = "#313244";
+  overlay   = "#45475A";
+  text      = "#CDD6F4";
+  muted     = "#A6ADC8";
+  border    = "#585B70";
+  primary   = "#CBA6F7";
+  secondary = "#89B4FA";
+  tertiary  = "#94E2D5";
+  green     = "#A6E3A1";
+  red       = "#F38BA8";
+  yellow    = "#F9E2AF";
 in
 {
   sops.secrets."adguard/password" = { mode = "0444"; };
@@ -67,9 +67,9 @@ in
         opacity = 85;
       };
       layout = [
-        { Infrastructure = { style = "row";    columns = 2; }; }
-        { AI             = { style = "row";    columns = 3; }; }
-        { Tools          = { style = "column"; }; }
+        { Infrastructure = { style = "row"; columns = 2; }; }
+        { AI = { style = "row"; columns = 3; }; }
+        { Tools  = { style = "column"; }; }
       ];
     };
 
@@ -80,14 +80,14 @@ in
         font-family: 'DM Sans', sans-serif;
         zoom: 1.1;
 
-        --color-200: 209 209 199 !important;
-        --color-700: 36 44 58 !important;
-        --color-800: 23 29 38 !important;
-        --color-900: 13 16 23 !important;
-        --color-logo-start: 142 149 158 !important;
-        --color-logo-stop: 36 44 58 !important;
+        --color-200: 205 214 244 !important;
+        --color-700: 88 91 112 !important;
+        --color-800: 49 50 68 !important;
+        --color-900: 30 30 46 !important;
+        --color-logo-start: 166 173 200 !important;
+        --color-logo-stop: 88 91 112 !important;
 
-        --standard-bg: rgba(36, 44, 58, 0.55);
+        --standard-bg: rgba(88, 91, 112, 0.55);
 
         --info-widgets:        ${primary};
         --resource-bar-bg:     var(--standard-bg);
@@ -105,7 +105,10 @@ in
         --scrollbar-bg:        var(--standard-bg);
 
         #information-widgets { border-color: ${overlay}; }
-        #information-widgets * { color: ${primary}; }
+        .information-widget-datetime * { color: ${primary}; }
+        .information-widget-openmeteo * { color: ${tertiary}; }
+        .information-widget-search svg  { color: ${secondary}; }
+        .information-widget-resource    { color: ${muted}; }
 
         .resource-usage { background-color: var(--standard-bg); }
         .resource-usage > div { background-color: ${green}; }
@@ -141,18 +144,8 @@ in
         .service-tags .dark\:bg-theme-900\/50 { background-color: rgb(var(--color-900) / 0.3) !important; }
       }
 
-      #widgets-wrap { padding: 0.75rem 1.5rem; }
-      #information-widgets,
-      #information-widgets-right {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
+      /* hostname inline with datetime; search grows to fill row */
       .information-widget-datetime {
-        flex: 0 0 100% !important;
-        order: 0;
         display: flex;
         align-items: baseline;
         gap: 1.25rem;
@@ -166,21 +159,14 @@ in
         text-transform: uppercase;
         flex-shrink: 0;
       }
-
-      .information-widget-search    { flex: 1 1 300px !important; order: 1; }
-      .information-widget-openmeteo { flex: 0 0 auto !important;  order: 2; }
-
-      .information-widget-resource {
-        flex: 0 0 auto !important;
-        order: 3;
-      }
+      .information-widget-search { flex: 1 1 300px !important; }
 
       .fixed.min-h-screen {
         background-position: center center !important;
         background-size: cover !important;
       }
 
-      #page_wrapper { max-width: 1400px; margin: 0 auto; }
+      #page_wrapper { width: 100%; }
 
       ::-webkit-scrollbar { width: 5px; }
       ::-webkit-scrollbar-track { background: ${bg}; }
@@ -220,8 +206,10 @@ in
         };
       }
       { resources = { label = "System"; cpu = true; memory = true; disk = "/"; }; }
-      { resources = { label = "Home";   disk = "/home"; }; }
-      { resources = { label = "Nix";    disk = "/nix"; }; }
+      { resources = { label = "Nix"; disk = "/nix"; }; }
+      { resources = { label = "Storage"; disk = "/mnt/Vault-Storage"; }; }
+      { resources = { label = "Academics"; disk = "/mnt/Vault-Academics"; }; }
+      { resources = { label = "Entertainment"; disk = "/mnt/Vault-Entertainment"; }; }
     ];
 
     services = [

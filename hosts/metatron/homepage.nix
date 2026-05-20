@@ -33,6 +33,7 @@ in
       HOMEPAGE_VAR_ADGUARD_PASSWORD=${config.sops.placeholder."adguard/password"}
       HOMEPAGE_VAR_NAVIDROME_TOKEN=${config.sops.placeholder."homepage/navidrome-token"}
       HOMEPAGE_VAR_NAVIDROME_SALT=${config.sops.placeholder."homepage/navidrome-salt"}
+      HOMEPAGE_VAR_NUT_PASSWORD=${config.sops.placeholder."nut/monitor-password"}
       HOMEPAGE_VAR_LATITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/latitude"}
       HOMEPAGE_VAR_LONGITUDE=${config.sops.placeholder."homepage/${config.networking.hostName}/longitude"}
       HOMEPAGE_VAR_LOCATION=${config.sops.placeholder."homepage/${config.networking.hostName}/location"}
@@ -247,6 +248,14 @@ in
       { resources = { label = "Navidrome";   disk = "/tank/services/navidrome"; }; }
       { resources = { label = "PostgreSQL";  disk = "/tank/services/postgresql"; }; }
       { resources = { label = "Forgejo";     disk = "/tank/services/forgejo"; }; }
+      {
+        nut = {
+          url = "nut://localhost:3493";
+          ups = "ups";
+          username = "monitor";
+          password = "{{HOMEPAGE_VAR_NUT_PASSWORD}}";
+        };
+      }
     ];
 
     services = [

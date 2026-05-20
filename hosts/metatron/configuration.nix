@@ -34,6 +34,7 @@
     ../../services/filebrowser.nix
     ../../services/vaultwarden.nix
     ../../services/forgejo.nix
+    ../../services/nut.nix
     ./homepage.nix
   ];
 

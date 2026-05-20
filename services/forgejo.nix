@@ -2,6 +2,9 @@
 let
   customDir = "${config.services.forgejo.stateDir}/custom";
   fontFile = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
+  iconPng = pkgs.runCommand "forgejo-icon.png" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
+    convert ${./icon.webp} $out
+  '';
 
   # Natsumikan dark palette CSS override + Google Sans Flex (self-hosted via /-/custom/fonts/)
   footerTemplate = pkgs.writeText "forgejo-footer.tmpl" ''
@@ -65,6 +68,10 @@ in
   sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
   sops.secrets."forgejo/oauth2-jwt-secret" = { owner = "forgejo"; };
   sops.secrets."forgejo/runner-token" = { mode = "0444"; };
+  sops.templates."forgejo-runner-env" = {
+    mode = "0444";
+    content = "TOKEN=${config.sops.placeholder."forgejo/runner-token"}";
+  };
 
   services.caddy.virtualHosts = {
     "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:1412";
@@ -98,6 +105,7 @@ in
       actions.ENABLED = true;
       service.DISABLE_REGISTRATION = true;
       ui.DEFAULT_THEME = "forgejo-dark";
+      "".APP_NAME = "Kuroma's Vault of Code";
     };
   };
 
@@ -133,13 +141,18 @@ in
           ${customDir}/templates \
           ${customDir}/templates/custom \
           ${customDir}/public \
-          ${customDir}/public/fonts
+          ${customDir}/public/fonts \
+          ${customDir}/public/img
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
           ${footerTemplate} \
           ${customDir}/templates/custom/footer.tmpl
         ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
           ${fontFile} \
           ${customDir}/public/fonts/GoogleSansFlex-VariableFont.ttf
+        ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
+          ${iconPng} ${customDir}/public/img/favicon.png
+        ${pkgs.coreutils}/bin/install -m 644 -o forgejo -g forgejo \
+          ${iconPng} ${customDir}/public/img/logo.png
       '';
     };
   };
@@ -162,7 +175,7 @@ in
     enable = true;
     name = "metatron";
     url = "https://git.kuroma.dev";
-    tokenFile = config.sops.secrets."forgejo/runner-token".path;
+    tokenFile = config.sops.templates."forgejo-runner-env".path;
     labels = [ "native:host" "ubuntu-latest:docker://ubuntu:latest" ];
     settings = {
       log.level = "warn";

@@ -73,7 +73,7 @@ in
     environmentFile = config.sops.templates."homepage-env".path;
 
     settings = {
-      title = "metatron";
+      title = "Landing - ${config.networking.hostName}";
       theme = "dark";
       color = "gray";
       headerStyle = "underlined";

@@ -9,6 +9,7 @@ let
       owner = "kuroma";
       group = "media";
       mode = "775";
+      snapshot = true;
     };
     "tank/media/music" = {
       mountpoint = "/tank/media/music";
@@ -17,6 +18,7 @@ let
       owner = "kuroma";
       group = "media";
       mode = "775";
+      snapshot = true;
     };
     "tank/nas/kuroma" = {
       mountpoint = "/tank/nas/kuroma";
@@ -25,6 +27,7 @@ let
       owner = "kuroma";
       group = "users";
       mode = "700";
+      snapshot = true;
     };
     "tank/nas/ct" = {
       mountpoint = "/tank/nas/ct";
@@ -33,6 +36,7 @@ let
       owner = "ct";
       group = "family";
       mode = "770";
+      snapshot = true;
     };
     "tank/nas/pt" = {
       mountpoint = "/tank/nas/pt";
@@ -41,6 +45,7 @@ let
       owner = "pt";
       group = "family";
       mode = "770";
+      snapshot = true;
     };
     "tank/nas/public" = {
       mountpoint = "/tank/nas/public";
@@ -49,6 +54,7 @@ let
       owner = "kuroma";
       group = "family";
       mode = "775";
+      snapshot = true;
     };
     "tank/services/nextcloud" = {
       mountpoint = "/tank/services/nextcloud";
@@ -121,6 +127,7 @@ let
       owner = "kuroma";
       group = "users";
       mode = "700";
+      snapshot = true;
     };
     "tank/backups" = {
       mountpoint = "/tank/backups";
@@ -129,6 +136,7 @@ let
       owner = "kuroma";
       group = "users";
       mode = "700";
+      snapshot = true;
     };
   };
 
@@ -137,6 +145,7 @@ let
     ${lib.optionalString (cfg.quota != null) "zfs set quota=${cfg.quota} ${name}"}
     ${lib.optionalString (cfg.reservation != null) "zfs set reservation=${cfg.reservation} ${name}"}
     ${lib.optionalString (name == "tank/services/postgresql") "zfs set recordsize=8k ${name}"}
+    zfs set com.sun:auto-snapshot=${if cfg.snapshot or false then "true" else "false"} ${name}
     chown ${cfg.owner}:${cfg.group} ${cfg.mountpoint} 2>/dev/null || true
     chmod ${cfg.mode} ${cfg.mountpoint}
   '';
@@ -152,6 +161,21 @@ in
     };
     path = [ pkgs.zfs ];
     script = lib.concatStrings (lib.mapAttrsToList mkDataset datasets);
+  };
+
+  services.zfs.autoSnapshot = {
+    enable = true;
+    frequent = 4;   # 15-min snapshots, keep 4
+    hourly = 24;
+    daily = 7;
+    weekly = 4;
+    monthly = 3;
+  };
+
+  services.zfs.autoScrub = {
+    enable = true;
+    pools = [ "tank" ];
+    interval = "weekly";
   };
 
   users.groups.family = {};

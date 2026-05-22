@@ -8,8 +8,14 @@
     dataDir = "/home/${username}";
     settings.gui.insecureSkipHostcheck = true;
     settings.devices = {
-      raziel.id   = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
-      zaphkiel.id = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";
+      raziel = {
+        id        = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
+        addresses = [ "tcp://100.79.72.120:22000" "dynamic" ];
+      };
+      zaphkiel = {
+        id        = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";
+        addresses = [ "tcp://100.91.235.104:22000" "dynamic" ];
+      };
     };
     settings.folders."Documents" = {
       path = "/home/${username}/Documents";

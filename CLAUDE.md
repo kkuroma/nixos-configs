@@ -153,6 +153,9 @@ Writes at runtime: niri KDL, ghostty config, nvim matugen.lua, starship palette.
 ### Users / Auth / Secrets
 `users.mutableUsers = false`. Passwords: `mkpasswd --method=yescrypt`. Sops: `nix-shell -p sops --run 'sops secrets/secrets.yaml'`. New host: add SSH host key to `.sops.yaml` after first boot.
 
+## Pending work
+- **Vault-Storage ext4 → btrfs migration:** plan documented in `PLAN.md`. Waiting on current arxiv rsync to metatron to finish before starting.
+
 ## Misc gotchas
 - **Vaultwarden `ProtectSystem=strict`:** add `ReadWritePaths = [ "/tank/services/vaultwarden" ]` or exits with EROFS.
 - **Hibernate resume:** zaphkiel/raziel: `resumeDevice = "/dev/mapper/cryptroot"`. metatron: `/dev/nvme0n1p2`. NVIDIA needs `powerManagement.enable + NVreg_PreserveVideoMemoryAllocations=1`.

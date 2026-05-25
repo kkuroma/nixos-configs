@@ -9,7 +9,7 @@ let
         ExecStart = pkgs.writeShellScript "backup-${name}" script;
         TimeoutStartSec = "6h";
       };
-      path = [ pkgs.rsync ];
+      path = [ pkgs.rsync pkgs.util-linux ];
     };
     systemd.timers."backup-${name}" = {
       wantedBy = [ "timers.target" ];

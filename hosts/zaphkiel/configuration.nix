@@ -27,7 +27,7 @@
     ../../services/n8n.nix
     ../../services/neo4j.nix
     ../../services/llama.nix
-    #./backup.nix
+    ./backup.nix
     ./homepage.nix
     ./datasets.nix
   ];
@@ -41,7 +41,7 @@
   boot.kernelParams = [
     "resume_offset=92872541"
     "resume=/dev/mapper/cryptroot"
-    "zfs.zfs_arc_max=8589934592"
+    "zfs.zfs_arc_max=17179869184"
   ];
   # networking.firewall.allowedTCPPorts = [ add temporary ports here, was 3000 ];
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 11435 7687 ]; # llama API + neo4j bolt (n8n/neo4j-http via caddy)

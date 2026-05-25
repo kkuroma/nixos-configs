@@ -8,5 +8,4 @@
     nvidiaSettings = false;
     powerManagement.enable = false;
   };
-
 }

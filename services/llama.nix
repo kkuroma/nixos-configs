@@ -52,14 +52,15 @@ in
   users.groups.llama = {};
 
   systemd.tmpfiles.rules = [
-    "d /var/lib/llm-models 0755 llama llama -"
-    "d /var/lib/llm-models/models 0755 llama llama -"
-    "d /var/lib/llm-models/embeddings 0755 llama llama -"
+    "d /Vault/llm-models 0755 llama llama -"
+    "d /Vault/llm-models/models 0755 llama llama -"
+    "d /Vault/llm-models/embeddings 0755 llama llama -"
   ];
 
   systemd.services.llama-router = {
     description = "LLaMA.cpp Router";
-    after = [ "network.target" ];
+    after = [ "network.target" "Vault.mount" ];
+    requires = [ "Vault.mount" ];
     wantedBy = [ "multi-user.target" ];
     environment = {
       ROUTER_CONFIG_PATH = "${routerConfig}";
@@ -80,13 +81,14 @@ in
 
   systemd.services.llama-embedding = {
     description = "LLaMA.cpp Embedding Server";
-    after = [ "network.target" ];
+    after = [ "network.target" "Vault.mount" ];
+    requires = [ "Vault.mount" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs.llama-cpp}/bin/llama-server"
         "--host 0.0.0.0 --port 11435"
-        "--model /var/lib/llm-models/embeddings/nomic-embed-text-v2-moe.Q4_0.gguf"
+        "--model /Vault/llm-models/embeddings/nomic-embed-text-v2-moe.Q4_0.gguf"
         "--embedding --pooling cls"
         "--ctx-size 2048 --parallel 4 --n-gpu-layers -1"
       ];

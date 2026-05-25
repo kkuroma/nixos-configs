@@ -8,5 +8,11 @@
     enable = true;
     https.enable = false;
     http.enable = true;
+    directories.home = "/Vault/neo4j";
+  };
+
+  systemd.services.neo4j = {
+    after    = [ "Vault.mount" ];
+    requires = [ "Vault.mount" ];
   };
 }

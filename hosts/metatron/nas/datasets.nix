@@ -9,7 +9,7 @@ let
       owner = "kuroma";
       group = "media";
       mode = "775";
-      snapshot = true;
+      snapshot = false;
     };
     "tank/media/music" = {
       mountpoint = "/tank/media/music";
@@ -18,7 +18,7 @@ let
       owner = "kuroma";
       group = "media";
       mode = "775";
-      snapshot = true;
+      snapshot = false;
     };
     "tank/nas/kuroma" = {
       mountpoint = "/tank/nas/kuroma";
@@ -127,7 +127,7 @@ let
       owner = "kuroma";
       group = "users";
       mode = "700";
-      snapshot = true;
+      snapshot = false;
     };
     "tank/backups" = {
       mountpoint = "/tank/backups";

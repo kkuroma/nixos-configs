@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   services.caddy.virtualHosts."n8n.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:5678";
 
@@ -10,6 +10,12 @@
   services.n8n = {
     enable = true;
     environment.GENERIC_TIMEZONE = "Asia/Tokyo";
+  };
+
+  systemd.services.n8n = {
+    after    = [ "Vault.mount" ];
+    requires = [ "Vault.mount" ];
+    environment.N8N_USER_FOLDER = lib.mkForce "/Vault/n8n";
   };
   systemd.services.n8n.serviceConfig.EnvironmentFile = config.sops.templates."n8n-env".path;
 }

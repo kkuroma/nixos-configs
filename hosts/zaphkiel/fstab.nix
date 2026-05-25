@@ -1,12 +1,6 @@
 { ... }:
 {
   fileSystems = {
-    "/mnt/Vault-Storage" = {
-      device  = "/dev/disk/by-uuid/60c72ba7-bdd3-478f-a033-cff40844ce9f";
-      fsType  = "ext4";
-      options = [ "defaults" "nofail" "x-systemd.automount" "noatime" ];
-    };
-
     "/mnt/Vault-Academics" = {
       device  = "/dev/disk/by-uuid/c02c0849-664d-4cb9-9585-f0fcf6234c47";
       fsType  = "ext4";

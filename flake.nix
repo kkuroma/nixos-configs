@@ -68,8 +68,8 @@
     # per machine profiles including hardware, system fonts, and video enc/dec
     machines = {
       zaphkiel = {
-        # xanmod for desktop speed, cachy means needing to import their flakes
-        kernelPackages = pkgs: pkgs.linuxKernel.packages.linux_xanmod_latest;
+        # zen: performance-tuned like xanmod, tracks mainline, has ZFS packaged
+        kernelPackages = pkgs: pkgs.linuxPackages_zen;
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
         nvenc = true;
         hwdec = "nvdec-copy";
@@ -164,6 +164,11 @@
               programs.zsh.shellAliases = {
                 matrix-add-user = "sudo register_new_matrix_user -k $(sudo cat /run/secrets/matrix/registration-secret) http://localhost:8448";
               };
+              home.file.".config/zsh-prompt.zsh".source = ./config/zsh-prompt.zsh;
+              programs.zsh.initContent = ''
+                export TERM=xterm-256color
+                source ~/.config/zsh-prompt.zsh
+              '';
             };
           };
         })

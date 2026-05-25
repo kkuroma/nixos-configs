@@ -3,6 +3,12 @@
   services.postgresql = {
     enable = true;
     dataDir = if config.networking.hostName == "metatron" then "/tank/services/postgresql" else "/Vault/postgresql";
+    identMap = ''
+      superuser_map kuroma postgres
+    '';
+    authentication = lib.mkAfter ''
+      local all kuroma peer map=superuser_map
+    '';
   };
 
   # recordsize=8k matches PostgreSQL's page size — set once manually after dataset creation:

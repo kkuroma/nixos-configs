@@ -127,7 +127,7 @@ let
       owner = "kuroma";
       group = "users";
       mode = "700";
-      snapshot = false;
+      snapshot = true;
     };
     "tank/backups" = {
       mountpoint = "/tank/backups";

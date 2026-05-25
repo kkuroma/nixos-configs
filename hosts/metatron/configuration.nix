@@ -48,6 +48,7 @@
       PermitRootLogin = "no";
     };
   };
+
   networking.hostId = "97c79472"; # head -c8 /etc/machine-id
 
   boot.supportedFilesystems = [ "zfs" ];

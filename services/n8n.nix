@@ -16,6 +16,7 @@
     after    = [ "Vault.mount" ];
     requires = [ "Vault.mount" ];
     environment.N8N_USER_FOLDER = lib.mkForce "/Vault/n8n";
+    serviceConfig.ReadWritePaths = [ "/Vault/n8n" ];
   };
   systemd.services.n8n.serviceConfig.EnvironmentFile = config.sops.templates."n8n-env".path;
 }

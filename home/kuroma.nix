@@ -48,6 +48,9 @@ in
   xdg.configFile."noctalia/colorschemes/Akiba/Akiba.json".source =
     ../config/noctalia/colorschemes/Akiba/Akiba.json;
 
+  xdg.configFile."noctalia/colorschemes/Teto/Teto.json".source =
+    ../config/noctalia/colorschemes/Teto/Teto.json;
+
   xdg.configFile."noctalia/colorschemes/Fuyuyuki/Fuyuyuki.json".source =
     ../config/noctalia/colorschemes/Fuyuyuki/Fuyuyuki.json;
 

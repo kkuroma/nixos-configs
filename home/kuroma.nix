@@ -42,6 +42,18 @@ in
   xdg.configFile."noctalia/colorschemes/Natsumikan/Natsumikan.json".source =
     ../config/noctalia/colorschemes/Natsumikan/Natsumikan.json;
 
+  xdg.configFile."noctalia/colorschemes/Haruhana/Haruhana.json".source =
+    ../config/noctalia/colorschemes/Haruhana/Haruhana.json;
+
+  xdg.configFile."noctalia/colorschemes/Akiba/Akiba.json".source =
+    ../config/noctalia/colorschemes/Akiba/Akiba.json;
+
+  xdg.configFile."noctalia/colorschemes/Fuyuyuki/Fuyuyuki.json".source =
+    ../config/noctalia/colorschemes/Fuyuyuki/Fuyuyuki.json;
+
+  xdg.configFile."noctalia/colorschemes/Miku/Miku.json".source =
+    ../config/noctalia/colorschemes/Miku/Miku.json;
+
   xdg.configFile."noctalia/user-templates.toml".source =
     ../config/noctalia/user-templates.toml;
 

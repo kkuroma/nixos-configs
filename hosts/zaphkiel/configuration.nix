@@ -28,7 +28,7 @@
     ../../services/neo4j.nix
     ../../services/llama.nix
     ../../services/postgresql.nix
-    # ./backup.nix  # re-enable after rsync to metatron completes
+    ./backup.nix
     ./homepage.nix
     ./datasets.nix
   ];

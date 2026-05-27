@@ -48,7 +48,7 @@ in
     enable = true;
     listenPort = 8083;
     allowedHosts = "localhost:8083,homepage.${config.networking.hostName}";
-    environmentFile = config.sops.templates."homepage-env".path;
+    environmentFiles = [ config.sops.templates."homepage-env".path ];
 
     settings = {
       title = "Landing - ${config.networking.hostName}";

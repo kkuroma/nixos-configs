@@ -4,10 +4,13 @@
     enable = true;
     dataDir = if config.networking.hostName == "metatron" then "/tank/services/postgresql" else "/Vault/postgresql";
     identMap = ''
-      superuser_map kuroma postgres
+      superuser_map kuroma   postgres
+      superuser_map kuroma   kuroma
+      superuser_map postgres postgres
     '';
     authentication = lib.mkAfter ''
-      local all kuroma peer map=superuser_map
+      local all kuroma   peer map=superuser_map
+      local all postgres peer map=superuser_map
     '';
   };
 

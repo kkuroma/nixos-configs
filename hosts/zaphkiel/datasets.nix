@@ -61,9 +61,5 @@ in
     monthly = 3;
   };
 
-  services.zfs.autoScrub = {
-    enable = true;
-    pools = [ "vault" ];
-    interval = "weekly";
-  };
+  services.zfs.autoScrub.enable = false;
 }

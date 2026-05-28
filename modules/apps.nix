@@ -1,12 +1,10 @@
 { pkgs, inputs, ... }:
 {
   services.envfs.enable = true; # symlinks /bin stuff to scripts
-  nixpkgs.overlays = [ inputs.millennium.overlays.default ];
 
   # millenium steam for custom colors
   programs.steam = {
     enable = true;
-    package = pkgs.millennium-steam;
   };
 
   environment.systemPackages = with pkgs; [

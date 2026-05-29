@@ -77,6 +77,7 @@ Samba binds to `lo tailscale0` only. Passwords in sops as `samba/{kuroma,ct,pt}`
 | `syncthing.nix` | Syncthing | :8384 | zaphkiel, raziel | internal |
 | `cockpit.nix` | Cockpit | :9090 | zaphkiel, raziel | internal |
 | `n8n.nix` | n8n | :5678 | zaphkiel | internal |
+| `arr/sonarr.nix` | Sonarr | :8989 | zaphkiel | internal |
 | `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | internal |
 | `llama.nix` | LLaMA router + embedding | :11434/:11435 | zaphkiel | tailscale direct |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | internal |

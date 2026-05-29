@@ -28,6 +28,7 @@
     ../../services/neo4j.nix
     ../../services/llama.nix
     ../../services/postgresql.nix
+    ../../services/arr/sonarr.nix
     ./backup.nix
     ./homepage.nix
     ./datasets.nix

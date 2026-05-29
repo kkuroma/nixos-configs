@@ -23,6 +23,11 @@
         "read only" = "no";
         "valid users" = "kuroma";
       };
+      movies = {
+        "path" = "/tank/media/movies";
+        "read only" = "no";
+        "valid users" = "kuroma";
+      };
       music = {
         "path" = "/tank/media/music";
         "read only" = "no";

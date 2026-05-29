@@ -54,7 +54,7 @@
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "tank" ];
 
-  boot.zfs.allowHibernation = true;
+  boot.zfs.unsafeAllowHibernation = true;
   boot.zfs.forceImportAll = false;
   boot.zfs.forceImportRoot = false;
   boot.resumeDevice = "/dev/nvme0n1p2";

@@ -2,9 +2,10 @@
 let
   creds = config.sops.templates."nas-creds".path;
   nasMap = pkgs.writeText "auto.nas" ''
-    anime  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/anime
-    music  -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/music
-    kuroma   -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/kuroma
+    anime -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/anime
+    movies -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/movies
+    music -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/music
+    kuroma -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/kuroma
     research -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/research
   '';
 in

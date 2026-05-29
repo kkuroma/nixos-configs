@@ -29,6 +29,7 @@
     ../../services/llama.nix
     ../../services/postgresql.nix
     ../../services/arr/sonarr.nix
+    ../../services/arr/radarr.nix
     ./backup.nix
     ./homepage.nix
     ./datasets.nix

@@ -85,6 +85,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | `cockpit.nix` | Cockpit | :9090 | zaphkiel, raziel | internal |
 | `n8n.nix` | n8n | :5678 | zaphkiel | internal |
 | `arr/sonarr.nix` | Sonarr | :8989 | zaphkiel | internal |
+| `arr/radarr.nix` | Radarr | :7878 | zaphkiel | internal |
 | `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | internal |
 | `llama.nix` | LLaMA router + embedding | :11434 / :11435 | zaphkiel, metatron | tailscale via Caddy |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | internal |
@@ -164,7 +165,9 @@ Module namespace is `power.ups` (not `services.nut`). Hardware: generic MEC0003 
 SSH on `tailscale0` only (open via `modules/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
 
 ### Autofs / Backups (zaphkiel)
-Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/backup.nix` push anime (6h), music (6h), research (weekly), home (6h, requires `/mnt/NAS` mounted). **metatron home backup: not configured** (TODO: snapper or rsync to `tank/nas/kuroma`).
+Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h, requires `/mnt/NAS` mounted). **metatron home backup: not configured** (TODO: snapper or rsync to `tank/nas/kuroma`).
+
+**Media layout:** `vault/media/anime` → `/mnt/Vault-Storage/media/anime` (Sonarr), `vault/media/movies` → `/mnt/Vault-Storage/media/movies` (Radarr). Mirrored on metatron as `tank/media/anime` (3T) and `tank/media/movies` (1T). Keep anime and movies in separate datasets — Sonarr manages anime/shows, Radarr manages movies; Jellyfin expects separate library roots for each type.
 
 ### raziel
 Fingerprint: `libfprint` native — do NOT add `libfprint-2-tod1-goodix` (corrupts enrollment). `fprintd-enroll $USER` after first boot. `fprintAuth = true` for sudo + polkit (accepted tradeoff: laptop, physically attended).

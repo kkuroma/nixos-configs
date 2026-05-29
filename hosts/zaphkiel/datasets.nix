@@ -2,6 +2,13 @@
 
 let
   datasets = {
+    "vault/media/movies" = {
+      mountpoint = "/mnt/Vault-Storage/media/movies";
+      owner = "kuroma";
+      group = "users";
+      mode = "755";
+      snapshot = true;
+    };
     "vault/media/anime" = {
       mountpoint = "/mnt/Vault-Storage/media/anime";
       owner = "kuroma";

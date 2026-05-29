@@ -33,6 +33,16 @@ let
       '';
     }
     {
+      name = "movies";
+      oncalendar = "*-*-* 03,09,15,21:00:00";
+      script = ''
+        set -euo pipefail
+        rsync -aHAXx --ignore-errors --info=progress2 --delete \
+          /mnt/Vault-Storage/media/movies/ \
+          metatron:/tank/media/movies/
+      '';
+    }
+    {
       name = "music";
       oncalendar = "*-*-* 01,07,13,19:00:00";
       script = ''

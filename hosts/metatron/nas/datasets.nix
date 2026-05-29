@@ -2,6 +2,15 @@
 
 let
   datasets = {
+    "tank/media/movies" = {
+      mountpoint = "/tank/media/movies";
+      quota = "1T";
+      reservation = "1T";
+      owner = "kuroma";
+      group = "media";
+      mode = "775";
+      snapshot = false;
+    };
     "tank/media/anime" = {
       mountpoint = "/tank/media/anime";
       quota = "3T";

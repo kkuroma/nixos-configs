@@ -400,7 +400,21 @@ in
     ];
   };
 
-  # git SSH uses system sshd on port 22 (already open on tailscale0 via networking.nix)
+  # git SSH uses system sshd on port 22 (already open on tailscale0 via networking.nix).
+  # Defense-in-depth: even if a key lands in forgejo's authorized_keys without the
+  # standard `command="forgejo serv …"` prefix, this Match block keeps the session
+  # from being weaponized as a pivot (no port/agent forwarding, no PTY, no X11).
+  # Forgejo's own SSH operations (push/pull) don't need any of these.
+  services.openssh.extraConfig = ''
+    Match User forgejo
+      AllowAgentForwarding no
+      AllowTcpForwarding no
+      AllowStreamLocalForwarding no
+      PermitTTY no
+      X11Forwarding no
+      PermitTunnel no
+      GatewayPorts no
+  '';
 
   # Actions runner — register token from https://git.kuroma.dev/-/admin/runners then add to sops
   services.gitea-actions-runner.instances."metatron" = {

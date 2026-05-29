@@ -85,6 +85,10 @@
     script =
       let
         setPass = user: secret: ''
+          if [ ! -s ${secret} ]; then
+            echo "samba-passwords: secret for ${user} is empty/missing, refusing to set blank password" >&2
+            exit 1
+          fi
           pass=$(cat ${secret})
           printf '%s\n%s\n' "$pass" "$pass" | smbpasswd -s -a ${user} 2>/dev/null || \
           printf '%s\n%s\n' "$pass" "$pass" | smbpasswd -s ${user}

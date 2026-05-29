@@ -39,7 +39,8 @@
       done
       api_key=$(${pkgs.libxml2}/bin/xmllint --xpath 'string(//apikey)' /home/${username}/.config/syncthing/config.xml)
       password=$(cat ${config.sops.secrets."syncthing/password".path})
-      ${pkgs.curl}/bin/curl -sf -X PATCH -H "X-API-Key: $api_key" -H "Content-Type: application/json" http://127.0.0.1:8384/rest/config/gui -d "{\"password\":\"$password\"}"
+      body=$(${pkgs.jq}/bin/jq -Rn --arg p "$password" '{password:$p}')
+      ${pkgs.curl}/bin/curl -sf -X PATCH -H "X-API-Key: $api_key" -H "Content-Type: application/json" http://127.0.0.1:8384/rest/config/gui -d "$body"
     '';
     in lib.mkForce [ "${script}" ];
 }

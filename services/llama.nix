@@ -87,7 +87,7 @@ in
     serviceConfig = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs.llama-cpp}/bin/llama-server"
-        "--host 0.0.0.0 --port 11435"
+        "--host 127.0.0.1 --port 11435"
         "--model /Vault/llm-models/embeddings/nomic-embed-text-v2-moe.Q4_0.gguf"
         "--embedding --pooling cls"
         "--ctx-size 2048 --parallel 4 --n-gpu-layers -1"

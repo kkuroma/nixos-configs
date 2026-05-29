@@ -19,6 +19,25 @@
       RuntimeDirectory = "stirling-pdf";
       WorkingDirectory = "/run/stirling-pdf";
       Restart = "on-failure";
+
+      # Hardening — Stirling parses untrusted PDFs via libreoffice/ghostscript.
+      # MemoryDenyWriteExecute intentionally omitted: JVM JIT needs W+X.
+      NoNewPrivileges = true;
+      ProtectHome = true;
+      ProtectKernelTunables = true;
+      ProtectKernelModules = true;
+      ProtectKernelLogs = true;
+      ProtectControlGroups = true;
+      ProtectClock = true;
+      ProtectHostname = true;
+      ProtectProc = "invisible";
+      LockPersonality = true;
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+      DevicePolicy = "closed";
+      PrivateDevices = true;
     };
   };
 }

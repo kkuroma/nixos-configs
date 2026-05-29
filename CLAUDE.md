@@ -9,9 +9,9 @@
 - `config/` — static config files, deployed via `.source` in `home/kuroma.nix`.
 - `services/` — one file per service, imported selectively per host. No aggregator. Each service file owns its Caddy vhosts using `config.networking.hostName`.
 
-**Hosts:** `zaphkiel` — desktop, NVIDIA RTX, nixpkgs-unstable | `raziel` — Framework 13 AMD, nixpkgs-unstable | `metatron` — home server, r5 8500G + GTX 1650, **nixpkgs-stable 25.11**
+**Hosts:** `zaphkiel` — desktop, NVIDIA RTX, nixpkgs-unstable | `raziel` — Framework 13 AMD, nixpkgs-unstable | `metatron` — home server, r5 8500G + GTX 1650, nixpkgs-unstable
 
-**Inputs:** nixpkgs-unstable, nixpkgs-stable, disko, home-manager, home-manager-stable, noctalia, nix-vscode-extensions, nixvim, sops-nix, nixos-hardware, millennium, vscodium-server.
+**Inputs:** nixpkgs-unstable, disko, home-manager, noctalia, nix-vscode-extensions, nixvim, sops-nix, nixos-hardware, millennium, vscodium-server.
 
 ## Decision rules
 
@@ -162,4 +162,4 @@ Writes at runtime: niri KDL, ghostty config, nvim matugen.lua, starship palette.
 - **MPV:** use `nvdec-copy` not `nvdec`. `osc = "no"` (thumbnail scripts replace OSC).
 - **Dolphin "Open With" empty:** `kbuildsycoca6` oneshot must run at session start.
 - **Nextcloud fresh install recovery:** drop+recreate DB, delete `config.php` and `data/` if `nextcloud-setup` fails mid-install.
-- **State versions:** all hosts `stateVersion = "25.11"`. Do not bump.
+- **State versions:** all hosts `stateVersion = "25.11"` (metatron too, even though it now runs unstable). Do not bump.

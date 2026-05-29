@@ -4,10 +4,6 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
-    nixpkgs-stable = {
-      url = "github:nixos/nixpkgs/nixos-25.11";
-    };
-
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,11 +12,6 @@
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    home-manager-stable = {
-      url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
 
     noctalia = {
@@ -51,7 +42,7 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-stable, disko, home-manager, home-manager-stable, noctalia, sops-nix, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, nixos-hardware, ... }@inputs:
   let
     system = "x86_64-linux";
     username = "kuroma";
@@ -139,12 +130,12 @@
       ];
     };
 
-    nixosConfigurations.metatron = nixpkgs-stable.lib.nixosSystem {
+    nixosConfigurations.metatron = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.metatron; };
       modules = [
         disko.nixosModules.disko
-        home-manager-stable.nixosModules.home-manager
+        home-manager.nixosModules.home-manager
         sops-nix.nixosModules.sops
         ./hosts/metatron/configuration.nix
         ({ username, ... }: {

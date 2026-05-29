@@ -68,7 +68,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 
 | File | Service | Port | Hosts | Access |
 |------|---------|------|-------|--------|
-| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron | internal |
+| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | internal |
 | `jellyfin.nix` | Jellyfin | :8096 | metatron | internal |
 | `navidrome.nix` | Navidrome | :4533 | metatron | internal |
 | `searxng.nix` | SearXNG | :8888 | metatron | public + internal |
@@ -93,7 +93,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 **Service access model:** Internal: `https://<service>.<hostname>` via AdGuard DNS + Caddy `tls internal`. Public: cloudflared → `localhost:80` → Caddy. DNS rewrites: `*.metatron → 100.107.220.115`, `*.zaphkiel → 100.91.235.104`, `*.raziel → 100.79.72.120`.
 
 ### AdGuard (`services/adguardhome.nix`)
-- `bind_hosts = [ "127.0.0.1" "${metatronIP}" ]` — explicit list, not `0.0.0.0`, so a disabled firewall doesn't expose an open resolver.
+- `bind_hosts = [ "0.0.0.0" ]` — firewall restricts DNS to `tailscale0` on all hosts, so `0.0.0.0` is safe and works regardless of which host is running the service.
 - `mutableSettings = true`. **Admin password is non-declarative** — lives in `/var/lib/AdGuardHome/AdGuardHome.yaml` under `users:`. To set/reset: stop service, edit file with a bcrypt hash (`htpasswd -bnBC 10 "" yourpassword | tr -d ':\n'`), restart.
 - **Fresh-install footgun:** on a from-scratch metatron, AdGuard boots into the public setup wizard with no auth until the YAML is hand-edited. Make this the first post-rebuild step.
 

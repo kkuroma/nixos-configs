@@ -3,18 +3,14 @@
   imports = [
     ./disko.nix
     ./hardware-configuration.nix
-    ./fstab.nix
 
-    ./nas/datasets.nix
-    ./nas/smb.nix
-
+    ../../universal
     ../../templates
     ../../modules
     ../../services
 
-    ./cloudflared.nix
+    ./extra
     ./homepage.nix
-    ./nut.nix
   ];
 
   networking.hostName = "metatron";
@@ -47,6 +43,20 @@
       root = "/tank/nas/ct/dump";
       user = "ct";
       group = "family";
+    };
+
+    cloudflared.main = {
+      tokenSecret = "cloudflared/token"; # existing sops key; rename if you split tunnels later
+      hostnames = [
+        "searx.kuroma.dev"
+        "pdf.kuroma.dev"
+        "pastebin.kuroma.dev"
+        "cloud.kuroma.dev"
+        "ct-dump.kuroma.dev"
+        "vault.kuroma.dev"
+        "git.kuroma.dev"
+        "matrix.isomorphic.to"
+      ];
     };
   };
 

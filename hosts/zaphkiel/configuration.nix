@@ -3,15 +3,14 @@
   imports = [
     ./disko.nix
     ./hardware-configuration.nix
-    ./fstab.nix
 
+    ../../universal
     ../../templates
     ../../modules
     ../../services
 
-    ./backup.nix
+    ./extra
     ./homepage.nix
-    ./datasets.nix
   ];
 
   networking.hostName = "zaphkiel";

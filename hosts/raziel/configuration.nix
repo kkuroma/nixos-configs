@@ -3,12 +3,13 @@
   imports = [
     ./disko.nix
     ./hardware-configuration.nix
-    ./fstab.nix
-    ./laptop.nix
 
+    ../../universal
     ../../templates
     ../../modules
     ../../services
+
+    ./extra
   ];
 
   networking.hostName = "raziel";

@@ -2,7 +2,7 @@
 let
   cfg = config.host.services.forgejo or null;
   customDir = "${config.services.forgejo.stateDir}/custom";
-  fontFile = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
+  fontFile = ../../config/fonts/GoogleSansFlex-VariableFont.ttf;
   iconPng = pkgs.runCommand "forgejo-icon.png" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
     convert ${./icon.webp} $out
   '';

@@ -4,10 +4,10 @@
     ./disko.nix
     ./hardware-configuration.nix
 
-    ../../universal
-    ../../templates
-    ../../modules
-    ../../services
+    ../../parts/universal
+    ../../parts/templates
+    ../../parts/modules
+    ../../parts/services
 
     ./extra
     ./homepage.nix

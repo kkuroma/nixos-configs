@@ -1,5 +1,7 @@
-{ pkgs, config, lib, username, ... }:
+{ pkgs, config, lib, username, zaphkielIP, razielIP, ... }:
 lib.mkIf (config.host.services.syncthing or { enable = false; }).enable {
+  sops.secrets."syncthing/password" = { owner = username; };
+
   services.syncthing = {
     enable = true;
     user = username;
@@ -8,11 +10,11 @@ lib.mkIf (config.host.services.syncthing or { enable = false; }).enable {
     settings.devices = {
       raziel = {
         id = "3ZJIJ5F-RXGMC73-5XKGWER-SGFSJSE-H3DKE54-KIR2OHU-UDXA4RG-7YIV7AP";
-        addresses = [ "tcp://100.79.72.120:22000" "dynamic" ];
+        addresses = [ "tcp://${razielIP}:22000" "dynamic" ];
       };
       zaphkiel = {
         id = "V6IXQRC-MQEAYRQ-2IYU5WB-W5PF2AI-6CCWJSO-KCIRGR7-43DHLD4-K6RDTQA";
-        addresses = [ "tcp://100.91.235.104:22000" "dynamic" ];
+        addresses = [ "tcp://${zaphkielIP}:22000" "dynamic" ];
       };
     };
     settings.folders."Documents" = {

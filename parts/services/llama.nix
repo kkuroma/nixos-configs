@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 
 let
-  llamaSrc = ../services/llama-router/src;
+  llamaSrc = ./llama-router/src;
   llamaEnv = pkgs.python3.withPackages (ps: with ps; [
     fastapi
     uvicorn
@@ -72,7 +72,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
     };
   };
 
-  environment.etc."llamacpp/presets.ini".source = ../services/llama-router/presets.ini;
+  environment.etc."llamacpp/presets.ini".source = ./llama-router/presets.ini;
 
   systemd.services.llama-embedding = {
     description = "LLaMA.cpp Embedding Server";

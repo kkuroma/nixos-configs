@@ -257,7 +257,7 @@ in
         "Infrastructure" = [
           {
             "AdGuard Home" = {
-              href = "https://adguardhome.metatron";
+              href = "https://adguard.metatron";
               description = "DNS + ad blocking";
               icon = "adguard-home.png";
               widget = {

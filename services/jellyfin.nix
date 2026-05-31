@@ -1,16 +1,12 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  cfg = config.host.services.jellyfin or null;
+in
 {
-  services.caddy.virtualHosts."jellyfin.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8096";
-
-  services.jellyfin = {
+  services.jellyfin = lib.mkIf (cfg != null && cfg.enable) {
     enable = true;
-    dataDir = "/tank/services/jellyfin";
-    cacheDir = "/tank/services/jellyfin/cache";
+    dataDir = cfg.dataDir;
+    cacheDir = "${cfg.dataDir}/cache";
     openFirewall = false;
-  };
-
-  systemd.services.jellyfin = {
-    after = [ "zfs-datasets.service" ];
-    requires = [ "zfs-datasets.service" ];
   };
 }

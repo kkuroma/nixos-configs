@@ -1,5 +1,5 @@
-{ pkgs, inputs, username, ... }:
-{
+{ pkgs, inputs, username, config, lib, ... }:
+lib.mkIf (config.host.desktop == "niri") {
   programs.niri.enable = true;
   programs.dconf.enable = true;
   programs.uwsm.enable = true;

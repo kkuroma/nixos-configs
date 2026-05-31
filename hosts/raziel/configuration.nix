@@ -6,26 +6,27 @@
     ./fstab.nix
     ./laptop.nix
 
-    ../../modules/boot.nix
-    ../../modules/locale.nix
-    ../../modules/networking.nix
-    ../../modules/niri.nix
-    ../../modules/nix.nix
-    ../../modules/amd.nix
-    ../../modules/apps.nix
-    ../../modules/autofs.nix
-    ../../modules/fonts.nix
-    ../../modules/caddy.nix
-    ../../modules/services.nix
-    ../../modules/users.nix
-    ../../modules/fcitx5.nix
-    ../../modules/sops.nix
-    ../../modules/virtualization.nix
-    ../../services/syncthing.nix
-    ../../services/cockpit.nix
+    ../../templates
+    ../../modules
+    ../../services
   ];
 
   networking.hostName = "raziel";
+
+  host = {
+    gpu.amd = true;
+    desktop = "niri";
+    profile = "desktop";
+    features = {
+      autofs = true;
+      virtualization = true;
+    };
+
+    services = {
+      syncthing = { enable = true; port = 8384; };
+      cockpit   = { enable = true; port = 9090; };
+    };
+  };
 
   boot.kernelParams = [
     # s2idle suspend — recommended for Framework 13 AMD

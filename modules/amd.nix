@@ -1,5 +1,5 @@
-{ pkgs, ... }:
-{
+{ pkgs, config, lib, ... }:
+lib.mkIf config.host.gpu.amd {
   hardware.graphics.enable = true;
   hardware.graphics.enable32Bit = true;
 

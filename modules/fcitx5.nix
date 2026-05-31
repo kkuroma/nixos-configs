@@ -1,5 +1,5 @@
-{ pkgs, ... }:
-{
+{ pkgs, config, lib, ... }:
+lib.mkIf (config.host.profile == "desktop") {
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";

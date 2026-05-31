@@ -1,5 +1,5 @@
-{ config, ... }:
-{
+{ config, lib, ... }:
+lib.mkIf config.host.gpu.nvidia {
   nixpkgs.config.cudaSupport = true;
 
   # Required for Xwayland to use the NVIDIA GLX implementation instead of Mesa's.

@@ -5,31 +5,10 @@
     ./hardware-configuration.nix
     ./fstab.nix
 
-    ../../modules/boot.nix
-    ../../modules/locale.nix
-    ../../modules/networking.nix
-    ../../modules/niri.nix
-    ../../modules/nix.nix
-    ../../modules/nvidia.nix
-    ../../modules/apps.nix
-    ../../modules/autofs.nix
-    ../../modules/fonts.nix
-    ../../modules/caddy.nix
-    ../../modules/services.nix
-    ../../modules/users.nix
-    ../../modules/fcitx5.nix
-    ../../modules/sops.nix
-    ../../modules/virtualization.nix
-    ../../modules/codiumserver.nix
-    ../../services/adguardhome.nix
-    ../../services/syncthing.nix
-    ../../services/cockpit.nix
-    ../../services/n8n.nix
-    ../../services/neo4j.nix
-    ../../services/llama.nix
-    ../../services/postgresql.nix
-    ../../services/arr/sonarr.nix
-    ../../services/arr/radarr.nix
+    ../../templates
+    ../../modules
+    ../../services
+
     ./backup.nix
     ./homepage.nix
     ./datasets.nix
@@ -37,6 +16,30 @@
 
   networking.hostName = "zaphkiel";
   networking.hostId = "2f88bc21"; # required by ZFS
+
+  host = {
+    gpu.nvidia = true;
+    desktop = "niri";
+    profile = "desktop";
+    features = {
+      autofs = true;
+      virtualization = true;
+      codiumserver = true;
+    };
+
+    services = {
+      adguardhome = { enable = true; port = 3000; };
+      syncthing   = { enable = true; port = 8384; };
+      cockpit     = { enable = true; port = 9090; };
+      n8n         = { enable = true; port = 5678; dataDir = "/Vault/n8n"; storage = "vault"; };
+      neo4j       = { enable = true; port = 7474; dataDir = "/Vault/neo4j"; storage = "vault"; };
+      sonarr      = { enable = true; port = 8989; dataDir = "/Vault/sonarr"; storage = "vault"; };
+      radarr      = { enable = true; port = 7878; dataDir = "/Vault/radarr"; storage = "vault"; };
+      llama       = { enable = true; port = 11434; storage = "vault"; unit = "llama-router"; };
+      llama-emb   = { enable = true; port = 11435; storage = "vault"; unit = "llama-embedding"; };
+      postgresql  = { enable = true; dataDir = "/Vault/postgresql"; storage = "vault"; };
+    };
+  };
 
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.forceImportRoot = false;

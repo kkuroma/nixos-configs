@@ -1,10 +1,8 @@
-{ config, ... }:
-{
-  services.caddy.virtualHosts = {
-    "vaultwarden.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8222";
-    "http://vault.kuroma.dev".extraConfig = "reverse_proxy localhost:8222";
-  };
-
+{ config, lib, ... }:
+let
+  cfg = config.host.services.vaultwarden or null;
+in
+lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."vaultwarden/admin-token" = { owner = "vaultwarden"; };
   sops.secrets."vaultwarden/smtp-password" = { owner = "vaultwarden"; };
 
@@ -16,20 +14,16 @@
     owner = "vaultwarden";
   };
 
-  systemd.services.vaultwarden = {
-    after = [ "zfs-datasets.service" ];
-    requires = [ "zfs-datasets.service" ];
-    serviceConfig.ReadWritePaths = [ "/tank/services/vaultwarden" ];
-  };
+  systemd.services.vaultwarden.serviceConfig.ReadWritePaths = [ cfg.dataDir ];
 
   services.vaultwarden = {
     enable = true;
     environmentFile = config.sops.templates."vaultwarden-env".path;
     config = {
-      DOMAIN = "https://vault.kuroma.dev";
-      ROCKET_PORT = 8222;
+      DOMAIN = "https://${cfg.publicHost}";
+      ROCKET_PORT = cfg.port;
       SIGNUPS_ALLOWED = false;
-      DATA_FOLDER = "/tank/services/vaultwarden";
+      DATA_FOLDER = cfg.dataDir;
       SMTP_HOST = "smtp.zoho.com";
       SMTP_PORT = 587;
       SMTP_SECURITY = "starttls";

@@ -1,16 +1,14 @@
-{ pkgs, config, ... }:
-{
-  services.caddy.virtualHosts = {
-    "pdf.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8085";
-    "http://pdf.kuroma.dev".extraConfig             = "reverse_proxy localhost:8085";
-  };
-
+{ pkgs, config, lib, ... }:
+let
+  cfg = config.host.services.stirling-pdf or null;
+in
+lib.mkIf (cfg != null && cfg.enable) {
   systemd.services.stirling-pdf = {
     description = "Stirling PDF";
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     environment = {
-      SERVER_PORT = "8085";
+      SERVER_PORT = toString cfg.port;
       HOME = "/var/lib/stirling-pdf";
     };
     serviceConfig = {

@@ -1,4 +1,4 @@
-{ pkgs, config, metatronIP, ... }:
+{ pkgs, config, lib, metatronIP, ... }:
 let
   creds = config.sops.templates."nas-creds".path;
   nasMap = pkgs.writeText "auto.nas" ''
@@ -9,7 +9,7 @@ let
     research -fstype=cifs,credentials=${creds},uid=1000,gid=1000,iocharset=utf8 ://${metatronIP}/research
   '';
 in
-{
+lib.mkIf config.host.features.autofs {
   sops.secrets."samba/kuroma" = {};
   sops.templates."nas-creds" = {
     content = ''

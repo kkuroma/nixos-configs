@@ -1,19 +1,15 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  cfg = config.host.services.navidrome or null;
+in
 {
-  services.caddy.virtualHosts."navidrome.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:4533";
-
-  services.navidrome = {
+  services.navidrome = lib.mkIf (cfg != null && cfg.enable) {
     enable = true;
     settings = {
       MusicFolder = "/tank/media/music";
-      DataFolder = "/tank/services/navidrome";
+      DataFolder = cfg.dataDir;
       Address = "127.0.0.1";
-      Port = 4533;
+      Port = cfg.port;
     };
-  };
-
-  systemd.services.navidrome = {
-    after = [ "zfs-datasets.service" ];
-    requires = [ "zfs-datasets.service" ];
   };
 }

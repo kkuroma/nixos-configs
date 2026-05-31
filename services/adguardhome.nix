@@ -1,7 +1,5 @@
-{ config, metatronIP, zaphkielIP, razielIP, ... }:
-{
-  services.caddy.virtualHosts."adguard.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:3000";
-
+{ config, lib, metatronIP, zaphkielIP, razielIP, ... }:
+lib.mkIf (config.host.services.adguardhome or { enable = false; }).enable {
   # Admin credentials live in /var/lib/AdGuardHome/AdGuardHome.yaml under `users:`.
   # To set/reset: stop the service, edit the file, add a bcrypt hash for the password
   # (generate with: htpasswd -bnBC 10 "" yourpassword | tr -d ':\n'), then restart.

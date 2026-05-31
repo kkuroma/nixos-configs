@@ -8,37 +8,47 @@
     ./nas/datasets.nix
     ./nas/smb.nix
 
-    ../../modules/boot.nix
-    ../../modules/locale.nix
-    ../../modules/networking.nix
-    ../../modules/nix.nix
-    ../../modules/amd.nix # Radeon 740M iGPU display + vaapi
-    ../../modules/users.nix
-    ../../modules/sops.nix
-    ../../modules/codiumserver.nix
-    ../../modules/kde.nix
-    ../../modules/nvidia-compute.nix  # GTX 1650 headless CUDA
-    ../../modules/virtualization.nix
-    ../../modules/caddy.nix
+    ../../templates
+    ../../modules
+    ../../services
 
-    ../../services/adguardhome.nix
-    ../../services/jellyfin.nix
-    ../../services/navidrome.nix
-    ../../services/searxng.nix
-    ../../services/privatebin.nix
-    ../../services/stirling-pdf.nix
     ./cloudflared.nix
-    ../../services/postgresql.nix
-    ../../services/nextcloud.nix
-    ../../services/matrix.nix
-    ../../services/filebrowser.nix
-    ../../services/vaultwarden.nix
-    ../../services/forgejo.nix
-    ../../services/nut.nix
     ./homepage.nix
+    ./nut.nix
   ];
 
   networking.hostName = "metatron";
+
+  host = {
+    gpu = { amd = true; nvidiaCompute = true; };
+    desktop = "kde";
+    profile = "server";
+    features = {
+      virtualization = true;
+      codiumserver = true;
+    };
+
+    services = {
+      adguardhome  = { enable = true; port = 3000; };
+      jellyfin     = { enable = true; port = 8096; dataDir = "/tank/services/jellyfin"; storage = "zfs"; };
+      navidrome    = { enable = true; port = 4533; dataDir = "/tank/services/navidrome"; storage = "zfs"; };
+      searx        = { enable = true; port = 8888; publicHost = "searx.kuroma.dev"; };
+      privatebin   = { enable = true; port = 8082; publicHost = "pastebin.kuroma.dev"; storage = "zfs"; unit = "phpfpm-privatebin"; };
+      stirling-pdf = { enable = true; port = 8085; publicHost = "pdf.kuroma.dev"; };
+      postgresql   = { enable = true; dataDir = "/tank/services/postgresql"; storage = "zfs"; };
+      nextcloud    = { enable = true; port = 8081; publicHost = "cloud.kuroma.dev"; dataDir = "/tank/services/nextcloud"; storage = "zfs"; unit = "nextcloud-setup"; };
+      matrix       = { enable = true; port = 8448; publicHost = "matrix.isomorphic.to"; publicAuto = false; dataDir = "/tank/services/matrix"; storage = "zfs"; unit = "matrix-synapse"; };
+      vaultwarden  = { enable = true; port = 8222; publicHost = "vault.kuroma.dev"; dataDir = "/tank/services/vaultwarden"; storage = "zfs"; };
+      forgejo      = { enable = true; port = 1412; publicHost = "git.kuroma.dev"; dataDir = "/tank/services/forgejo"; storage = "zfs"; };
+    };
+
+    filebrowsers.ct-dump = {
+      port = 8200;
+      root = "/tank/nas/ct/dump";
+      user = "ct";
+      group = "family";
+    };
+  };
 
   services.openssh = {
     enable = true;
@@ -53,57 +63,13 @@
 
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "tank" ];
-
   boot.zfs.unsafeAllowHibernation = true;
   boot.zfs.forceImportAll = false;
   boot.zfs.forceImportRoot = false;
   boot.resumeDevice = "/dev/nvme0n1p2";
   boot.kernelParams = [ "resume_offset=533760" ];  # sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 
-  environment.systemPackages = with pkgs; [
-    firefox
-
-    # core CLI
-    nushell
-    git
-    wget
-    curl
-    zip
-    unzip
-
-    # CLI tools
-    ripgrep
-    tree
-    fd
-    duf
-    dust
-    btop
-    procs
-    ffmpeg
-    killall
-    jq
-    lsof
-    strace
-    file
-    zellij
-
-    # networking / diagnostics
-    nmap
-    mtr
-    dnsutils
-    tcpdump
-    whois
-
-    # hardware
-    pciutils
-    usbutils
-    nvme-cli
-    smartmontools
-  ];
-
-  # NFS/SMB service users — no shell, no interactive login, UID/GID for ACL.
-  # Add per-person and per-service users here post-install, e.g.:
-  # users.users.alice = { uid = 1001; isSystemUser = true; group = "users"; };
+  environment.systemPackages = [ pkgs.firefox ];
 
   fonts.packages = with pkgs; [
     noto-fonts

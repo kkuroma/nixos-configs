@@ -1,5 +1,5 @@
-{ pkgs, ... }:
-{
+{ pkgs, config, lib, ... }:
+lib.mkIf config.host.features.virtualization {
   # docker - nvidia enabled because this is an nvidia machine
   virtualisation.docker = {
     enable = true;

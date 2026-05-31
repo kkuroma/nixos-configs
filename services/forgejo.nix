@@ -1,5 +1,6 @@
 { config, lib, pkgs, ... }:
 let
+  cfg = config.host.services.forgejo or null;
   customDir = "${config.services.forgejo.stateDir}/custom";
   fontFile = ../config/fonts/GoogleSansFlex-VariableFont.ttf;
   iconPng = pkgs.runCommand "forgejo-icon.png" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
@@ -321,7 +322,7 @@ let
     ln -sf ${iconPng}   ${customDir}/public/assets/img/logo.png
   '';
 in
-{
+lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."forgejo/secret-key" = { owner = "forgejo"; };
   sops.secrets."forgejo/internal-token" = { owner = "forgejo"; };
   sops.secrets."forgejo/oauth2-jwt-secret" = { owner = "forgejo"; };
@@ -331,14 +332,9 @@ in
     content = "TOKEN=${config.sops.placeholder."forgejo/runner-token"}";
   };
 
-  services.caddy.virtualHosts = {
-    "forgejo.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:1412";
-    "http://git.kuroma.dev".extraConfig = "reverse_proxy localhost:1412";
-  };
-
   services.forgejo = {
     enable = true;
-    stateDir = "/tank/services/forgejo";
+    stateDir = cfg.dataDir;
     database = {
       type = "postgres";
       createDatabase = true;
@@ -354,11 +350,11 @@ in
     };
     settings = {
       server = {
-        DOMAIN = "git.kuroma.dev";
-        ROOT_URL = "https://git.kuroma.dev";
-        HTTP_PORT = 1412;
+        DOMAIN = cfg.publicHost;
+        ROOT_URL = "https://${cfg.publicHost}";
+        HTTP_PORT = cfg.port;
         SSH_PORT = 22;
-        SSH_DOMAIN = "metatron";
+        SSH_DOMAIN = config.networking.hostName;
         SSH_USER = "forgejo";
       };
       actions.ENABLED = true;
@@ -385,13 +381,13 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.coreutils}/bin/install -d -m 750 -o forgejo -g forgejo /tank/services/forgejo/custom /tank/services/forgejo/custom/conf";
+      ExecStart = "${pkgs.coreutils}/bin/install -d -m 750 -o forgejo -g forgejo ${cfg.dataDir}/custom ${cfg.dataDir}/custom/conf";
     };
   };
 
   systemd.services.forgejo = {
-    after = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
-    requires = [ "zfs-datasets.service" "postgresql-setup.service" "forgejo-init-dirs.service" ];
+    after = [ "postgresql-setup.service" "forgejo-init-dirs.service" ];
+    requires = [ "postgresql-setup.service" "forgejo-init-dirs.service" ];
     serviceConfig.ExecStartPre = lib.mkAfter [
       # Symlink theme CSS, font, and icon from Nix store — auto-updates on rebuild
       "+${setupAssets}"
@@ -417,10 +413,10 @@ in
   '';
 
   # Actions runner — register token from https://git.kuroma.dev/-/admin/runners then add to sops
-  services.gitea-actions-runner.instances."metatron" = {
+  services.gitea-actions-runner.instances.${config.networking.hostName} = {
     enable = true;
-    name = "metatron";
-    url = "https://git.kuroma.dev";
+    name = config.networking.hostName;
+    url = "https://${cfg.publicHost}";
     tokenFile = config.sops.templates."forgejo-runner-env".path;
     labels = [ "native:host" "ubuntu-latest:docker://ubuntu:latest" ];
     settings = {

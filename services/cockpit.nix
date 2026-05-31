@@ -1,7 +1,8 @@
 { config, lib, ... }:
-{
-  services.caddy.virtualHosts."cockpit.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:9090";
-
+let
+  cfg = config.host.services.cockpit or null;
+in
+lib.mkIf (cfg != null && cfg.enable) {
   services.cockpit = {
     enable = true;
     settings.WebService = {

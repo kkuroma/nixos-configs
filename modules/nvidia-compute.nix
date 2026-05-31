@@ -1,5 +1,5 @@
-{ ... }:
-{
+{ config, lib, ... }:
+lib.mkIf config.host.gpu.nvidiaCompute {
   services.xserver.videoDrivers = [ "nvidia" ];
 
   hardware.nvidia = {

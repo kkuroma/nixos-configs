@@ -1,5 +1,5 @@
-{ username, ... }:
-{
+{ username, config, lib, ... }:
+lib.mkIf (config.host.profile == "desktop") {
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 

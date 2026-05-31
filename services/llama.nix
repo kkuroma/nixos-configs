@@ -33,17 +33,13 @@ let
       START_RETRIES = 3;
       GRACEFUL_KILL_TIMEOUT = 5.0;
     };
-    "API-port" = 11434;
+    "API-port" = config.host.services.llama.port;
     "LLM-base-port" = 30000;
     "llama-server-executable" = "${pkgs.llama-cpp}/bin/llama-server";
   });
+  embPort = toString config.host.services.llama-emb.port;
 in
-{
-  services.caddy.virtualHosts = {
-    "llama.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:11434";
-    "llama-emb.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:11435";
-  };
-
+lib.mkIf (config.host.services.llama or { enable = false; }).enable {
   users.users.llama = {
     isSystemUser = true;
     group = "llama";
@@ -59,8 +55,7 @@ in
 
   systemd.services.llama-router = {
     description = "LLaMA.cpp Router";
-    after = [ "network.target" "Vault.mount" ];
-    requires = [ "Vault.mount" ];
+    after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     environment = {
       ROUTER_CONFIG_PATH = "${routerConfig}";
@@ -81,13 +76,12 @@ in
 
   systemd.services.llama-embedding = {
     description = "LLaMA.cpp Embedding Server";
-    after = [ "network.target" "Vault.mount" ];
-    requires = [ "Vault.mount" ];
+    after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = lib.concatStringsSep " " [
         "${pkgs.llama-cpp}/bin/llama-server"
-        "--host 127.0.0.1 --port 11435"
+        "--host 127.0.0.1 --port ${embPort}"
         "--model /Vault/llm-models/embeddings/nomic-embed-text-v2-moe.Q4_0.gguf"
         "--embedding --pooling cls"
         "--ctx-size 2048 --parallel 4 --n-gpu-layers -1"

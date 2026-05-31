@@ -1,5 +1,5 @@
-{ pkgs, lib, ... }:
-{
+{ pkgs, lib, config, ... }:
+lib.mkIf (config.host.profile == "desktop") {
   fonts.packages = with pkgs; [
     maple-mono.NF-CN
     noto-fonts

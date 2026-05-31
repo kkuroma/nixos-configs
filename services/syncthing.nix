@@ -1,7 +1,5 @@
 { pkgs, config, lib, username, ... }:
-{
-  services.caddy.virtualHosts."syncthing.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:8384";
-
+lib.mkIf (config.host.services.syncthing or { enable = false; }).enable {
   services.syncthing = {
     enable = true;
     user = username;

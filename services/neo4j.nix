@@ -1,18 +1,14 @@
-{ config, ... }:
-{
-  services.caddy.virtualHosts."neo4j.${config.networking.hostName}".extraConfig = "tls internal\nreverse_proxy localhost:7474";
-
+{ config, lib, ... }:
+let
+  cfg = config.host.services.neo4j or null;
+in
+lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."neo4j/password" = {};
 
   services.neo4j = {
     enable = true;
     https.enable = false;
     http.enable = true;
-    directories.home = "/Vault/neo4j";
-  };
-
-  systemd.services.neo4j = {
-    after    = [ "Vault.mount" ];
-    requires = [ "Vault.mount" ];
+    directories.home = cfg.dataDir;
   };
 }

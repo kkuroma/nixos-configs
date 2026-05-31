@@ -47,9 +47,9 @@
     system = "x86_64-linux";
     username = "kuroma";
     lib = nixpkgs.lib;
-    metatronIP  = "100.107.220.115";
-    zaphkielIP  = "100.91.235.104";
-    razielIP    = "100.79.72.120";
+    metatronIP = "100.107.220.115";
+    zaphkielIP = "100.91.235.104";
+    razielIP = "100.79.72.120";
 
     # per machine profiles including hardware, system fonts, and video enc/dec
     machines = {
@@ -109,85 +109,48 @@
     hmExtraArgs = machineConfig: {
       inherit inputs username machineConfig niriParts;
     };
+
+    # Per-host wiring lives here; configuration.nix handles system, hosts/<name>/home.nix
+    # (optional) handles host-specific HM extras.
+    mkHost = name: { extraModules ? [], hmEntry, hasNiri }: lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.${name}; };
+      modules = [
+        disko.nixosModules.disko
+        home-manager.nixosModules.home-manager
+        sops-nix.nixosModules.sops
+        (./hosts + "/${name}/configuration.nix")
+        {
+          home-manager = {
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            backupFileExtension = "backup";
+            extraSpecialArgs = hmExtraArgs machines.${name}
+              // lib.optionalAttrs (!hasNiri) { niriParts = []; };
+            users.${username}.imports =
+              [ hmEntry ]
+              ++ lib.optional hasNiri inputs.nixvim.homeModules.nixvim
+              ++ lib.optional (builtins.pathExists (./hosts + "/${name}/home.nix"))
+                              (./hosts + "/${name}/home.nix");
+          };
+        }
+      ] ++ extraModules;
+    };
   in {
-    nixosConfigurations.zaphkiel = lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.zaphkiel; };
-      modules = [
-        disko.nixosModules.disko
-        home-manager.nixosModules.home-manager
-        sops-nix.nixosModules.sops
-        ./hosts/zaphkiel/configuration.nix
-        ({ username, ... }: {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            backupFileExtension = "backup";
-            extraSpecialArgs = hmExtraArgs machines.zaphkiel;
-            users.${username} = { imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ]; };
-          };
-        })
-      ];
-    };
-
-    nixosConfigurations.metatron = nixpkgs.lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.metatron; };
-      modules = [
-        disko.nixosModules.disko
-        home-manager.nixosModules.home-manager
-        sops-nix.nixosModules.sops
-        ./hosts/metatron/configuration.nix
-        ({ username, ... }: {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            backupFileExtension = "backup";
-            extraSpecialArgs = (hmExtraArgs machines.metatron) // { niriParts = []; }; # no niri
-            users.${username} = {
-              imports = [ ./home/kuroma-server.nix ];
-              home.stateVersion = "25.11";
-              programs.zsh.shellAliases = {
-                matrix-add-user = "sudo register_new_matrix_user -k $(sudo cat /run/secrets/matrix/registration-secret) http://localhost:8448";
-              };
-              home.file.".config/zsh-prompt.zsh".source = ./config/zsh-prompt.zsh;
-              programs.zsh.initContent = ''
-                export TERM=xterm-256color
-                source ~/.config/zsh-prompt.zsh
-              '';
-            };
-          };
-        })
-      ];
-    };
-
-    nixosConfigurations.raziel = lib.nixosSystem {
-      inherit system;
-      specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.raziel; };
-      modules = [
-        nixos-hardware.nixosModules.framework-amd-ai-300-series
-        disko.nixosModules.disko
-        home-manager.nixosModules.home-manager
-        sops-nix.nixosModules.sops
-        ./hosts/raziel/configuration.nix
-        ({ username, ... }: {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            backupFileExtension = "backup";
-            extraSpecialArgs = hmExtraArgs machines.raziel;
-            users.${username} = {
-              imports = [ inputs.nixvim.homeModules.nixvim ./home/kuroma.nix ];
-              # raziel-specific: lock screen before sleep via swayidle
-              services.swayidle = {
-                enable = true;
-                extraArgs = [ "-w" ];
-                events.before-sleep = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
-              };
-            };
-          };
-        })
-      ];
+    nixosConfigurations = {
+      zaphkiel = mkHost "zaphkiel" { 
+        hmEntry = ./home/kuroma.nix; 
+        hasNiri = true;
+      };
+      metatron = mkHost "metatron" { 
+        hmEntry = ./home/kuroma-server.nix;
+        hasNiri = false; 
+      };
+      raziel   = mkHost "raziel"   { 
+        hmEntry = ./home/kuroma.nix;
+        hasNiri = true;
+        extraModules = [ nixos-hardware.nixosModules.framework-amd-ai-300-series ]; 
+      };
     };
   };
 }

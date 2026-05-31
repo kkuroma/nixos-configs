@@ -3,12 +3,10 @@
   imports = [
     ./disko.nix
     ./hardware-configuration.nix
-
     ../../parts/universal
     ../../parts/templates
     ../../parts/modules
     ../../parts/services
-
     ./extra
     ./homepage.nix
   ];
@@ -25,17 +23,75 @@
     };
 
     services = {
-      adguardhome  = { enable = true; port = 3000; };
-      jellyfin     = { enable = true; port = 8096; dataDir = "/tank/services/jellyfin"; storage = "zfs"; };
-      navidrome    = { enable = true; port = 4533; dataDir = "/tank/services/navidrome"; storage = "zfs"; };
-      searx        = { enable = true; port = 8888; publicHost = "searx.kuroma.dev"; };
-      privatebin   = { enable = true; port = 8082; publicHost = "pastebin.kuroma.dev"; storage = "zfs"; unit = "phpfpm-privatebin"; };
-      stirling-pdf = { enable = true; port = 8085; publicHost = "pdf.kuroma.dev"; };
-      postgresql   = { enable = true; dataDir = "/tank/services/postgresql"; storage = "zfs"; };
-      nextcloud    = { enable = true; port = 8081; publicHost = "cloud.kuroma.dev"; dataDir = "/tank/services/nextcloud"; storage = "zfs"; unit = "nextcloud-setup"; };
-      matrix       = { enable = true; port = 8448; publicHost = "matrix.isomorphic.to"; publicAuto = false; dataDir = "/tank/services/matrix"; storage = "zfs"; unit = "matrix-synapse"; };
-      vaultwarden  = { enable = true; port = 8222; publicHost = "vault.kuroma.dev"; dataDir = "/tank/services/vaultwarden"; storage = "zfs"; };
-      forgejo      = { enable = true; port = 1412; publicHost = "git.kuroma.dev"; dataDir = "/tank/services/forgejo"; storage = "zfs"; };
+      adguardhome  = {
+        enable = true;
+        port = 3000;
+      };
+      jellyfin = {
+         enable = true;
+         port = 8096;
+         dataDir = "/tank/services/jellyfin";
+         storage = "zfs";
+      };
+      navidrome = { 
+        enable = true; 
+        port = 4533; 
+        dataDir = "/tank/services/navidrome";
+        storage = "zfs";
+      };
+      searx= { 
+        enable = true; 
+        port = 8888; 
+        publicHost = "searx.kuroma.dev"; 
+      };
+      privatebin = { 
+        enable = true; 
+        port = 8082; 
+        publicHost = "pastebin.kuroma.dev"; 
+        storage = "zfs"; 
+        unit = "phpfpm-privatebin";
+      };
+      stirling-pdf = { 
+        enable = true; 
+        port = 8085; 
+        publicHost = "pdf.kuroma.dev";
+      };
+      postgresql = {
+        enable = true; 
+        dataDir = "/tank/services/postgresql"; 
+        storage = "zfs";
+      };
+      nextcloud = { 
+        enable = true;
+        port = 8081;
+        publicHost = "cloud.kuroma.dev";
+        dataDir = "/tank/services/nextcloud";
+        storage = "zfs";
+        unit = "nextcloud-setup"; 
+      };
+      matrix = {
+        enable = true;
+        port = 8448;
+        publicHost = "matrix.isomorphic.to";
+        publicAuto = false;
+        dataDir = "/tank/services/matrix";
+        storage = "zfs";
+        unit = "matrix-synapse";
+      };
+      vaultwarden = { 
+        enable = true;
+        port = 8222;
+        publicHost = "vault.kuroma.dev";
+        dataDir = "/tank/services/vaultwarden";
+        storage = "zfs";
+      };
+      forgejo = { 
+        enable = true; 
+        port = 1412; 
+        publicHost = "git.kuroma.dev"; 
+        dataDir = "/tank/services/forgejo"; 
+        storage = "zfs";
+      };
     };
 
     filebrowsers.ct-dump = {

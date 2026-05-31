@@ -27,16 +27,59 @@
     };
 
     services = {
-      adguardhome = { enable = true; port = 3000; };
-      syncthing   = { enable = true; port = 8384; };
-      cockpit     = { enable = true; port = 9090; };
-      n8n         = { enable = true; port = 5678; dataDir = "/Vault/n8n"; storage = "vault"; };
-      neo4j       = { enable = true; port = 7474; dataDir = "/Vault/neo4j"; storage = "vault"; };
-      sonarr      = { enable = true; port = 8989; dataDir = "/Vault/sonarr"; storage = "vault"; };
-      radarr      = { enable = true; port = 7878; dataDir = "/Vault/radarr"; storage = "vault"; };
-      llama       = { enable = true; port = 11434; storage = "vault"; unit = "llama-router"; };
-      llama-emb   = { enable = true; port = 11435; storage = "vault"; unit = "llama-embedding"; };
-      postgresql  = { enable = true; dataDir = "/Vault/postgresql"; storage = "vault"; };
+      adguardhome = {
+        enable = true;
+        port = 3000;
+      };
+      syncthing = { 
+        enable = true;
+        port = 8384;
+      };
+      cockpit = { 
+        enable = true; 
+        port = 9090;
+      };
+      n8n = { 
+        enable = true;
+        port = 5678;
+        dataDir = "/Vault/n8n";
+        storage = "vault";
+      };
+      neo4j = { 
+        enable = true; 
+        port = 7474; 
+        dataDir = "/Vault/neo4j"; 
+        storage = "vault";
+      };
+      sonarr = { 
+        enable = true; 
+        port = 8989; 
+        dataDir = "/Vault/sonarr";
+        storage = "vault";
+      };
+      radarr = { 
+        enable = true; 
+        port = 7878; 
+        dataDir = "/Vault/radarr"; 
+        storage = "vault";
+      };
+      llama = { 
+        enable = true; 
+        port = 11434; 
+        storage = "vault"; 
+        unit = "llama-router"; 
+      };
+      llama-emb = { 
+        enable = true; 
+        port = 11435; 
+        storage = "vault"; 
+        unit = "llama-embedding";
+      };
+      postgresql = { 
+        enable = true; 
+        dataDir = "/Vault/postgresql"; 
+        storage = "vault"; 
+      };
     };
   };
 

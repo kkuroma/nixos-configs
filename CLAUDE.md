@@ -2,12 +2,14 @@
 
 ## Repository layout
 
-- `flake.nix` — `nixosConfigurations` + `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`). Passed to HM as `machineConfig` via `hmExtraArgs`. Host-specific HM inlined here.
-- `modules/` — NixOS modules, no aggregator — hosts import by path.
-- `hosts/<name>/` — `configuration.nix`, `disko.nix`, `hardware-configuration.nix`, `fstab.nix`, plus host-specific service overlays (`homepage.nix`, `datasets.nix`, etc.).
+- `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { hmEntry = ...; hasNiri = ...; extraModules = [...]; };`. No inline HM blobs.
+- `parts/universal/` — Tier 1. Always-on, no gates, no options. Auto-imported by every host via `parts/universal/default.nix`. Includes `boot`, `locale`, `networking`, `nix`, `sops` (framework only — secrets live with their consumer), `users`, `packages` (base CLI/net/hw toolkit), `caddy`.
+- `parts/templates/` — Option declarations. `system.nix` (host.gpu/desktop/profile/features), `services.nix` (host.services.<name>), `filebrowser.nix` (host.filebrowsers), `parts/templates/cloudflared.nix` (host.cloudflared). Auto-imported.
+- `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix`. Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (apps, fonts, fcitx5, services), features (autofs, virtualization, codiumserver).
+- `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`.
+- `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, cloudflared instance, nut, etc., auto-imported via `extra/default.nix`).
 - `home/` — shared HM modules. `kuroma.nix` is the desktop entry point. `kuroma-server.nix` is the minimal entry point (git, nushell, zsh — used by metatron). All `.source` refs in `kuroma.nix`.
 - `config/` — static config files, deployed via `.source` in `home/kuroma.nix`.
-- `services/` — one file per service, imported selectively per host. No aggregator. Each service file owns its Caddy vhosts using `config.networking.hostName`.
 
 **Hosts:** `zaphkiel` — desktop, NVIDIA RTX, nixpkgs-unstable | `raziel` — Framework 13 AMD, nixpkgs-unstable | `metatron` — home server, r5 8500G + GTX 1650, nixpkgs-unstable
 
@@ -15,13 +17,28 @@
 
 ## Decision rules
 
-- Host-agnostic system → `modules/`, imported per-host
-- Host-specific system → `hosts/<name>/configuration.nix`
-- Shared HM → `home/`, imported via `kuroma.nix`
-- Host-specific HM → inline in `flake.nix` `users.${username}`
-- Machine hardware values → `machines.<name>` in `flake.nix`, never HM options
-- Static files → `config/`, `.source` in `kuroma.nix` only; files needing Nix interpolation → `.text` in relevant module
-- Never write NF icons or ANSI escapes in Nix strings — use `.source` files
+- **Adding a service** that fits the standard mold: drop `parts/services/foo.nix` (gated on `config.host.services.foo or null`), declare `host.services.foo = { enable = true; port = ...; ... }` in the host. No edits to host imports.
+- **Adding a module** (system-level, opt-in): drop `parts/modules/foo.nix` (gated on a `host.X` option), add the option to `parts/templates/system.nix`, host flips the switch.
+- **Adding a host**: `hosts/<name>/{disko,hardware-configuration,configuration}.nix` + entry in `machines` + one `mkHost` line in `flake.nix`. Per-host HM goes in `hosts/<name>/home.nix` (auto-picked).
+- **Host-agnostic always-on system config** → `parts/universal/`.
+- **Host-specific system config** → `hosts/<name>/configuration.nix` or `hosts/<name>/extra/`.
+- **Service secrets** → declared inside the service file (gated on `cfg.enable`), NOT in `parts/universal/sops.nix`. The universal file holds only sops framework config (defaultSopsFile, age keys).
+- **Multi-instance services** (filebrowser, cloudflared) → declare the template under `parts/templates/`, host says `host.<name>.<instance> = {...}`; template emits per-instance sops + systemd + caddy. Internally also sets `host.services.<unit>` entries to inherit caddy/storage glue.
+- **Per-host HM extras** → `hosts/<name>/home.nix` (auto-imported by `mkHost` if present). Never inline in `flake.nix`.
+- **Machine hardware values** → `machines.<name>` in `flake.nix`, threaded to HM via `machineConfig` specialArg. Never HM options.
+- **Static files** → `config/`, `.source` in `kuroma.nix` only; files needing Nix interpolation → `.text` in relevant module.
+- **Never write NF icons or ANSI escapes** in Nix strings — use `.source` files.
+
+## Tier model
+
+| Tier | Lives in | Gating | Adds to host |
+|------|----------|--------|--------------|
+| 1 — always-on | `parts/universal/` | none | nothing |
+| 2 — flag | `parts/modules/` | `host.{gpu,desktop,profile,features}.X` | one line in `host = {...}` |
+| 3 — parameterized | `parts/services/` | `host.services.<name>.enable` + dataDir/publicHost/etc | a struct in `host.services` |
+| Multi-instance | `parts/templates/<name>.nix` | `host.<name>.<instance>` declared | a struct per instance |
+
+**Typo-safety caveat:** `host.services.<name>` is a freeform attrsOf — `host.services.jelyfin = ...` (typo) silently no-ops with no error. Verify with `nix eval .#nixosConfigurations.<host>.config.services.<name>.enable` before deploying.
 
 ## Common commands
 
@@ -41,16 +58,16 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap`). systemd-
 **Swapfiles:** after creation or resize: `sudo btrfs inspect-internal map-swapfile -r /swap/swapfile` → update `resume_offset`. Use `chattr +C` + `fallocate` (not `truncate`) to avoid CoW holes.
 
 ### Kernel
-- `modules/boot.nix` blacklists `algif_aead` (CVE-2026-31431, unpatched in 6.12 LTS at last check).
+- `parts/universal/boot.nix` blacklists `algif_aead` (CVE-2026-31431, unpatched in 6.12 LTS at last check).
 - Per-host kernel: zaphkiel = zen, raziel = latest, metatron = LTS (latest breaks ZFS).
 
 ### GPU
-- **zaphkiel** (`modules/nvidia.nix`): `open = true`, `cudaSupport = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate.
-- **raziel + metatron** (`modules/amd.nix`): `hardware.graphics`, `amd_pstate=active`.
-- **metatron** (`modules/nvidia-compute.nix`): GTX 1650 headless CUDA. `modesetting.enable = false`, `open = false` (Turing TU117).
+- **zaphkiel** (`parts/modules/nvidia.nix`): `open = true`, `cudaSupport = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate.
+- **raziel + metatron** (`parts/modules/amd.nix`): `hardware.graphics`, `amd_pstate=active`.
+- **metatron** (`parts/modules/nvidia-compute.nix`): GTX 1650 headless CUDA. `modesetting.enable = false`, `open = false` (Turing TU117).
 
 ### metatron ZFS (`tank`)
-RAIDZ1 on 4× WD Red 12TB. Datasets managed via `hosts/metatron/nas/datasets.nix` — systemd oneshot `zfs-datasets.service`.
+RAIDZ1 on 4× WD Red 12TB. Datasets managed via `hosts/metatron/extra/datasets.nix` — systemd oneshot `zfs-datasets.service`.
 
 **Gotchas:**
 - `zfs-datasets.service` is **first-creation only** — it tolerates `zfs create` failures (`|| true`) so re-runs are no-ops, but it does NOT update existing dataset properties idempotently. To change a quota/reservation, do it manually with `zfs set`. The service exists so a new metatron-shaped host can bootstrap cleanly.
@@ -64,50 +81,53 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 
 ### Services
 
-`modules/caddy.nix` — shared base. Each service file adds its own vhosts via `config.networking.hostName`.
+`parts/universal/caddy.nix` enables caddy + base certs. `parts/templates/services.nix` defines `host.services.<name>` (port, dataDir, publicHost, storage, unit, caddyExtra, publicAuto) and emits the caddy vhosts + systemd storage deps. Each `parts/services/*.nix` is gated on `cfg.enable` and reads its parameters from the host's declaration.
 
-| File | Service | Port | Hosts | Access |
-|------|---------|------|-------|--------|
-| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | internal |
-| `jellyfin.nix` | Jellyfin | :8096 | metatron | internal |
-| `navidrome.nix` | Navidrome | :4533 | metatron | internal |
-| `searxng.nix` | SearXNG | :8888 | metatron | public + internal |
-| `privatebin.nix` | PrivateBin | :8082 | metatron | public + internal |
-| `stirling-pdf.nix` | Stirling PDF | :8085 | metatron | public + internal |
-| `nextcloud.nix` | Nextcloud | :8081 | metatron | public + internal |
-| `matrix.nix` | Matrix Synapse | :8448 | metatron | internal + public |
-| `postgresql.nix` | PostgreSQL | — | metatron, zaphkiel | shared base only |
-| `vaultwarden.nix` | Vaultwarden | :8222 | metatron | public + internal |
-| `filebrowser.nix` | FileBrowser (multi) | :8200+ | metatron | public + internal |
-| `forgejo.nix` | Forgejo | :1412 | metatron | public + internal |
-| `nut.nix` | NUT (UPS) | :3493 | metatron | localhost only |
-| `syncthing.nix` | Syncthing | :8384 | zaphkiel, raziel | internal |
-| `cockpit.nix` | Cockpit | :9090 | zaphkiel, raziel | internal |
-| `n8n.nix` | n8n | :5678 | zaphkiel | internal |
-| `arr/sonarr.nix` | Sonarr | :8989 | zaphkiel | internal |
-| `arr/radarr.nix` | Radarr | :7878 | zaphkiel | internal |
-| `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | internal |
-| `llama.nix` | LLaMA router + embedding | :11434 / :11435 | zaphkiel, metatron | tailscale via Caddy |
-| `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | internal |
+| File | Service | Port | Default hosts | Public domain |
+|------|---------|------|---------------|---------------|
+| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | — |
+| `jellyfin.nix` | Jellyfin | :8096 | metatron | — |
+| `navidrome.nix` | Navidrome | :4533 | metatron | — |
+| `searxng.nix` | SearXNG | :8888 | metatron | searx.kuroma.dev |
+| `privatebin.nix` | PrivateBin | :8082 | metatron | pastebin.kuroma.dev |
+| `stirling-pdf.nix` | Stirling PDF | :8085 | metatron | pdf.kuroma.dev |
+| `nextcloud.nix` | Nextcloud | :8081 | metatron | cloud.kuroma.dev |
+| `matrix.nix` | Matrix Synapse | :8448 | metatron | matrix.isomorphic.to (publicAuto=false: handles .well-known) |
+| `postgresql.nix` | PostgreSQL | — | metatron, zaphkiel | — |
+| `vaultwarden.nix` | Vaultwarden | :8222 | metatron | vault.kuroma.dev |
+| `forgejo.nix` | Forgejo | :1412 | metatron | git.kuroma.dev |
+| `hosts/metatron/extra/nut.nix` | NUT (UPS) | :3493 | metatron | — (localhost only) |
+| `syncthing.nix` | Syncthing | :8384 | zaphkiel, raziel | — |
+| `cockpit.nix` | Cockpit | :9090 | zaphkiel, raziel | — |
+| `n8n.nix` | n8n | :5678 | zaphkiel | — |
+| `sonarr.nix` | Sonarr | :8989 | zaphkiel | — |
+| `radarr.nix` | Radarr | :7878 | zaphkiel | — |
+| `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | — |
+| `llama.nix` | LLaMA router + embedding | :11434 / :11435 | zaphkiel | — |
+| `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | — |
+| **`parts/templates/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
+| **`parts/templates/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main) | — |
 
 **Service access model:** Internal: `https://<service>.<hostname>` via AdGuard DNS + Caddy `tls internal`. Public: cloudflared → `localhost:80` → Caddy. DNS rewrites: `*.metatron → 100.107.220.115`, `*.zaphkiel → 100.91.235.104`, `*.raziel → 100.79.72.120`.
 
-### AdGuard (`services/adguardhome.nix`)
+**Enabling a service:** the host's `configuration.nix` declares `host.services.<name> = { enable = true; port = ...; dataDir = ...; publicHost = ...; storage = "zfs" | "vault" | "none"; unit = ...; };`. Most fields have sensible defaults; only port + (dataDir for stateful services) are mandatory. Service secrets are declared inside the gated `mkIf` of the service file, not in `parts/universal/sops.nix`.
+
+### AdGuard (`parts/services/adguardhome.nix`)
 - `bind_hosts = [ "0.0.0.0" ]` — firewall restricts DNS to `tailscale0` on all hosts, so `0.0.0.0` is safe and works regardless of which host is running the service.
 - `mutableSettings = true`. **Admin password is non-declarative** — lives in `/var/lib/AdGuardHome/AdGuardHome.yaml` under `users:`. To set/reset: stop service, edit file with a bcrypt hash (`htpasswd -bnBC 10 "" yourpassword | tr -d ':\n'`), restart.
 - **Fresh-install footgun:** on a from-scratch metatron, AdGuard boots into the public setup wizard with no auth until the YAML is hand-edited. Make this the first post-rebuild step.
 
-### LLaMA (`services/llama.nix`)
+### LLaMA (`parts/services/llama.nix`)
 - Router on :11434, embedding server on :11435. Both `--host 127.0.0.1`; Caddy exposes them on tailscale via `llama.${host}` / `llama-emb.${host}`. Do **not** bind `0.0.0.0` — docker/libvirt bridges would reach the model with no auth.
 - Active on zaphkiel (current GPU host) and metatron (GTX 1650). Models live under `/Vault/llm-models` (zaphkiel) — service has `Vault.mount` ordering.
 
 ### PostgreSQL
-`postgresql.nix` is just `enable = true` + `dataDir = "/tank/services/postgresql"` (metatron) or `/Vault/postgresql` (zaphkiel). Each service manages its own DB.
+`parts/services/postgresql.nix` reads `dataDir` + `storage` from the host's `host.services.postgresql` block — no host-name branching. metatron sets `/tank/services/postgresql` + `storage = "zfs"`; zaphkiel sets `/Vault/postgresql` + `storage = "vault"`. Each consumer service manages its own DB.
 
 **NixOS 25.11:** `ensureUsers`/`ensureDatabases` run in `postgresql-setup.service`. Custom SQL and dependent services need `after = [ "postgresql-setup.service" ]`; custom SQL in `lib.mkAfter` on `postStart`. **Matrix DB:** omit `ensureDBOwnership`, use `WITH OWNER=` in `CREATE DATABASE` SQL instead (Synapse requires `LC_COLLATE=C`).
 
 ### FileBrowser (multi-instance)
-Add entries to `instances` attrset in `filebrowser.nix`. Each entry generates a hardened systemd service + internal + public Caddy vhosts. Ports start at :8200. Also add hostname to `cloudflared.nix`.
+Declare instances in the host: `host.filebrowsers.<name> = { port = ...; root = ...; user = ...; group = ...; };`. `parts/templates/filebrowser.nix` generates a hardened systemd unit + sops secrets + a `host.services.<unit>` entry (so caddy + storage glue come along). Public hostname defaults to `<name>.kuroma.dev`; the corresponding cloudflared instance must include it in its `hostnames` list.
 
 - Per-instance sops secrets: `filebrowser/<name>/username`, `filebrowser/<name>/password`.
 - **Init is one-shot:** `ExecStartPre` runs only when the SQLite DB doesn't exist. Rotating the sops password does NOT update the DB. To rotate: `sudo -u <user> filebrowser users update <name> --password <new> -d /var/lib/filebrowser-<name>/database.db`.
@@ -123,8 +143,8 @@ Port :8083. Wallpaper at `hosts/<name>/homepage.png` — must `git add` before b
 - NUT "peanut" widget requires Peanut2 REST server (not in nixpkgs) — not configured.
 - metatron `BindReadOnlyPaths`: list each ZFS child dataset individually.
 
-### Forgejo (`forgejo.nix`)
-Port :1412. SSH on :22 via system sshd (tailscale only). Clone URL: `forgejo@metatron:kuroma/<repo>.git`. State at `/tank/services/forgejo`. Theme: Natsumikan (custom CSS + Google Sans Flex, symlinked from Nix store via `ExecStartPre`). Icon: `services/icon.webp` → PNG via imagemagick at build time.
+### Forgejo (`parts/services/forgejo.nix`)
+Port :1412. SSH on :22 via system sshd (tailscale only). Clone URL: `forgejo@metatron:kuroma/<repo>.git`. State at `/tank/services/forgejo`. Theme: Natsumikan (custom CSS + Google Sans Flex, symlinked from Nix store via `ExecStartPre`). Icon: `parts/services/icon.webp` → PNG via imagemagick at build time.
 
 **Gotchas:**
 - `services.forgejo.secrets` is `attrsOf (attrsOf path)` — `{ section.KEY = path; }`. Use `lib.mkForce`.
@@ -138,23 +158,23 @@ Port :1412. SSH on :22 via system sshd (tailscale only). Clone URL: `forgejo@met
 - **sshd hardening:** `services.openssh.extraConfig` adds a `Match User forgejo` block disabling agent/TCP/stream forwarding, PTY, X11, and tunnels. Defense-in-depth in case a key ever lands in `authorized_keys` without the standard `command="forgejo serv …"` prefix — the session is still unusable as a pivot.
 - **Push mirror to GitHub:** repo Settings → Mirror Settings → Add Push Mirror → HTTPS URL + GitHub PAT (`repo` scope). Forgejo is source of truth; GitHub is mirror.
 
-### NUT (`services/nut.nix`, metatron only)
+### NUT (`hosts/metatron/extra/nut.nix`)
 Module namespace is `power.ups` (not `services.nut`). Hardware: generic MEC0003 UPS (vendor `0001:0000`, Megatec Q1 protocol) — driver `blazer_usb`. upsd listens on `127.0.0.1:3493`.
 
 - **70% shutdown:** systemd timer polls `upsc` every minute; shuts down if status contains `OB` and charge < 70%.
 - **Email alerts:** upsmon `NOTIFYCMD` + msmtp → smtp.zoho.com → `contact@kuroma.dev` on ONBATT/ONLINE/LOWBATT/COMMBAD/COMMOK/SHUTDOWN. Reuses `vaultwarden/smtp-password`.
 - Sops: `nut/monitor-password`. `upsc` reads are unauthenticated from localhost.
 
-### Stirling-PDF (`services/stirling-pdf.nix`)
+### Stirling-PDF (`parts/services/stirling-pdf.nix`)
 `DynamicUser=true` plus full systemd hardening: `NoNewPrivileges`, `ProtectHome`, `ProtectKernel{Tunables,Modules,Logs}`, `ProtectControlGroups`, `ProtectClock`, `ProtectHostname`, `ProtectProc=invisible`, `LockPersonality`, `RestrictNamespaces`, `RestrictRealtime`, `RestrictSUIDSGID`, `RestrictAddressFamilies = AF_UNIX AF_INET AF_INET6`, `DevicePolicy=closed`, `PrivateDevices`.
 
 `MemoryDenyWriteExecute` is **intentionally omitted** — the JVM JIT needs W+X. If Stirling fails to start after a rebuild, check journalctl for sandbox denials; the most likely culprit is `RestrictNamespaces` or `ProtectKernelLogs`.
 
-### Syncthing (`services/syncthing.nix`)
-`ExecStartPost` waits for the API, then PATCHes the GUI password from `sops:syncthing/password`. The JSON body is built with `jq -Rn --arg p` — passwords containing `"`/`\`/newlines are safe.
+### Syncthing (`parts/services/syncthing.nix`)
+`ExecStartPost` waits for the API, then PATCHes the GUI password from `sops:syncthing/password`. The JSON body is built with `jq -Rn --arg p` — passwords containing `"`/`\`/newlines are safe. The `syncthing/password` sops secret is declared inside the gated `mkIf` (so metatron, which doesn't enable syncthing, doesn't provision it). Device addresses use the `zaphkielIP`/`razielIP` specialArgs rather than literal IPs.
 
 ### Cloudflare tunnel
-`searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev` → `http://localhost:80`. Set in Cloudflare dashboard or `tunnelConfig` in `cloudflared.nix`. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix).
+Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cloudflared.<name> = { hostnames = [...]; tokenSecret = "cloudflared/<name>/token"; };` (or override `tokenSecret` to reuse an existing sops key — metatron's `main` instance uses `cloudflared/token`). Each instance gets its own systemd unit `cloudflared-<name>` + per-instance sops secret + yaml config; all forward to `http://localhost:80` (caddy). Currently: metatron's `main` → searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev + matrix.isomorphic.to. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix). Adding cloudflared to another host = one declaration block + a new sops secret.
 
 **Public service notes:**
 - `ct-dump.kuroma.dev`: dumping ground, low-trust by design.
@@ -162,17 +182,17 @@ Module namespace is `power.ups` (not `services.nut`). Hardware: generic MEC0003 
 - `pdf.kuroma.dev`: same model. Stirling is hardened (see above) but parses untrusted input — candidate for shutdown if usage is rare.
 
 ### Networking
-SSH on `tailscale0` only (open via `modules/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
+SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
 
 ### Autofs / Backups (zaphkiel)
-Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h, requires `/mnt/NAS` mounted). **metatron home backup: not configured** (TODO: snapper or rsync to `tank/nas/kuroma`).
+Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/extra/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h, requires `/mnt/NAS` mounted). **metatron home backup: not configured** (TODO: snapper or rsync to `tank/nas/kuroma`).
 
 **Media layout:** `vault/media/anime` → `/mnt/Vault-Storage/media/anime` (Sonarr), `vault/media/movies` → `/mnt/Vault-Storage/media/movies` (Radarr). Mirrored on metatron as `tank/media/anime` (3T) and `tank/media/movies` (1T). Keep anime and movies in separate datasets — Sonarr manages anime/shows, Radarr manages movies; Jellyfin expects separate library roots for each type.
 
 ### raziel
 Fingerprint: `libfprint` native — do NOT add `libfprint-2-tod1-goodix` (corrupts enrollment). `fprintd-enroll $USER` after first boot. `fprintAuth = true` for sudo + polkit (accepted tradeoff: laptop, physically attended).
 
-**Charge-limit udev rule (`hosts/raziel/laptop.nix`):** picks 80% (left port) / 100% (right port). User-session calls (`noctalia-shell ipc`, `notify-send`) are wrapped in a `run_user` helper that no-ops when `/run/user/1000/bus` doesn't exist — safe during early boot / no-login.
+**Charge-limit udev rule (`hosts/raziel/extra/laptop.nix`):** picks 80% (left port) / 100% (right port). User-session calls (`noctalia-shell ipc`, `notify-send`) are wrapped in a `run_user` helper that no-ops when `/run/user/1000/bus` doesn't exist — safe during early boot / no-login.
 
 ### Desktop session — niri (zaphkiel + raziel)
 greetd + tuigreet → `niri-session`. xwayland-satellite: `After = graphical-session.target` (not pre — races WAYLAND_DISPLAY). Use `nohup ... &` not `systemd-run --user`. One global `layout {}` (noctalia owns it). No `is-only-window` in 26.04 — use `open-maximized true`.
@@ -191,13 +211,13 @@ Writes at runtime: niri KDL, ghostty config, nvim matugen.lua, starship palette.
 
 ### Users / Auth / Secrets
 - `users.mutableUsers = false`. Passwords: `mkpasswd --method=yescrypt`.
-- `modules/users.nix` currently ships `hashedPassword` inline for `kuroma` and `root`. Repo is push-mirrored to public GitHub via Forgejo — these hashes are public. Acceptable only if the password is unique to this host and high-entropy; otherwise migrate to `hashedPasswordFile` from sops.
+- `parts/universal/users.nix` currently ships `hashedPassword` inline for `kuroma` and `root`. Repo is push-mirrored to public GitHub via Forgejo — these hashes are public. Acceptable only if the password is unique to this host and high-entropy; otherwise migrate to `hashedPasswordFile` from sops. (Migration TODO also noted under Pending work.)
 - Sops: `nix-shell -p sops --run 'sops secrets/secrets.yaml'`. New host: add SSH host key to `.sops.yaml` after first boot.
 - **World-readable secrets (`mode = "0444"`):** `nut/monitor-password` (local-only impact), `forgejo/runner-token` (registration only). `cloudflared/token` and `vaultwarden/smtp-password` should ideally have proper owners — DynamicUser blocks that for cloudflared without restructuring.
 
 ## Pending work
 - **Vault-Storage ext4 → btrfs migration:** plan documented in `PLAN.md`. Waiting on current arxiv rsync to metatron to finish before starting.
-- **`hashedPasswordFile` migration** for kuroma/root in `modules/users.nix` (if/when convenient).
+- **`hashedPasswordFile` migration** for kuroma/root in `parts/universal/users.nix` (if/when convenient).
 
 ## Misc gotchas
 - **Vaultwarden `ProtectSystem=strict`:** add `ReadWritePaths = [ "/tank/services/vaultwarden" ]` or exits with EROFS.

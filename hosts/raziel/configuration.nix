@@ -24,8 +24,14 @@
     };
 
     services = {
-      syncthing = { enable = true; port = 8384; };
-      cockpit   = { enable = true; port = 9090; };
+      syncthing = { 
+        enable = true; 
+        port = 8384;
+      };
+      cockpit = { 
+        enable = true; 
+        port = 9090;
+      };
     };
   };
 

@@ -218,6 +218,43 @@ Writes at runtime: niri KDL, ghostty config, nvim matugen.lua, starship palette.
 ## Pending work
 - **Vault-Storage ext4 → btrfs migration:** plan documented in `PLAN.md`. Waiting on current arxiv rsync to metatron to finish before starting.
 - **`hashedPasswordFile` migration** for kuroma/root in `parts/universal/users.nix` (if/when convenient).
+- **Post-refactor switch on zaphkiel** still pending (host offline as of 2026-06-01). See verification procedure below; delete this bullet once switched.
+
+## Post-refactor verification (temporary)
+
+The big tier/options refactor (commit range `62bee79..HEAD`) landed without changing any package — only generated configs/units differ. Procedure for cutover on a host that wasn't switched yet:
+
+1. **Build, don't switch:**
+   ```
+   cd ~/System/nixos-configs
+   sudo nixos-rebuild build --flake .#<host>
+   ```
+2. **Diff the closure** (should list small text-substitution drvs only; no new packages):
+   ```
+   nix store diff-closures /run/current-system $(readlink -f result)
+   ```
+   Expected on **zaphkiel**: caddy config, llama-router/llama-embedding units, polkit, dbus-broker, generated `etc`/`system-path`/`system-units`/`user-units`/`activate` aggregators. No CUDA / OBS / cc1plus compiles. If you see source builds, stop and investigate.
+
+3. **Dry-activate** to see exactly what would stop/restart/reload:
+   ```
+   sudo result/bin/switch-to-configuration dry-activate
+   ```
+   Expected on **zaphkiel**:
+   - **Reload (no traffic interruption):** caddy, dbus-broker
+   - **Restart (~1s gap):** polkit, llama-router, llama-embedding
+   - **Untouched:** sshd, jellyfin, navidrome, postgresql, syncthing, n8n, neo4j, sonarr, radarr
+   - `syncthing/password` secret is **kept** on zaphkiel (it's enabled there — only removed from metatron, which never used it)
+
+4. **Switch:**
+   ```
+   sudo nixos-rebuild switch --flake .#<host>
+   ```
+5. **Spot-check:**
+   - `systemctl status caddy` (active, reloaded)
+   - `systemctl status llama-router llama-embedding` (active)
+   - For metatron only: `systemctl status cloudflared-main` (the rename — new unit must come up; old `cloudflared` is gone). `wantedBy=multi-user.target` triggers it via target re-evaluation; if it doesn't start, `sudo systemctl start cloudflared-main`.
+
+**Metatron switched on 2026-06-01.** Verified: cloudflared rename was the only behavior change; CF-fronted sites stayed reachable across the switch.
 
 ## Misc gotchas
 - **Vaultwarden `ProtectSystem=strict`:** add `ReadWritePaths = [ "/tank/services/vaultwarden" ]` or exits with EROFS.

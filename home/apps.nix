@@ -141,6 +141,7 @@ in
       prettier
 
       # GUI apps
+      orca-slicer
       feishin
       obs-studio
       vesktop

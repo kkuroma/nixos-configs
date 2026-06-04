@@ -38,5 +38,6 @@
     usbutils
     nvme-cli
     smartmontools
+    gparted
   ];
 }

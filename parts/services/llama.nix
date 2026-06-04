@@ -22,6 +22,8 @@ let
       "Qwen3.5-9B" = { num_instance = 1; };
       "Gemma-4-26B" = { num_instance = 1; };
       "Gemma-4-26B-Code" = { num_instance = 1; };
+      "Qwen3.6-35B-A3B-Code" = { num_instance = 1; };
+      "Qwen3.6-35B-A3B-Code-Uncen" = { num_instance = 1; };
     };
     ROUTER = {
       HEALTH_CHECK_INTERVAL = 1.0;

@@ -60,17 +60,17 @@
         nvenc = true;
         hwdec = "nvdec-copy";
         displays = [ # get parsed to niri
-          {
-            output = "HDMI-A-1";
-            mode = "1920x1080@119.879";
-            x = 0;
-            y = 0;
-            transform = "90";
-            defaultColumnWidth = "proportion 1.0";
-          }
+          # {
+          #   output = "HDMI-A-1";
+          #   mode = "1920x1080@119.879";
+          #   x = 0;
+          #   y = 0;
+          #   transform = "90";
+          #   defaultColumnWidth = "proportion 1.0";
+          # }
           {
             output = "HDMI-A-2";
-            mode = "1920x1080@119.879";
+            mode = "2560x1440@143.972";
             x = 1080;
             y = 700;
           }

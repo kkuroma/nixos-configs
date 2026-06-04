@@ -39,6 +39,10 @@ in
         }
         input {
             focus-follows-mouse max-scroll-amount="0%"
+            touchpad {
+                tap
+                tap-button-map "left-right-middle"
+            }
         }
         spawn-at-startup "noctalia-shell"
       '' +

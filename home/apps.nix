@@ -62,6 +62,7 @@ in
 
     programs.mpv = {
       enable = true;
+      scripts = with pkgs.mpvScripts; [ mpris ];
       config = {
         hwdec = machineConfig.hwdec; # GPU decoding & rendering
         vo = "gpu-next";

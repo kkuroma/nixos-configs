@@ -60,8 +60,8 @@ let
       mountpoint = "/tank/nas/public";
       quota = "2T";
       reservation = "2T";
-      owner = "kuroma";
-      group = "family";
+      owner = "public";
+      group = "public";
       mode = "775";
       snapshot = true;
     };

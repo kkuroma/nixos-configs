@@ -94,12 +94,20 @@
       };
     };
 
-    filebrowsers.ct-dump = {
-      port = 8200;
-      root = "/tank/nas/ct/dump";
-      user = "ct";
-      group = "family";
-    };
+    filebrowsers = {
+      ct-dump = {
+        port = 8200;
+        root = "/tank/nas/ct/dump";
+        user = "ct";
+        group = "family";
+      };
+      public-dump = {
+        port = 8201;
+        root = "/tank/nas/public/dump";
+        user = "public";
+        group = "public";
+      };
+    }
 
     cloudflared.main = {
       tokenSecret = "cloudflared/token"; # existing sops key; rename if you split tunnels later
@@ -109,6 +117,7 @@
         "pastebin.kuroma.dev"
         "cloud.kuroma.dev"
         "ct-dump.kuroma.dev"
+        "public-dump.kuroma.dev"
         "vault.kuroma.dev"
         "git.kuroma.dev"
         "matrix.isomorphic.to"

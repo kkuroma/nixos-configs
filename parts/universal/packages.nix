@@ -25,6 +25,7 @@
     strace
     file
     zellij
+    sqlite
 
     # networking
     nmap

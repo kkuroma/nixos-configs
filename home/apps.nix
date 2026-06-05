@@ -205,6 +205,8 @@ in
 
       # etc
       kdePackages.ark
+      unrar
+      p7zip
       kdePackages.kde-cli-tools
       gnome-disk-utility
       libnotify

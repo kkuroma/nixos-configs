@@ -107,7 +107,7 @@
         user = "public";
         group = "public";
       };
-    }
+    };
 
     cloudflared.main = {
       tokenSecret = "cloudflared/token"; # existing sops key; rename if you split tunnels later

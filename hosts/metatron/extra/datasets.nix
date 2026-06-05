@@ -188,6 +188,7 @@ in
   };
 
   users.groups.family = {};
+  users.groups.public = {};
   users.groups.media.members = [ "kuroma" "jellyfin" "navidrome" ];
 
   users.users.ct = {
@@ -202,5 +203,12 @@ in
     isSystemUser = true;
     group = "family";
     description = "NAS user (smb only no shell)";
+  };
+
+  users.users.public = {
+    uid = 1003;
+    isSystemUser = true;
+    group = "public";
+    description = "Public NAS filebrowser user";
   };
 }

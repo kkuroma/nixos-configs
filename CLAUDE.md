@@ -62,7 +62,7 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap`). systemd-
 - Per-host kernel: zaphkiel = zen, raziel = latest, metatron = LTS (latest breaks ZFS).
 
 ### GPU
-- **zaphkiel** (`parts/modules/nvidia.nix`): `open = true`, `cudaSupport = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate.
+- **zaphkiel** (`parts/modules/nvidia.nix`): `open = true`, `cudaSupport = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate. `onnxruntime` is overlaid to `cudaSupport = false` — librewolf depends on it and the CUDA variant isn't cached, so without the overlay every rebuild compiles it from source (and fails).
 - **raziel + metatron** (`parts/modules/amd.nix`): `hardware.graphics`, `amd_pstate=active`.
 - **metatron** (`parts/modules/nvidia-compute.nix`): GTX 1650 headless CUDA. `modesetting.enable = false`, `open = false` (Turing TU117).
 
@@ -185,7 +185,7 @@ Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cl
 SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
 
 ### Autofs / Backups (zaphkiel)
-Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/extra/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h, requires `/mnt/NAS` mounted). **metatron home backup: not configured** (TODO: snapper or rsync to `tank/nas/kuroma`).
+Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/extra/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h → `metatron:/tank/nas/kuroma/home/` over SSH). All jobs rsync directly to metatron over SSH — no SMB intermediary.
 
 **Media layout:** `vault/media/anime` → `/mnt/Vault-Storage/media/anime` (Sonarr), `vault/media/movies` → `/mnt/Vault-Storage/media/movies` (Radarr). Mirrored on metatron as `tank/media/anime` (3T) and `tank/media/movies` (1T). Keep anime and movies in separate datasets — Sonarr manages anime/shows, Radarr manages movies; Jellyfin expects separate library roots for each type.
 
@@ -258,7 +258,7 @@ The big tier/options refactor (commit range `62bee79..HEAD`) landed without chan
 
 ## Misc gotchas
 - **Vaultwarden `ProtectSystem=strict`:** add `ReadWritePaths = [ "/tank/services/vaultwarden" ]` or exits with EROFS.
-- **Hibernate resume:** zaphkiel/raziel: `resumeDevice = "/dev/mapper/cryptroot"`. metatron: `/dev/nvme0n1p2`. NVIDIA needs `powerManagement.enable + NVreg_PreserveVideoMemoryAllocations=1`.
+- **Hibernate resume:** zaphkiel/raziel: `boot.resumeDevice = "/dev/mapper/cryptroot"` + `resume_offset` from `btrfs inspect-internal map-swapfile -r /swap/swapfile`. metatron: `/dev/nvme0n1p2`. NVIDIA needs `powerManagement.enable + NVreg_PreserveVideoMemoryAllocations=1`. **zaphkiel ZFS:** `zfs-export-vault-pre-hibernate.service` exports `vault` before the hibernate image is written — without it ZFS sees a dirty pool on resume and either refuses import or corrupts.
 - **MPV:** use `nvdec-copy` not `nvdec`. `osc = "no"` (thumbnail scripts replace OSC).
 - **Dolphin "Open With" empty:** `kbuildsycoca6` oneshot must run at session start.
 - **Nextcloud fresh install recovery:** drop+recreate DB, delete `config.php` and `data/` if `nextcloud-setup` fails mid-install.

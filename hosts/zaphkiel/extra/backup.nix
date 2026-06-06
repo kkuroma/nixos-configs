@@ -67,10 +67,6 @@ let
       oncalendar = "*-*-* 00,06,12,18:00:00";
       script = ''
         set -euo pipefail
-        if ! mountpoint -q /mnt/NAS; then
-          echo "Error: /mnt/NAS is not mounted. Aborting." >&2
-          exit 1
-        fi
         rsync -aHAXx --ignore-errors --info=progress2 --delete \
           --exclude='.cache/' \
           --exclude='.local/share/Trash/' \
@@ -79,7 +75,7 @@ let
           --exclude='node_modules/' \
           --exclude='*.tmp' \
           --exclude='.gvfs/' \
-          /home/${username}/ /mnt/NAS/kuroma/home/
+          /home/${username}/ metatron:/tank/nas/kuroma/home/
       '';
     }
   ];

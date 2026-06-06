@@ -23,7 +23,7 @@
     };
 
     services = {
-      adguardhome  = {
+      adguard = {
         enable = true;
         port = 3000;
       };

@@ -85,7 +85,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 
 | File | Service | Port | Default hosts | Public domain |
 |------|---------|------|---------------|---------------|
-| `adguardhome.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | — |
+| `adguard.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | — |
 | `jellyfin.nix` | Jellyfin | :8096 | metatron | — |
 | `navidrome.nix` | Navidrome | :4533 | metatron | — |
 | `searxng.nix` | SearXNG | :8888 | metatron | searx.kuroma.dev |
@@ -112,7 +112,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 
 **Enabling a service:** the host's `configuration.nix` declares `host.services.<name> = { enable = true; port = ...; dataDir = ...; publicHost = ...; storage = "zfs" | "vault" | "none"; unit = ...; };`. Most fields have sensible defaults; only port + (dataDir for stateful services) are mandatory. Service secrets are declared inside the gated `mkIf` of the service file, not in `parts/universal/sops.nix`.
 
-### AdGuard (`parts/services/adguardhome.nix`)
+### AdGuard (`parts/services/adguard.nix`)
 - `bind_hosts = [ "0.0.0.0" ]` — firewall restricts DNS to `tailscale0` on all hosts, so `0.0.0.0` is safe and works regardless of which host is running the service.
 - `mutableSettings = true`. **Admin password is non-declarative** — lives in `/var/lib/AdGuardHome/AdGuardHome.yaml` under `users:`. To set/reset: stop service, edit file with a bcrypt hash (`htpasswd -bnBC 10 "" yourpassword | tr -d ':\n'`), restart.
 - **Fresh-install footgun:** on a from-scratch metatron, AdGuard boots into the public setup wizard with no auth until the YAML is hand-edited. Make this the first post-rebuild step.

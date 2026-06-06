@@ -165,7 +165,6 @@ in
       qbittorrent
       librewolf
       puddletag
-      logseq
       upscayl
 
       # cli tools

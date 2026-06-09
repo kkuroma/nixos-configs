@@ -160,6 +160,7 @@ in
       ### end of the bloat ###
       krita
       prismlauncher
+      osu-lazer-bin
       imv
       onlyoffice-desktopeditors
       qbittorrent

@@ -9,8 +9,6 @@ lib.mkIf (config.host.services.adguard or { enable = false; }).enable {
     host = "127.0.0.1";
     settings = {
       dns = {
-        # Explicit list instead of 0.0.0.0 — eliminates open-resolver footgun if
-        # the host firewall is ever disabled. Listens on loopback + tailscale only.
         bind_hosts = [ "0.0.0.0" ];
         port = 53;
         upstream_dns = [

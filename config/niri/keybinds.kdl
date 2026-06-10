@@ -5,7 +5,8 @@ binds {
     Mod+Space hotkey-overlay-title="Launcher" { spawn-sh "noctalia-shell ipc call launcher toggle"; }
     Mod+C hotkey-overlay-title="VSCode" { spawn "codium"; }
     Mod+B hotkey-overlay-title="Browser" { spawn "vivaldi"; }
-    Mod+Shift+B hotkey-overlay-title="Browser" { spawn "librewolf"; }
+    Mod+Shift+B hotkey-overlay-title="Browser (Paranoid)" { spawn "librewolf"; }
+    Ctrl+Mod+Shift+B hotkey-overlay-title="Browser (Very Paranoid)" { spawn "librewolf --private-window"; }
     Mod+E hotkey-overlay-title="Files" { spawn "dolphin"; }
     Mod+W { spawn-sh "noctalia-shell ipc call wallpaper toggle"; }
     Mod+S { spawn-sh "noctalia-shell ipc call settings toggle"; }

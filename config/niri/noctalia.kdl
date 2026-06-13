@@ -13,7 +13,10 @@ debug {
     honor-xdg-activation-with-invalid-serial
 }
 
+// v5 Option 1 (blurred overview wallpaper): noctalia draws its backdrop layer as
+// "noctalia-backdrop" (was "noctalia-overview" in v4) and [backdrop] is enabled in
+// noctalia settings. place-within-backdrop hoists it into niri's overview backdrop.
 layer-rule {
-    match namespace="^noctalia-overview*"
+    match namespace="^noctalia-backdrop"
     place-within-backdrop true
 }

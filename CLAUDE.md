@@ -2,14 +2,22 @@
 
 ## Repository layout
 
-- `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { hmEntry = ...; hasNiri = ...; extraModules = [...]; };`. No inline HM blobs.
+- `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { hasNiri = ...; extraModules = [...]; };`. Every host's HM entry is `./home` (single entry); `hasNiri` is threaded to HM as `isDesktop` (gates the graphical layers) and also gates the nixvim import. No inline HM blobs.
 - `parts/universal/` — Tier 1. Always-on, no gates, no options. Auto-imported by every host via `parts/universal/default.nix`. Includes `boot`, `locale`, `networking`, `nix`, `sops` (framework only — secrets live with their consumer), `users`, `packages` (base CLI/net/hw toolkit), `caddy`.
 - `parts/templates/` — Option declarations. `system.nix` (host.gpu/desktop/profile/features), `services.nix` (host.services.<name>), `filebrowser.nix` (host.filebrowsers), `parts/templates/cloudflared.nix` (host.cloudflared). Auto-imported.
-- `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix`. Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (apps, fonts, fcitx5, services), features (autofs, virtualization, codiumserver).
+- `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix` (or `templates/home.nix`). Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (fonts, fcitx5, services), `gaming` (Steam stack — gated on `config.host.home.gaming`, the **system half of the HM gaming bundle**: `host.home.*` is read by both system modules via `config` and HM via `osConfig`), features (autofs, virtualization, codiumserver).
 - `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`.
 - `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, cloudflared instance, nut, etc., auto-imported via `extra/default.nix`).
-- `home/` — shared HM modules. `kuroma.nix` is the desktop entry point. `kuroma-server.nix` is the minimal entry point (git, nushell, zsh — used by metatron). All `.source` refs in `kuroma.nix`.
-- `config/` — static config files, deployed via `.source` in `home/kuroma.nix`.
+- `home/` — HM modules, one concern per file, with a tiered layout mirroring `parts/`. **The machine's HM tickbox is `host.home.*`** (declared in `parts/templates/home.nix`, set in each host's `configuration.nix`, read by HM modules via `osConfig`). Bundles default to follow `host.profile` (`server`|`desktop`); a host unticks what it doesn't want (e.g. `host.home.gaming = false`).
+  - `default.nix` — the **single entry point** for every host (flake imports `./home` always — no `hmEntry`/`hasNiri`). Imports `./base` always; `./dev` when `host.home.dev` (**any profile** — works on servers); the graphical layers (`packages`/`fonts`/`scripts`/`programs`/`desktop`) only when `host.profile == "desktop"`. Declares home identity + gated `.face`.
+  - `base/` — headless-safe modules imported by **every** host (git, zsh, nushell). Auto-imported (blind `default.nix`).
+  - `dev/` — **headless-safe** dev tooling, imported whenever `host.home.dev` (servers included): `nvim.nix` + `packages.nix` (python/node/uv/formatters/claude-code). Must not require a graphical session; noctalia-routing modules here carry a static fallback (see below). The tier import is the dev gate, so files inside don't `mkIf dev`.
+  - `programs/` — one file per **configured graphical program** (`enable` + config; self-installs). Auto-imported, desktop-only. Bundle-specific ones self-gate with `config = lib.mkIf osConfig.host.home.<bundle> { … }` (mpv→media, vscodium→dev) — exactly like a `parts/services/*.nix` gates on its `enable`.
+  - `desktop/` — session/DE integration (niri, noctalia, theming, mimeapps, kde, kde-servicemenus, vivaldi, cliphist). Auto-imported, desktop-only. `noctalia.nix` self-gates on `host.home.noctalia`.
+  - `packages.nix` — THE install-only package list (desktop-only); bundle apps gate via `lib.optionals osConfig.host.home.<bundle>`. `scripts/` — authored shell-script packages. `fonts.nix` — `rice.fonts` option + font deployment.
+  - `.source` refs live in the module that owns the concern (e.g. noctalia palettes/templates in `desktop/noctalia.nix`, fastfetch in `programs/fastfetch.nix`).
+  - **noctalia routing:** modules that *require* noctalia's runtime-generated files branch on `osConfig.host.home.noctalia` and carry a static fallback for the off case — **nvim** (matugen.lua → builtin `habamax` colorscheme; base16-nvim + the matugen-placeholder activation only on the noctalia path) and **starship** (palette=noctalia + marker → a static `[palettes.fallback]`). Modules that only *optionally* theme via noctalia (ghostty/qt/fcitx5/kde) are desktop-only and still hardcode `theme = noctalia`; they'd only need a fallback on a noctalia-off *desktop*, which doesn't exist (metatron is a server, so they never load there).
+- `config/` — static config files, deployed via `.source` from the owning HM module.
 
 **Hosts:** `zaphkiel` — desktop, NVIDIA RTX, nixpkgs-unstable | `raziel` — Framework 13 AMD, nixpkgs-unstable | `metatron` — home server, r5 8500G + GTX 1650, nixpkgs-unstable
 
@@ -26,7 +34,7 @@
 - **Multi-instance services** (filebrowser, cloudflared) → declare the template under `parts/templates/`, host says `host.<name>.<instance> = {...}`; template emits per-instance sops + systemd + caddy. Internally also sets `host.services.<unit>` entries to inherit caddy/storage glue.
 - **Per-host HM extras** → `hosts/<name>/home.nix` (auto-imported by `mkHost` if present). Never inline in `flake.nix`.
 - **Machine hardware values** → `machines.<name>` in `flake.nix`, threaded to HM via `machineConfig` specialArg. Never HM options.
-- **Static files** → `config/`, `.source` in `kuroma.nix` only; files needing Nix interpolation → `.text` in relevant module.
+- **Static files** → `config/`, `.source` from the owning HM module (`base/` if headless-safe, else `programs/`/`desktop/`); files needing Nix interpolation → `.text` in relevant module.
 - **Never write NF icons or ANSI escapes** in Nix strings — use `.source` files.
 
 ## Tier model
@@ -192,19 +200,45 @@ Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsy
 ### raziel
 Fingerprint: `libfprint` native — do NOT add `libfprint-2-tod1-goodix` (corrupts enrollment). `fprintd-enroll $USER` after first boot. `fprintAuth = true` for sudo + polkit (accepted tradeoff: laptop, physically attended).
 
-**Charge-limit udev rule (`hosts/raziel/extra/laptop.nix`):** picks 80% (left port) / 100% (right port). User-session calls (`noctalia-shell ipc`, `notify-send`) are wrapped in a `run_user` helper that no-ops when `/run/user/1000/bus` doesn't exist — safe during early boot / no-login.
+**Charge-limit udev rule (`hosts/raziel/extra/laptop.nix`):** picks 80% (left port) / 100% (right port). User-session calls (`noctalia msg caffeine-enable/disable`, `notify-send`) are wrapped in a `run_user` helper that no-ops when `/run/user/1000/bus` doesn't exist — safe during early boot / no-login. Uses the absolute `/run/current-system/sw/bin/noctalia` (system package — see Noctalia section for why the binary is not HM-installed).
 
 ### Desktop session — niri (zaphkiel + raziel)
 greetd + tuigreet → `niri-session`. xwayland-satellite: `After = graphical-session.target` (not pre — races WAYLAND_DISPLAY). Use `nohup ... &` not `systemd-run --user`. One global `layout {}` (noctalia owns it). No `is-only-window` in 26.04 — use `open-maximized true`.
 
-### Noctalia theming
-Writes at runtime: niri KDL, ghostty config, nvim matugen.lua, starship palette.
+### Noctalia (v5, native — `noctalia` binary, no Quickshell)
+On v5.0.0 (input `noctalia` = repo `noctalia-shell`, but binary renamed `noctalia-shell`→`noctalia`). Launched via niri `spawn-at-startup "noctalia"`; **binary is a SYSTEM package** (`parts/modules/niri.nix`) so `/run/current-system/sw/bin/noctalia` stays valid for raziel's udev charge-limit rule + swayidle `before-sleep`.
+
+**Two-layer config (the mutability story):**
+- **Declarative base** → `~/.config/noctalia/config.toml`, Nix-owned via `home/noctalia.nix` (`programs.noctalia` from `inputs.noctalia.homeModules.default`). Read-only symlink is fine.
+- **Runtime state** → `~/.local/state/noctalia/settings.toml`, written by GUI/IPC. Load order = builtin defaults → config.toml → state, **merged PER-KEY, state wins**. GUI auto-prunes a state key when it matches the lower layer. ⇒ Nix is the base; state holds deviations.
+- **Left mutable in state (NOT nixed):** `[theme]` (palette/mode), `[wallpaper]`, and the **monitor-coupled** layouts `[desktop_widgets]` + `[lockscreen_widgets]` (embed connector names like `HDMI-A-1` → per-host, would break raziel's `eDP-1`). **Nixed in config.toml:** `[backdrop]`, `[bar*]`, `[widget.*]`, `[control_center]`, `[dock]`, `[location]`, `[plugins]`, `[shell*]`, `[theme.templates]`. (`[bar*]`/`[widget.*]` carry no monitor names so they're portable — trade-off is bar tweaks need a rebuild, not a live GUI drag.)
+- **Migration caveat:** after changing a nixed key you must remove it from state too (stale state shadows Nix). Done once via the `settings.toml.pretrim-*` trim; future nixed-key changes need the same.
+
+**`home/noctalia.nix`:** `programs.noctalia = { enable = true; package = null; systemd.enable = false; settings = {…}; }`. `package = null` is deliberate — emits config.toml only, no double-install (binary is the system package above). `systemd.enable = false` — niri spawns it.
+
+**Palettes:** whole-dir symlink `config/noctalia/palettes/` → `~/.config/noctalia/palettes/` (in `home/noctalia.nix`). 26 **dark-only** JSON files (each has only a `dark` block of `m*` roles + `terminal`; v5 derives light mode at runtime, so standalone light files were redundant and removed). Selected via `noctalia msg color-scheme-set custom <name>`; custom schemes show in the GUI picker. Add a theme = drop a `.json` + `git add` + rebuild.
+
+**Templates** (`[theme.templates]` in config.toml):
+- `builtin_ids` (btop, gtk3/4, ghostty, kcolorscheme, niri, qt, starship) + `community_ids` (neovim, vscode, discord, yazi).
+- **Community templates** are fetched from `api.noctalia.dev` and cached in `~/.local/state/noctalia/community-templates/`. **`offline_mode = true` blocks the fetch** — symptom is `[theme_templates] community template 'x' is not cached yet` + un-themed apps. Turn offline off, then `config-reload`.
+- **fcitx5** has no community template → declared **inline** as `[theme.templates.user.fcitx5]` (input = `config/noctalia/templates/fcitx5-theme.conf` symlink, output = `~/.local/share/fcitx5/themes/noctalia/theme.conf`, `post_hook` restarts fcitx5). Inline user templates apply with no GUI toggle — this **replaces** the legacy `user-templates.toml` + "User templates" toggle (both removed). nvim is community-managed (community `neovim` + custom would both write `nvim/lua/matugen.lua` → don't redefine).
+
+**IPC** is `noctalia msg <command>` (v4 was `noctalia-shell ipc call <t> <a>`): `panel-toggle <id>` (launcher/clipboard/session/wallpaper/control-center), `settings-toggle`, `session lock|suspend|…`, `caffeine-enable|disable`, `screenshot-region`, `config-reload`, `color-scheme-set/get`. Keybinds in `config/niri/keybinds.kdl`.
+
+**niri overview backdrop:** `config/niri/noctalia.kdl` has `layer-rule { match namespace="^noctalia-backdrop"; place-within-backdrop true }` (v5 renamed the surface from `noctalia-overview`) + `[backdrop] enabled` — wallpaper shows in overview (`Mod+grave`).
+
+**Monitor coupling:** only `[wallpaper.monitors.*]` + `[lockscreen_widgets]` name connectors (HDMI-A-1/2). Login boxes auto-regenerate per output; decorative lockscreen widgets use literal `output =` + absolute `cx`/`cy` (per-resolution) — inherently per-host, hence left in state (would break raziel's `eDP-1`). Stale v4 `~/.config/noctalia/settings.json` (JSON) is ignored by v5 — safe to delete.
 
 - Starship: do NOT pre-populate `[palettes.noctalia]` (duplicate TOML key on theme change). Do NOT use `programs.starship` (read-only symlink).
 - VSCodium: noctalia extension as writable copy via `home.activation` — NOT in extensions list.
 - GTK: NOT managed by HM `gtk` module — uses `adw-gtk3` + dconf in `home/qt.nix`.
 - **Maple Mono weight gotcha:** non-standard weights register as separate fc families, not weight variants.
 - **ONLYOFFICE fonts:** ignores symlinks — copy real files via `home.activation`; include `*.ttc` for CJK.
+
+**Noctalia pending polish (non-blocking, from the v4→v5 migration):**
+- **niri `include`:** `niri` is a builtin template, so v5 wants to append `include "noctalia.kdl"` to `~/.config/niri/config.kdl` — but that's a read-only HM symlink that currently *inlines* a static `config/niri/noctalia.kdl` (which itself `include`s a writable `~/.config/niri/noctalia.kdl` placeholder from `home/desktop/niri.nix`). Works (backdrop namespace already fixed to `^noctalia-backdrop`), logs a non-fatal permission warning on theme apply. Cleaner end-state: emit `include "noctalia.kdl"` from `niri.nix` and drop the static `noctalia.kdl` from `niriParts`.
+- **starship marker:** `home/programs/starship.nix` preserves everything from a single `# >>> NOCTALIA STARSHIP PALETTE >>>` marker to EOF. If v5 ever switches to a bounded begin/end block, this needs updating. (The noctalia-off static-`[palettes.fallback]` branch is already wired.)
+- **VSCodium:** the community `vscode` template writes into the `noctalia.noctaliatheme` extension dir, which `home/programs/vscodium.nix` keeps mutable via `home.activation` — verify they don't fight on a theme change.
 
 ### Shell
 `reload = "exec zsh"`. `init-shell` `.envrc` must be ONLY `use flake` — any extra export causes infinite direnv reload loop. `exec zsh` in shellHook must be guarded by `[[ $- == *i* ]]`.

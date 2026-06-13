@@ -109,7 +109,7 @@
 
     # Per-host wiring lives here; configuration.nix handles system, hosts/<name>/home.nix
     # (optional) handles host-specific HM extras.
-    mkHost = name: { extraModules ? [], hmEntry, hasNiri }: lib.nixosSystem {
+    mkHost = name: { extraModules ? [] }: lib.nixosSystem {
       inherit system;
       specialArgs = { inherit inputs username metatronIP zaphkielIP razielIP; machineConfig = machines.${name}; };
       modules = [
@@ -122,11 +122,9 @@
             useGlobalPkgs = true;
             useUserPackages = true;
             backupFileExtension = "backup";
-            extraSpecialArgs = hmExtraArgs machines.${name}
-              // lib.optionalAttrs (!hasNiri) { niriParts = []; };
+            extraSpecialArgs = hmExtraArgs machines.${name};
             users.${username}.imports =
-              [ hmEntry ]
-              ++ lib.optional hasNiri inputs.nixvim.homeModules.nixvim
+              [ ./home ]
               ++ lib.optional (builtins.pathExists (./hosts + "/${name}/home.nix"))
                               (./hosts + "/${name}/home.nix");
           };
@@ -135,18 +133,10 @@
     };
   in {
     nixosConfigurations = {
-      zaphkiel = mkHost "zaphkiel" { 
-        hmEntry = ./home/kuroma.nix; 
-        hasNiri = true;
-      };
-      metatron = mkHost "metatron" { 
-        hmEntry = ./home/kuroma-server.nix;
-        hasNiri = false; 
-      };
-      raziel   = mkHost "raziel"   { 
-        hmEntry = ./home/kuroma.nix;
-        hasNiri = true;
-        extraModules = [ nixos-hardware.nixosModules.framework-amd-ai-300-series ]; 
+      zaphkiel = mkHost "zaphkiel" { };
+      metatron = mkHost "metatron" { };
+      raziel   = mkHost "raziel"   {
+        extraModules = [ nixos-hardware.nixosModules.framework-amd-ai-300-series ];
       };
     };
   };

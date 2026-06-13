@@ -4,6 +4,6 @@
   services.swayidle = {
     enable = true;
     extraArgs = [ "-w" ];
-    events.before-sleep = "/run/current-system/sw/bin/noctalia-shell ipc --any-display call lockScreen lock";
+    events.before-sleep = "/run/current-system/sw/bin/noctalia msg session lock";
   };
 }

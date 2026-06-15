@@ -1,20 +1,21 @@
 { pkgs, inputs, ... }:
-# Authored shell-script "packages": defined here from the .sh files in this dir (or
-# inline) and installed via home.packages. These are code we own, so they live with
-# their sources rather than in the plain packages.nix install list.
+# This file contains code we own and custom shell scripts that can be injected as shell commands
 let
-  # Bake the locked nixpkgs rev into init-shell so generated project flakes pin to
-  # the same nixpkgs the system was built with, preventing package version skew.
+  # Inject nixpkgs versions to the init shell script to avoid version drife
   initShell = pkgs.writeShellScriptBin "init-shell" (
     builtins.replaceStrings [ "@NIXPKGS_REV@" ] [ inputs.nixpkgs.rev ]
       (builtins.readFile ./init-shell.sh)
   );
 
+  # shell scripts
   compressMkv = pkgs.writeShellScriptBin "compress-mkv"
     (builtins.readFile ./compress-mkv.sh);
 
   upscaleMkv = pkgs.writeShellScriptBin "upscale-mkv"
     (builtins.readFile ./upscale-mkv.sh);
+  
+  colorPicker = pkgs.writeShellScriptBin "color-picker"
+    (builtins.readFile ./color-picker.sh);
 
   # fd -> fzf files inside a given directory (home) and launches selected file in vscodium
   codeLauncher = pkgs.writeShellScriptBin "code-launcher" ''
@@ -57,5 +58,5 @@ let
   '';
 in
 {
-  home.packages = [ initShell compressMkv upscaleMkv codeLauncher fileLauncher ];
+  home.packages = [ initShell compressMkv upscaleMkv colorPicker codeLauncher fileLauncher ];
 }

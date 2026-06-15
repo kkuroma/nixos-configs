@@ -1,34 +1,36 @@
 binds {
-    Mod+grave hotkey-overlay-title="Overview" { toggle-overview; }
-    Mod+T hotkey-overlay-title="Terminal" { spawn "ghostty"; }
-    Mod+Shift+T hotkey-overlay-title="Float Terminal" { spawn "ghostty" "--class=ghostty.float"; }
-    Mod+Space hotkey-overlay-title="Launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
-    Mod+C hotkey-overlay-title="VSCode" { spawn "codium"; }
-    Mod+B hotkey-overlay-title="Browser" { spawn "vivaldi"; }
-    Mod+Shift+B hotkey-overlay-title="Browser (Paranoid)" { spawn "librewolf"; }
-    Mod+Shift+Ctrl+B hotkey-overlay-title="Browser (Very Paranoid)" { spawn "librewolf" "--private-window"; }
-    Mod+E hotkey-overlay-title="Files" { spawn "dolphin"; }
-    Mod+W { spawn-sh "noctalia msg panel-toggle wallpaper"; }
-    Mod+S { spawn-sh "noctalia msg settings-toggle"; }
-    Mod+Escape { spawn-sh "noctalia msg panel-toggle session"; }
-    Ctrl+Shift+S { spawn-sh "noctalia msg screenshot-region"; }
-    Ctrl+Mod+V { spawn-sh "noctalia msg panel-toggle clipboard"; }
-    Shift+Mod+C { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "code-launcher"; }
-    Shift+Mod+E { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "file-launcher"; }
-    Mod+Q { close-window; }
-    Mod+Shift+Q { quit; }
-    Mod+R { spawn-sh "pkill -x noctalia; noctalia -d & disown"; }
-    Mod+L { spawn-sh "noctalia msg session lock"; }
+    Mod+backslash       hotkey-overlay-title="Show Keybindings"         { show-hotkey-overlay; }
+    Mod+grave           hotkey-overlay-title="Toggle Overview"          { toggle-overview; }
+    Mod+T               hotkey-overlay-title="Terminal"                 { spawn "ghostty"; }
+    Mod+Shift+T         hotkey-overlay-title="Floating Terminal"        { spawn "ghostty" "--class=ghostty.float"; }
+    Mod+Space           hotkey-overlay-title="Spawn Launcher"           { spawn-sh "noctalia msg panel-toggle launcher"; }
+    Mod+C               hotkey-overlay-title="VSCode"                   { spawn "codium"; }
+    Mod+B               hotkey-overlay-title="Browser"                  { spawn "vivaldi"; }
+    Mod+Shift+B         hotkey-overlay-title="Browser (Paranoid)"       { spawn "librewolf"; }
+    Mod+Shift+Ctrl+B    hotkey-overlay-title="Browser (Very Paranoid)"  { spawn "librewolf" "--private-window"; }
+    Mod+E               hotkey-overlay-title="File Manager"             { spawn "dolphin"; }
+    Mod+W               hotkey-overlay-title="Wallpaper Picker"         { spawn-sh "noctalia msg panel-toggle wallpaper"; }
+    Mod+S               hotkey-overlay-title="Shell Settings"           { spawn-sh "noctalia msg settings-toggle"; }
+    Mod+Escape          hotkey-overlay-title="Power Menu"               { spawn-sh "noctalia msg panel-toggle session"; }
+    Ctrl+Shift+S        hotkey-overlay-title="Screenshot"               { spawn-sh "noctalia msg screenshot-region"; }
+    Ctrl+Mod+V          hotkey-overlay-title="Clipboard"                { spawn-sh "noctalia msg panel-toggle clipboard"; }
+    Shift+Mod+C         hotkey-overlay-title="VSCodium Launcher"        { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "code-launcher"; }
+    Shift+Mod+E         hotkey-overlay-title="File Manager Launcher"    { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "file-launcher"; }
+    Mod+Q               hotkey-overlay-title="Close Window"             { close-window; }
+    Mod+Shift+Q         hotkey-overlay-title="Kill NiriWM"              { quit; }
+    Mod+R               hotkey-overlay-title="Reload Shell"             { spawn-sh "pkill -x noctalia; noctalia -d & disown"; }
+    Mod+L               hotkey-overlay-title="Lock Screen"              { spawn-sh "noctalia msg session lock"; }
+    Mod+period          hotkey-overlay-title="Color Picker"             { spawn-sh "color-picker"; }
 
-    Mod+Left { focus-column-left; }
-    Mod+Right { focus-column-right; }
-    Mod+Up { focus-workspace-up; }
-    Mod+Down { focus-workspace-down; }
+    Mod+Left    { focus-column-left; }
+    Mod+Right   { focus-column-right; }
+    Mod+Up      { focus-workspace-up; }
+    Mod+Down    { focus-workspace-down; }
 
-    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Left  { move-column-left; }
     Mod+Shift+Right { move-column-right; }
-    Mod+Shift+Up { move-column-to-workspace-up; }
-    Mod+Shift+Down { move-column-to-workspace-down; }
+    Mod+Shift+Up    { move-column-to-workspace-up; }
+    Mod+Shift+Down  { move-column-to-workspace-down; }
 
     Alt+Shift+BracketLeft { focus-workspace-up; }
     Alt+Shift+BracketRight { focus-workspace-down; }
@@ -60,7 +62,6 @@ binds {
     Mod+V { toggle-window-floating; }
     Mod+F { maximize-column; }
     Mod+Shift+F { fullscreen-window; }
-    Mod+Shift+Space { toggle-window-floating; }
 
     Alt+Equal { set-column-width "+10%"; }
     Alt+Minus { set-column-width "-10%"; }

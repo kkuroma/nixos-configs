@@ -1,7 +1,5 @@
 { pkgs, lib, osConfig, ... }:
-# Install-only packages, gated by host.home.* bundles (the file itself only loads on
-# desktop hosts — see home/default.nix). Core desktop tools are ungated; bundle-specific
-# apps ride their tick. Configured apps install via their home/programs/<name>.nix.
+# Install user-level packages plus gated specific packages
 let
   h = osConfig.host.home;
 in
@@ -10,7 +8,6 @@ in
     [
       # ── core desktop (always present on a graphical host) ──
       # GUI
-      wireshark
       orca-slicer
       vesktop
       (vivaldi.override { proprietaryCodecs = true; enableWidevine = true; })
@@ -90,5 +87,9 @@ in
       prismlauncher
       osu-lazer-bin
       gamescope
+    ]
+    # ── networking bundle ──
+    ++ lib.optionals h.networking [
+      wireshark
     ];
 }

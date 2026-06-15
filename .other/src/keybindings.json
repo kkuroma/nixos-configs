@@ -1,0 +1,38 @@
+[
+  { "key": "cmd+p",           "command": "workbench.action.quickOpen" },
+  { "key": "cmd+e",           "command": "-workbench.action.quickOpen" },
+  { "key": "cmd+alt+w",       "command": "workbench.action.closeActiveEditor" },
+  { "key": "cmd+w",           "command": "-workbench.action.closeActiveEditor" },
+  { "key": "cmd+shift+t",     "command": "workbench.action.createTerminalEditor" },
+  { "key": "cmd+shift+b",     "command": "workbench.action.browser.open" },
+  { "key": "cmd+shift+b",     "command": "-workbench.action.tasks.build",
+                               "when": "taskCommandsRegistered" },
+
+  { "key": "ctrl+c",          "command": "-extension.vim_ctrl+c",
+                               "when": "editorTextFocus && vim.active && vim.overrideCtrlC && vim.use<C-c> && !inDebugRepl" },
+  { "key": "ctrl+a",          "command": "-extension.vim_ctrl+a",
+                               "when": "editorTextFocus && vim.active && vim.use<C-a> && !inDebugRepl" },
+  { "key": "ctrl+x",          "command": "-extension.vim_ctrl+x",
+                               "when": "editorTextFocus && vim.active && vim.use<C-x> && !inDebugRepl" },
+  { "key": "ctrl+f",          "command": "-extension.vim_ctrl+f",
+                               "when": "editorTextFocus && vim.active && vim.use<C-f> && !inDebugRepl && vim.mode != 'Insert'" },
+
+  { "key": "cmd+alt+a",       "command": "notebook.cell.insertCodeCellAboveAndFocusContainer",
+                               "when": "notebookEditorFocused && !inputFocus && !notebookOutputInputFocused" },
+  { "key": "a",               "command": "-notebook.cell.insertCodeCellAboveAndFocusContainer",
+                               "when": "notebookEditorFocused && !inputFocus && !notebookOutputInputFocused" },
+  { "key": "cmd+enter",       "command": "-notebook.cell.insertCodeCellBelow",
+                               "when": "notebookCellListFocused && !inputFocus" },
+  { "key": "cmd+alt+b",       "command": "notebook.cell.insertCodeCellBelowAndFocusContainer",
+                               "when": "notebookEditorFocused && !inputFocus && !notebookOutputInputFocused" },
+  { "key": "b",               "command": "-notebook.cell.insertCodeCellBelowAndFocusContainer",
+                               "when": "notebookEditorFocused && !inputFocus && !notebookOutputInputFocused" },
+  { "key": "cmd+alt+b",       "command": "-workbench.action.toggleAuxiliaryBar" },
+
+  { "key": "cmd+shift+right", "command": "workbench.action.nextEditor" },
+  { "key": "cmd+shift+left",  "command": "workbench.action.previousEditor" },
+  { "key": "ctrl+cmd+right",  "command": "workbench.action.focusRightGroup" },
+  { "key": "ctrl+cmd+left",   "command": "workbench.action.focusLeftGroup" },
+  { "key": "ctrl+cmd+up",     "command": "workbench.action.focusAboveGroup" },
+  { "key": "ctrl+cmd+down",   "command": "workbench.action.focusBelowGroup" }
+]

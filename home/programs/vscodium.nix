@@ -54,6 +54,7 @@ let
     ovsx.theqtcompany.qt-qml
     ovsx.theqtcompany.qt-core
     ovsx.delgan.qml-format
+    ovsx.pkief.material-icon-theme
   ];
 
   # extensions json template
@@ -75,6 +76,7 @@ let
   # settings, exported from my old vscodium session, turned into nix
   settings = {
     "workbench.colorTheme" = "NoctaliaTheme";
+    "workbench.iconTheme" = "material-icon-theme";
     "workbench.editor.showTabs" = "multiple";
     "workbench.activityBar.location" = "top";
     "workbench.statusBar.visible" = false;

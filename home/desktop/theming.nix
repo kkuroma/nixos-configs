@@ -54,6 +54,21 @@ in
   xdg.configFile."qt5ct/qt5ct.conf".source = iniFormat.generate "qt5ct.conf" (mkQtCt "5");
   xdg.configFile."qt6ct/qt6ct.conf".source = iniFormat.generate "qt6ct.conf" (mkQtCt "6");
 
+  # GTK reads settings.ini before consulting dconf, so noctalia (spawned by niri
+  # before dconf.service is up) finds the icon theme without needing a live D-Bus session.
+  xdg.configFile."gtk-3.0/settings.ini".text = ''
+    [Settings]
+    gtk-icon-theme-name=${icon}
+    gtk-theme-name=adw-gtk3
+    gtk-font-name=${ui} ${uiSz}
+  '';
+  xdg.configFile."gtk-4.0/settings.ini".text = ''
+    [Settings]
+    gtk-icon-theme-name=${icon}
+    gtk-theme-name=adw-gtk3
+    gtk-font-name=${ui} ${uiSz}
+  '';
+
   xdg.configFile."kdeglobals".text = ''
     [Icons]
     Theme=${icon}

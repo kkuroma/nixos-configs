@@ -10,6 +10,7 @@ in
     [
       # ── core desktop (always present on a graphical host) ──
       # GUI
+      wireshark
       orca-slicer
       vesktop
       (vivaldi.override { proprietaryCodecs = true; enableWidevine = true; })

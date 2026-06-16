@@ -73,6 +73,7 @@ in
       obs-studio
       puddletag
       kdePackages.kdenlive
+      pwvucontrol
     ]
     # ── dev bundle (desktop-only bits; headless toolchain is home/dev/packages.nix) ──
     ++ lib.optionals h.dev [

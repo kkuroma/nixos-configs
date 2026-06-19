@@ -24,7 +24,7 @@ in
       krita
       imv
       qbittorrent
-      librewolf
+      mullvad-browser  # secondary/privacy browser (replaced librewolf: unmaintained/insecure in nixpkgs)
       upscayl
 
       # cli tools

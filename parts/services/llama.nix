@@ -22,6 +22,10 @@ let
       "Qwen3.5-9B" = { num_instance = 1; };
       "Gemma-4-26B" = { num_instance = 1; };
       "Gemma-4-26B-Code" = { num_instance = 1; };
+      "Gemma-4-26B-Vision" = { num_instance = 1; };
+      "Gemma-4-12B" = { num_instance = 1; };
+      "Gemma-4-12B-Code" = { num_instance = 1; };
+      "Gemma-4-12B-Vision" = { num_instance = 1; };
       "Qwen3.6-35B-A3B-Code" = { num_instance = 1; };
       "Qwen3.6-35B-A3B-Code-Uncen" = { num_instance = 1; };
     };

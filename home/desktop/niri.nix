@@ -6,9 +6,9 @@ let
   #                  gaps (default 6), borderWidth (default 2), focusRingWidth (default 2)
   renderDisplay = d:
     let
-      gaps = d.gaps or 6;
-      bw   = d.borderWidth or 2;
-      frw  = d.focusRingWidth or 2;
+      gaps = d.gaps or 12;
+      bw   = d.borderWidth or 3;
+      frw  = d.focusRingWidth or 3;
     in
     "output \"${d.output}\" {\n"
     + "    mode \"${d.mode}\"\n"

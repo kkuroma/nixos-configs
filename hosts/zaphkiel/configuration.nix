@@ -109,5 +109,7 @@
   # networking.firewall.allowedTCPPorts = [ add temporary ports here, was 3000 ];
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 11435 7687 ]; # llama API + neo4j bolt (n8n/neo4j-http via caddy)
 
+  services.envfs.enable = true;
+
   system.stateVersion = "25.11";
 }

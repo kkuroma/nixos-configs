@@ -9,4 +9,5 @@
 
   # CVE-2026-31431 (copy fail) — LPE via algif_aead, not fixed in 6.12 LTS yet
   boot.blacklistedKernelModules = [ "algif_aead" ];
+  hardware.enableRedistributableFirmware = true;
 }

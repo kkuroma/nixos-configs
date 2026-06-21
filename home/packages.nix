@@ -28,17 +28,13 @@ in
       upscayl
 
       # cli tools
-      lsd
       starship
       brightnessctl
       playerctl
-      bat
       tesseract
       imagemagick
       zbar
-      curl
       ffmpeg
-      jq
       gifski
       grim
       slurp

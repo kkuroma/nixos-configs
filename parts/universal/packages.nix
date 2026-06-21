@@ -26,6 +26,10 @@
     file
     zellij
     sqlite
+    lsd
+    bat
+    jq
+    curl
 
     # networking
     nmap

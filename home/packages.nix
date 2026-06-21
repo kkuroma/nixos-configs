@@ -50,6 +50,7 @@ in
       video2x
       wl-screenrec
       wl-clipboard
+      aria2
 
       # desktop shell / theming
       papirus-icon-theme

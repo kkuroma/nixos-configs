@@ -21,6 +21,7 @@ binds {
     Mod+R               hotkey-overlay-title="Reload Shell"             { spawn-sh "pkill -x noctalia; noctalia -d & disown"; }
     Mod+L               hotkey-overlay-title="Lock Screen"              { spawn-sh "noctalia msg session lock"; }
     Mod+period          hotkey-overlay-title="Color Picker"             { spawn-sh "color-picker"; }
+    Ctrl+Shift+Escape   hotkey-overlay-title="Task Manager"             { spawn "ghostty" "--class=ghostty.float" "-e" "btop"; } 
 
     Mod+Left    { focus-column-left; }
     Mod+Right   { focus-column-right; }

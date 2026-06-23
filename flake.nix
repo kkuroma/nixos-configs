@@ -76,8 +76,7 @@
         ];
       };
       raziel = {
-        # linuxPackages_latest: latest kernel for security patches, perf boost only hurts battery
-        kernelPackages = pkgs: pkgs.linuxPackages_latest;
+        kernelPackages = pkgs: pkgs.linuxPackages;
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 11; };
         nvenc = false;
         hwdec = "vaapi";

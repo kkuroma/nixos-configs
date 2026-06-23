@@ -8,7 +8,6 @@ in
     [
       # ── core desktop (always present on a graphical host) ──
       # GUI
-      orca-slicer
       vesktop
       (vivaldi.override { proprietaryCodecs = true; enableWidevine = true; })
       networkmanagerapplet

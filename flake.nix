@@ -26,6 +26,8 @@
 
     nixvim.url = "github:nix-community/nixvim";
 
+    nix-flatpak.url = "github:gmodena/nix-flatpak"; # declarative flatpak
+
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";

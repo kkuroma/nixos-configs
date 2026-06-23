@@ -35,5 +35,10 @@ in
       default = desk;
       description = "kali linux networking tools like nmap, traceroute, wireshark.";
     };
+    flatpak = lib.mkOption {
+      type = lib.types.bool;
+      default = desk;
+      description = "flatpak runtime + declarative Flathub apps.";
+    };
   };
 }

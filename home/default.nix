@@ -12,6 +12,7 @@ in
     ++ lib.optionals home.dev [ ./dev ]
     ++ lib.optionals isDesktop [
       ./packages.nix
+      ./flatpak.nix
       ./fonts.nix
       ./scripts
       ./programs

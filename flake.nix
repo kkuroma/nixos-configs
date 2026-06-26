@@ -54,7 +54,7 @@
     machines = {
       zaphkiel = {
         # zen: performance-tuned like xanmod, tracks mainline, has ZFS packaged
-        kernelPackages = pkgs: pkgs.linuxPackages_zen;
+        kernelPackages = pkgs: pkgs.linuxPackages;
         fonts = { uiSize = 12; monoSize = 12; ghosttyFontSize = 10; };
         nvenc = true;
         hwdec = "nvdec-copy";

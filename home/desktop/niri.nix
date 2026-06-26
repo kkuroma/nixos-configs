@@ -46,6 +46,7 @@ in
         }
         spawn-at-startup "noctalia"
         spawn-at-startup "tailscale" "systray"
+        spawn-at-startup "fcitx5" "--replace"
       '' +
       lib.concatMapStrings builtins.readFile niriParts +
       lib.concatMapStrings renderDisplay machineConfig.displays +

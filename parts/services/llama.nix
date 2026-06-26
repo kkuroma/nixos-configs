@@ -201,6 +201,18 @@ let
       top-p = "0.95";
       min-p = "0.01";
     };
+
+    "Ornith1.0-35B" = {
+      num_instance = 1;
+      model = "/Vault/llm-models/models/ornith-1.0-35b-Q4_K_M.gguf";
+      c = 16384;
+      b = 8192;
+      ub = 512;
+      parallel = 1;
+      temp = "1.0";
+      top-p = "0.95";
+      min-p = "0.01";
+    };
   };
 
   # Router JSON: pick num_instance per model out of the shared `models` attrset.

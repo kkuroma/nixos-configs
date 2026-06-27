@@ -18,6 +18,22 @@
   security.pam.services.polkit-1.fprintAuth = true;
   services.fwupd.enable = true;
 
+  # One-way to 10.10.30.0/24: raziel may initiate; that subnet may not open new connections back.
+  networking.firewall.extraCommands = ''
+    iptables -I nixos-fw 1 -s 10.10.30.0/24 -m conntrack --ctstate NEW -j nixos-fw-refuse
+  '';
+  networking.firewall.extraStopCommands = ''
+    iptables -D nixos-fw -s 10.10.30.0/24 -m conntrack --ctstate NEW -j nixos-fw-refuse 2>/dev/null || true
+  '';
+
+  # The Mullvad exit node grabs all non-local traffic; --exit-node-allow-lan-access only
+  # excludes the directly-connected /24. Keep the whole internal LAN off the tunnel — route
+  # 10.10.0.0/16 via the gateway, not the exit node.
+  networking.localCommands = ''
+    ip rule del to 10.10.0.0/16 lookup main priority 5200 2>/dev/null || true
+    ip rule add to 10.10.0.0/16 lookup main priority 5200
+  '';
+
 
   services.udev.extraRules = ''
     SUBSYSTEM=="power_supply", KERNEL=="ucsi-source-psy-USBC000:00[14]", ACTION=="change", RUN+="${pkgs.writeShellScript "charge-limit" ''

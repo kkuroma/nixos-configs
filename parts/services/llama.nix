@@ -104,7 +104,7 @@ let
     "Gemma-4-12B" = {
       num_instance = 1;
       model = "/Vault/llm-models/models/gemma-4-12b-it-Q8_0.gguf";
-      c = 65536;
+      c = 262144;
       b = 8192;
       ub = 512;
       parallel = 4;
@@ -116,7 +116,7 @@ let
       model-draft = "/Vault/llm-models/models/gemma-4-12b-it-mtp.gguf";
       spec-type = "draft-mtp";
       spec-draft-n-max = 4;
-      c = 65536;
+      c = 262144;
       b = 8192;
       ub = 512;
       parallel = 1;

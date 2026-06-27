@@ -159,4 +159,5 @@
 
   system.stateVersion = "25.11";
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 ];
+  services.openssh.settings.GatewayPorts = "clientspecified";
 }

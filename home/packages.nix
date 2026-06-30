@@ -88,5 +88,6 @@ in
     # ── networking bundle ──
     ++ lib.optionals h.networking [
       wireshark
+      iperf
     ];
 }

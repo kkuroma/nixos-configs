@@ -7,6 +7,11 @@ let
   iconPng = pkgs.runCommand "forgejo-icon.png" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
     convert ${./icon.webp} $out
   '';
+  # Forgejo requests logo.svg/favicon.svg first; source is raster (.webp) → vectorize with vtracer.
+  iconSvg = pkgs.runCommand "forgejo-icon.svg" { nativeBuildInputs = [ pkgs.libwebp pkgs.vtracer ]; } ''
+    dwebp ${./icon.webp} -o icon.png
+    vtracer -i icon.png -o $out --mode spline --filter_speckle 4 --color_precision 6
+  '';
 
   # Standalone Forgejo theme — placed at {customDir}/public/assets/css/theme-natsumikan.css
   # and declared in ui.THEMES so Forgejo registers it.
@@ -589,9 +594,15 @@ let
       color-scheme: dark;
     }
 
-    /* Fonts: Google Sans Flex UI, Maple Mono code (prefers installed NF-CN, else self-hosted) */
+    /* Fonts: Google Sans Flex UI, Maple Mono code (prefers installed NF-CN, else self-hosted).
+       Descendants (*) are covered so the `*` UI-font rule doesn't leak onto .chroma syntax spans. */
     * { font-family: 'Google Sans Flex', system-ui, -apple-system, sans-serif !important; }
-    code, pre, kbd, samp, tt, .mono, .file-view .lines-code, .code-view, .CodeMirror, .monaco-editor .view-lines {
+    code, code *, pre, pre *, kbd, samp, tt, var,
+    .mono, .mono *, .chroma, .chroma *,
+    .file-view .lines-code, .file-view .lines-code *,
+    .code-view, .code-view *, .code-inner, .code-inner *,
+    .CodeMirror, .CodeMirror *, .cm-editor, .cm-editor *,
+    .monaco-editor .view-lines, .monaco-editor .view-lines * {
       font-family: 'Maple Mono NF CN', 'Maple Mono', ui-monospace, SFMono-Regular, monospace !important;
     }
 
@@ -639,6 +650,8 @@ let
     ln -sf ${mapleTtf}/MapleMono-Bold.ttf    ${customDir}/public/assets/fonts/MapleMono-Bold.ttf
     ln -sf ${iconPng}     ${customDir}/public/assets/img/favicon.png
     ln -sf ${iconPng}     ${customDir}/public/assets/img/logo.png
+    ln -sf ${iconSvg}     ${customDir}/public/assets/img/favicon.svg
+    ln -sf ${iconSvg}     ${customDir}/public/assets/img/logo.svg
   '';
 in
 lib.mkIf (cfg != null && cfg.enable) {
@@ -675,6 +688,7 @@ lib.mkIf (cfg != null && cfg.enable) {
         SSH_PORT = 22;
         SSH_DOMAIN = config.networking.hostName;
         SSH_USER = "forgejo";
+        LANDING_PAGE = "explore"; # anonymous visitors land on /explore, not the marketing home
       };
       actions.ENABLED = true;
       service.DISABLE_REGISTRATION = true;

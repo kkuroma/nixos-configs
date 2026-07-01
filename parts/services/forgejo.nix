@@ -8,9 +8,11 @@ let
     convert ${./icon.webp} $out
   '';
   # Forgejo requests logo.svg/favicon.svg first; source is raster (.webp) → vectorize with vtracer.
+  # vtracer omits viewBox, so the SVG can't rasterize as a tab favicon — inject one from width/height.
   iconSvg = pkgs.runCommand "forgejo-icon.svg" { nativeBuildInputs = [ pkgs.libwebp pkgs.vtracer ]; } ''
     dwebp ${./icon.webp} -o icon.png
-    vtracer -i icon.png -o $out --mode spline --filter_speckle 4 --color_precision 6
+    vtracer -i icon.png -o raw.svg --mode spline --filter_speckle 4 --color_precision 6
+    sed -E 's/(width="([0-9]+)" height="([0-9]+)")/\1 viewBox="0 0 \2 \3"/' raw.svg > $out
   '';
 
   # Standalone Forgejo theme — placed at {customDir}/public/assets/css/theme-natsumikan.css

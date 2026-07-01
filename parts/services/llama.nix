@@ -15,7 +15,7 @@ let
     jinja = true;
     fa = true;
     ngl = 99;
-    cram = 4;
+    cram = 4096;
     models-max = 1;
     ctk = "q4_0";
     ctv = "q4_0";

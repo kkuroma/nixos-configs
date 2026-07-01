@@ -1,13 +1,15 @@
 { config, pkgs, ... }:
 # Yggdrasil - external server co-hosted with haruto, imports keys from the following
 #   wireguard/yggdrasil/private-key
+#   wireguard/yggdrasil/preshared-key
 # NetworkManager-ensure-profiles runs envsubst over the profile with this env file.
-# The current (-Kuroma) peer has no preshared key, so none is templated here.
 {
   sops.secrets."wireguard/yggdrasil/private-key" = { };
+  sops.secrets."wireguard/yggdrasil/preshared-key" = { };
 
   sops.templates."wg-yggdrasil.env".content = ''
     WG_PRIVKEY=${config.sops.placeholder."wireguard/yggdrasil/private-key"}
+    WG_PSK=${config.sops.placeholder."wireguard/yggdrasil/preshared-key"}
   '';
 
   networking.networkmanager.ensureProfiles = {
@@ -25,6 +27,8 @@
 
       "wireguard-peer.btQ0rdGVuz9kWBq2BM/LaGtxEa/vuxxh8QBVuHwidyc=" = {
         endpoint = "68.187.65.48:51820";
+        preshared-key = "$WG_PSK";
+        preshared-key-flags = "0";
         # Split tunnel over the whole internal 10.10.0.0/16 range (proxmox 10.10.30.10,
         # plus .20/.60/.91) — NOT 0.0.0.0/0, so internet stays direct and tailscale's
         # 100.64.0.0/10 is untouched. Local LAN subnets win by longest-prefix, so toggling

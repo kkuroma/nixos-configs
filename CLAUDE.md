@@ -192,6 +192,32 @@ Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cl
 ### Networking
 SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
 
+### WireGuard — Yggdrasil (`hosts/raziel/extra/wireguard.nix`)
+Split-tunnel WG into a friend's server "Yggdrasil" (co-hosted with haruto, UniFi WG server, public endpoint `68.187.65.48:51820`). Reaches the internal `10.10.0.0/16` (e.g. Proxmox `10.10.30.10:8006`) from away, while Tailscale + normal internet stay direct. **Currently only on raziel.**
+
+**Design:**
+- **NetworkManager-native**, not `networking.wireguard.*`. Declared via `networking.networkmanager.ensureProfiles.profiles.<attr>` — the profile is named after the **attribute key** (`yggdrasil`), NOT the connection `id` (`YggdrasilWG`).
+- `autoconnect = false` — brought up manually with `nmcli connection up yggdrasil`.
+- **Split, not full:** `allowed-ips = "10.10.0.0/16;"` (trailing `;` required by NM keyfile format), NOT `0.0.0.0/0`. Internet stays direct, Tailscale's `100.64.0.0/10` untouched. Overlaps a host's own `10.10.x` LAN harmlessly — longest-prefix match keeps the local `/24` direct, only *other* subnets tunnel.
+- `ipv4.never-default = "true"`, `ipv6.method = "disabled"`.
+
+**Secrets (sops):** `wireguard/yggdrasil/private-key` + `wireguard/yggdrasil/preshared-key`. `NetworkManager-ensure-profiles.service` runs `envsubst` over the store profile (which contains literal `$WG_PRIVKEY`/`$WG_PSK`) using `environmentFiles`, then writes the final keyfile to **`/run/NetworkManager/system-connections/yggdrasil.nmconnection`** (root-only 0600) — NOT `/etc/NetworkManager/system-connections/`. The env file is a `sops.templates."wg-yggdrasil.env"` rendering both placeholders. Peer block needs both `preshared-key = "$WG_PSK"` and `preshared-key-flags = "0"`.
+
+**Tailscale carve-out (`dispatcherScripts`):** when a Mullvad exit node is active, table 52 holds `default dev tailscale0` which would swallow the handshake packets to the endpoint. A dispatcher tied to `ygg0` up/down adds `ip rule add to 68.187.65.48/32 lookup main priority 5260` (just below tailscale's `lookup 52` at 5270) so handshakes leave via the physical route. Removed on down; survives reboots + tailscale restarts (tailscale never touches a rule it didn't create). Harmless on hosts with no exit node.
+
+**Verifying a handshake:** `ip -s -h link show ygg0` (no sudo) — **RX > 0 == handshake completed**. RX=0 / TX>0 == our inits get no reply (server-side: port not forwarded, `wg` not listening, or pubkey not registered — check with `sudo wg show` / `sudo ss -ulpn | grep 51820` on Yggdrasil).
+
+**Adding to another host (e.g. zaphkiel):**
+1. Get a **separate client config** from haruto — its own keypair + tunnel IP (raziel is `10.10.91.67/32`) + PSK. **Never reuse another host's key/address** — two peers with the same pubkey flap.
+2. Add its keys to sops under a distinct path (`wireguard/yggdrasil-<host>/{private-key,preshared-key}`) so they don't collide in the shared `secrets.yaml`.
+3. Mirror `hosts/<host>/extra/wireguard.nix` off raziel's, swapping the sops paths + `ipv4.address1`.
+4. No firewall changes (client-initiated), no port to open.
+
+**Gotchas:**
+- The `.conf` from haruto is plaintext (private key) — never paste it anywhere public; the repo is push-mirrored to GitHub, so the key lives in sops only.
+- After editing the source, a `build` is not a `switch` — verify the deployed keyfile with `sudo cat /run/NetworkManager/system-connections/yggdrasil.nmconnection` shows the substituted key + PSK (no literal `$WG_*`), not just that a fresh build is correct.
+- The generated store profile can be found via `nix-store -qR $(readlink -f result) | grep -- '-yggdrasil'`.
+
 ### Autofs / Backups (zaphkiel)
 Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/extra/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h → `metatron:/tank/nas/kuroma/home/` over SSH). All jobs rsync directly to metatron over SSH — no SMB intermediary.
 

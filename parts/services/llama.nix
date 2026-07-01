@@ -132,7 +132,7 @@ let
       model-draft = "/Vault/llm-models/models/gemma-4-12b-it-mtp.gguf";
       spec-type = "draft-mtp";
       spec-draft-n-max = 4;
-      c = 32768;
+      c = 262144;
       b = 8192;
       ub = 512;
       parallel = 1;

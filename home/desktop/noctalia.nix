@@ -109,6 +109,11 @@
         launcher_position = "start";
       };
 
+      lockscreen = {
+        fingerprint = true;
+        allow_empty_password = true;
+      };
+
       location.address = "Tokyo, Japan";
 
       plugins = {

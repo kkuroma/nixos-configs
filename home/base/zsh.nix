@@ -1,8 +1,9 @@
-{ lib, ... }:
+{ config, lib, ... }:
 {
 
   programs.zsh = {
     enable = true;
+    dotDir = config.home.homeDirectory; # lock legacy (home-dir) location; stateVersion < 26.05
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     defaultKeymap = "emacs";

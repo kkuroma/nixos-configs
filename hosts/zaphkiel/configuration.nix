@@ -24,6 +24,7 @@
       autofs = true;
       virtualization = true;
       codiumserver = true;
+      yubikey = true;
     };
 
     services = {

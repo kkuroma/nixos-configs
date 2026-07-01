@@ -1,0 +1,4 @@
+# Trusted keys for pam_rssh -> remote sudo. One pubkey per line (authorized_keys format).
+# Generate: ssh-keygen -t ed25519-sk -O resident -f ~/.ssh/id_sudo_sk
+sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAILTrRLGt4X9qE51kWGmwTGg0UpSjcQJJZ+H7q7Za8A3IAAAABHNzaDo= sudo@kuroma
+sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIMWRkyMJ/YLndZw6ygJCeIYafp5LXyECZbFIxjeQLb0RAAAABHNzaDo= sudo@kuroma-backup

@@ -21,6 +21,7 @@
     features = {
       autofs = true;
       virtualization = true;
+      yubikey = true;
     };
 
     services = {

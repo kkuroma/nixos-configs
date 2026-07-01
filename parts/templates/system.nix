@@ -23,6 +23,7 @@
       autofs         = lib.mkEnableOption "autofs CIFS mounts from metatron";
       virtualization = lib.mkEnableOption "docker + libvirt + podman";
       codiumserver   = lib.mkEnableOption "VSCodium remote server";
+      yubikey        = lib.mkEnableOption "YubiKey tooling (ykman, pcscd, udev rules)";
     };
   };
 }

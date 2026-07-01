@@ -68,9 +68,10 @@ lib.mkIf config.host.features.yubikey {
     '';
   };
 
-  # forward the FIDO agent to our hosts so plain `ssh` carries keys for remote sudo (uid 1000 = kuroma).
+  # forward the FIDO agent to our hosts for remote sudo. IdentityAgent selects it; explicit-path ForwardAgent silently no-ops.
   programs.ssh.extraConfig = ''
     Host raziel zaphkiel metatron
-      ForwardAgent /run/user/1000/ssh-agent-fido
+      IdentityAgent /run/user/1000/ssh-agent-fido
+      ForwardAgent yes
   '';
 }

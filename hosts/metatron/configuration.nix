@@ -101,12 +101,6 @@
         user = "ct";
         group = "family";
       };
-      public-dump = {
-        port = 8201;
-        root = "/tank/nas/public/dump";
-        user = "public";
-        group = "public";
-      };
     };
 
     cloudflared.main = {

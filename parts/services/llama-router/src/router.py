@@ -197,8 +197,8 @@ class LLMRouter:
         proc = subprocess.Popen(
             [exe, "--host", "0.0.0.0", "--port", str(port),
              "--models-preset", self.llama_presets_path, "--metrics"],
-            stdout=subprocess.DEVNULL, # sys.stdout,
-            stderr=subprocess.DEVNULL, # sys.stderr,
+            stdout=None, # inherit router's fds -> journald
+            stderr=None, # inherit router's fds -> journald
         )
         self.processes[port] = proc
         deadline = asyncio.get_event_loop().time() + self.HEALTH_CHECK_TIMEOUT

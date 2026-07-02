@@ -23,7 +23,7 @@ lib.mkIf config.host.features.yubikey {
       u2fAuth = true;
       rules.auth.u2f.control = lib.mkForce "required";
       rules.auth.fprintd.control =
-        lib.mkIf config.security.pam.services.${svc}.fprintAuth (lib.mkForce "required");
+        lib.mkIf config.security.pam.services.${svc}.fprintAuth (lib.mkForce "sufficient");
     }))
     # remote sudo via forwarded ssh-agent key (sufficient, before u2f). pam_rssh, not
     # pam_ssh_agent_auth (the latter can't parse sk-ssh-ed25519 FIDO keys).

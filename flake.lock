@@ -79,6 +79,26 @@
         "type": "github"
       }
     },
+    "llama-router": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782953285,
+        "narHash": "sha256-49q81LconNvqzzlv0xG3wVzN/1rW7lCJT09HjXWyfu4=",
+        "ref": "refs/heads/main",
+        "rev": "f43b6c3c5eb9b6d6c3ef349ae155b097a4d638ac",
+        "revCount": 2,
+        "type": "git",
+        "url": "https://git.kuroma.dev/kkuroma/llama-router"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.kuroma.dev/kkuroma/llama-router"
+      }
+    },
     "nix-flatpak": {
       "locked": {
         "lastModified": 1780908363,
@@ -222,6 +242,7 @@
       "inputs": {
         "disko": "disko",
         "home-manager": "home-manager",
+        "llama-router": "llama-router",
         "nix-flatpak": "nix-flatpak",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixos-hardware": "nixos-hardware",

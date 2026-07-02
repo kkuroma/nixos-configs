@@ -39,6 +39,11 @@
     };
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
+    llama-router = {
+      url = "git+https://git.kuroma.dev/kkuroma/llama-router";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, nixos-hardware, ... }@inputs:
@@ -117,6 +122,7 @@
         disko.nixosModules.disko
         home-manager.nixosModules.home-manager
         sops-nix.nixosModules.sops
+        inputs.llama-router.nixosModules.default
         (./hosts + "/${name}/configuration.nix")
         {
           home-manager = {

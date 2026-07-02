@@ -111,7 +111,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | `sonarr.nix` | Sonarr | :8989 | zaphkiel | — |
 | `radarr.nix` | Radarr | :7878 | zaphkiel | — |
 | `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | — |
-| `llama.nix` | LLaMA router + embedding | :11434 / :11435 | zaphkiel | — |
+| `llama.nix` | LLaMA router | :11434 | zaphkiel | — |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | — |
 | **`parts/templates/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
 | **`parts/templates/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main) | — |
@@ -126,8 +126,9 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 - **Fresh-install footgun:** on a from-scratch metatron, AdGuard boots into the public setup wizard with no auth until the YAML is hand-edited. Make this the first post-rebuild step.
 
 ### LLaMA (`parts/services/llama.nix`)
-- Router on :11434, embedding server on :11435. Both `--host 127.0.0.1`; Caddy exposes them on tailscale via `llama.${host}` / `llama-emb.${host}`. Do **not** bind `0.0.0.0` — docker/libvirt bridges would reach the model with no auth.
-- Active on zaphkiel (current GPU host) and metatron (GTX 1650). Models live under `/Vault/llm-models` (zaphkiel) — service has `Vault.mount` ordering.
+- Router code lives in its own flake: `git+https://git.kuroma.dev/kkuroma/llama-router` (input follows nixpkgs; module imported in `mkHost`, exposes `services.llama-router`). `parts/services/llama.nix` is thin wiring: model presets + `host.services.llama` glue, gated as before.
+- Router on :11434 (binds `0.0.0.0`, firewall scopes to tailscale0). Caddy exposes it via `llama.${host}`.
+- Active on zaphkiel only. Models live flat under `/Vault/llm-models/*.gguf` — unit gets `Vault.mount` ordering via `host.services` storage glue (unit `llama-router`, user `llama`).
 
 ### PostgreSQL
 `parts/services/postgresql.nix` reads `dataDir` + `storage` from the host's `host.services.postgresql` block — no host-name branching. metatron sets `/tank/services/postgresql` + `storage = "zfs"`; zaphkiel sets `/Vault/postgresql` + `storage = "vault"`. Each consumer service manages its own DB.
@@ -190,7 +191,7 @@ Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cl
 - `pdf.kuroma.dev`: same model. Stirling is hardened (see above) but parses untrusted input — candidate for shutdown if usage is rare.
 
 ### Networking
-SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434+11435 on tailscale0 (Caddy reverse-proxies; llama itself listens on 127.0.0.1); neo4j bolt :7687 on tailscale0.
+SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434 on tailscale0 (router binds 0.0.0.0; Caddy also reverse-proxies); neo4j bolt :7687 on tailscale0.
 
 ### WireGuard — Yggdrasil (`hosts/raziel/extra/wireguard.nix`)
 Split-tunnel WG into a friend's server "Yggdrasil" (co-hosted with haruto, UniFi WG server, public endpoint `68.187.65.48:51820`). Reaches the internal `10.10.0.0/16` (e.g. Proxmox `10.10.30.10:8006`) from away, while Tailscale + normal internet stay direct. **Currently only on raziel.**
@@ -293,7 +294,7 @@ The big tier/options refactor (commit range `62bee79..HEAD`) landed without chan
    ```
    nix store diff-closures /run/current-system $(readlink -f result)
    ```
-   Expected on **zaphkiel**: caddy config, llama-router/llama-embedding units, polkit, dbus-broker, generated `etc`/`system-path`/`system-units`/`user-units`/`activate` aggregators. No CUDA / OBS / cc1plus compiles. If you see source builds, stop and investigate.
+   Expected on **zaphkiel**: caddy config, llama-router unit, polkit, dbus-broker, generated `etc`/`system-path`/`system-units`/`user-units`/`activate` aggregators. No CUDA / OBS / cc1plus compiles. If you see source builds, stop and investigate.
 
 3. **Dry-activate** to see exactly what would stop/restart/reload:
    ```
@@ -301,7 +302,7 @@ The big tier/options refactor (commit range `62bee79..HEAD`) landed without chan
    ```
    Expected on **zaphkiel**:
    - **Reload (no traffic interruption):** caddy, dbus-broker
-   - **Restart (~1s gap):** polkit, llama-router, llama-embedding
+   - **Restart (~1s gap):** polkit, llama-router (llama-embedding is removed — it should stop, not restart)
    - **Untouched:** sshd, jellyfin, navidrome, postgresql, syncthing, n8n, neo4j, sonarr, radarr
    - `syncthing/password` secret is **kept** on zaphkiel (it's enabled there — only removed from metatron, which never used it)
 
@@ -311,7 +312,7 @@ The big tier/options refactor (commit range `62bee79..HEAD`) landed without chan
    ```
 5. **Spot-check:**
    - `systemctl status caddy` (active, reloaded)
-   - `systemctl status llama-router llama-embedding` (active)
+   - `systemctl status llama-router` (active)
    - For metatron only: `systemctl status cloudflared-main` (the rename — new unit must come up; old `cloudflared` is gone). `wantedBy=multi-user.target` triggers it via target re-evaluation; if it doesn't start, `sudo systemctl start cloudflared-main`.
 
 **Metatron switched on 2026-06-01.** Verified: cloudflared rename was the only behavior change; CF-fronted sites stayed reachable across the switch.

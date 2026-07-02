@@ -249,14 +249,6 @@ in
             };
           }
           {
-            "LLaMA Embeddings" = {
-              href = "http://zaphkiel:11435";
-              description = "Embedding API";
-              icon = "ollama.png";
-              ping = "http://localhost:11435";
-            };
-          }
-          {
             n8n = {
               href = "https://n8n.zaphkiel";
               description = "Workflow automation";

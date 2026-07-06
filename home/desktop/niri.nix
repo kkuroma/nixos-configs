@@ -1,14 +1,22 @@
-{ lib, config, pkgs, niriParts, machineConfig, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  niriParts,
+  machineConfig,
+  ...
+}:
 let
   # Renders a display attrset to a niri output {} KDL block.
   # Required fields: output, mode, x, y
   # Optional fields: transform, scale, defaultColumnWidth (KDL value string e.g. "proportion 1.0"),
   #                  gaps (default 6), borderWidth (default 2), focusRingWidth (default 2)
-  renderDisplay = d:
+  renderDisplay =
+    d:
     let
-      gaps = d.gaps or 12;
-      bw   = d.borderWidth or 3;
-      frw  = d.focusRingWidth or 3;
+      gaps = d.gaps or 4;
+      bw = d.borderWidth or 2;
+      frw = d.focusRingWidth or 2;
     in
     "output \"${d.output}\" {\n"
     + "    mode \"${d.mode}\"\n"
@@ -19,7 +27,9 @@ let
     + "        gaps ${toString gaps}\n"
     + "        border { width ${toString bw}; }\n"
     + "        focus-ring { width ${toString frw}; }\n"
-    + lib.optionalString (d ? defaultColumnWidth) "        default-column-width { ${d.defaultColumnWidth}; }\n"
+    + lib.optionalString (
+      d ? defaultColumnWidth
+    ) "        default-column-width { ${d.defaultColumnWidth}; }\n"
     + "    }\n"
     + "}\n";
 in
@@ -31,41 +41,40 @@ in
   };
 
   config = {
-    xdg.configFile."niri/config.kdl".text =
-      ''
-        cursor {
-            xcursor-theme "breeze_cursors"
-            xcursor-size 24
-        }
-        input {
-            focus-follows-mouse max-scroll-amount="0%"
-            touchpad {
-                tap
-                tap-button-map "left-right-middle"
-            }
-        }
-        spawn-at-startup "noctalia"
-        spawn-at-startup "tailscale" "systray"
-        spawn-at-startup "fcitx5" "--replace"
-      '' +
-      lib.concatMapStrings builtins.readFile niriParts +
-      lib.concatMapStrings renderDisplay machineConfig.displays +
-      ''
-        prefer-no-csd
-        window-rule {
-            match app-id="ghostty[.]float"
-            open-floating true
-        }
-        window-rule {
-            match app-id="imv"
-            open-floating true
-        }
-        window-rule {
-            match app-id="mpv"
-            open-floating true
-        }
-      '' +
-      config.rice.niri.extraConfig;
+    xdg.configFile."niri/config.kdl".text = ''
+      cursor {
+          xcursor-theme "breeze_cursors"
+          xcursor-size 24
+      }
+      input {
+          focus-follows-mouse max-scroll-amount="0%"
+          touchpad {
+              tap
+              tap-button-map "left-right-middle"
+          }
+      }
+      spawn-at-startup "noctalia"
+      spawn-at-startup "tailscale" "systray"
+      spawn-at-startup "fcitx5" "--replace"
+    ''
+    + lib.concatMapStrings builtins.readFile niriParts
+    + lib.concatMapStrings renderDisplay machineConfig.displays
+    + ''
+      prefer-no-csd
+      window-rule {
+          match app-id="ghostty[.]float"
+          open-floating true
+      }
+      window-rule {
+          match app-id="imv"
+          open-floating true
+      }
+      window-rule {
+          match app-id="mpv"
+          open-floating true
+      }
+    ''
+    + config.rice.niri.extraConfig;
     xdg.configFile."Xresources".text = ''
       Xcursor.theme: breeze_cursors
       Xcursor.size: 24
@@ -103,7 +112,7 @@ in
       Install.WantedBy = [ "graphical-session.target" ];
     };
 
-    home.activation.niriNoctaliaFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    home.activation.niriNoctaliaFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -f "$HOME/.config/niri/noctalia.kdl" ]; then
         echo "// placeholder — noctalia will overwrite this on first run" \
           > "$HOME/.config/niri/noctalia.kdl"

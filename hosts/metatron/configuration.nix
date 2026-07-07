@@ -104,7 +104,7 @@
     };
 
     cloudflared.main = {
-      tokenSecret = "cloudflared/token"; # existing sops key; rename if you split tunnels later
+      tokenSecret = "cloudflared/metatron-token"; # split 2026-07-08: zaphkiel has its own tunnel
       hostnames = [
         "searx.kuroma.dev"
         "pdf.kuroma.dev"

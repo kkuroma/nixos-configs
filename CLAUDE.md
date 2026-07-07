@@ -112,6 +112,8 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | `radarr.nix` | Radarr | :7878 | zaphkiel | — |
 | `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | — |
 | `llama.nix` | LLaMA router | :11434 | zaphkiel | — |
+| `librechat.nix` | LibreChat | :3080 | zaphkiel | — |
+| `graphiv.nix` | GraphIV MCP | :8756 | zaphkiel | — |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | — |
 | **`parts/templates/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
 | **`parts/templates/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main) | — |
@@ -129,6 +131,32 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 - Router code lives in its own flake: `git+https://git.kuroma.dev/kkuroma/llama-router` (input follows nixpkgs; module imported in `mkHost`, exposes `services.llama-router`). `parts/services/llama.nix` is thin wiring: model presets + `host.services.llama` glue, gated as before.
 - Router on :11434 (binds `0.0.0.0`, firewall scopes to tailscale0). Caddy exposes it via `llama.${host}`.
 - Active on zaphkiel only. Models live flat under `/Vault/llm-models/*.gguf` — unit gets `Vault.mount` ordering via `host.services` storage glue (unit `llama-router`, user `llama`).
+
+### LibreChat + GraphIV MCP (`parts/services/librechat.nix`, `parts/services/graphiv.nix`)
+zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-router (custom endpoint,
+`fetch: true`, default model `Gemma-4-26B`) and mounts the GraphIV MCP server for arXiv deep research.
+
+- **Secrets:** `secrets/librechat.yaml` — a separate sops file (CREDS_KEY/CREDS_IV/JWT_SECRET/JWT_REFRESH_SECRET).
+  Created by encrypting a fresh plaintext with the repo's public age keys (`nix run nixpkgs#sops -- -e -i`);
+  no private key needed. Wired via `services.librechat.credentials` (systemd LoadCredential — root reads them).
+- **Mongo:** `enableLocalDB = true` + `services.mongodb.package = pkgs.mongodb-ce` (prebuilt; stock
+  `pkgs.mongodb` is an hours-long unfree source build).
+- **MCP transport is streamable-http, not stdio** — the librechat unit runs with `ProtectHome=true`,
+  so it cannot spawn a server out of `/home`. GOTCHA: `Domain "…" is not allowed` at MCP init means
+  the SSRF guard — with no `mcpSettings.allowedDomains` in librechat.yaml, LibreChat fail-closes on
+  SSRF-prone targets **including loopback**; the settings block allowlists
+  `http://127.0.0.1:8756` explicitly. `graphiv-mcp` (unit in `graphiv.nix`) runs
+  `serve_mcp.py --http` on `127.0.0.1:8756` inside the GraphIV repo's `nix develop` env as user
+  `kuroma` (project venv + CUDA + peer-auth Postgres come from the dev shellHook), starting the
+  project PG first if down. librechat.yaml points at `http://127.0.0.1:8756/mcp` with
+  `timeout = 7200000` ms — `deep_research` legitimately holds a tool call for minutes.
+- **First-run:** register an account at `https://librechat.zaphkiel` (ALLOW_REGISTRATION=true — flip
+  off once accounts exist), pick the llama-router endpoint, attach the `graphiv` MCP in the tools menu.
+- First `graphiv-mcp` start may realize the dev shell (TimeoutStartSec=15min).
+- **State on /Vault:** librechat `dataDir = /Vault/librechat`, mongo `dbpath = /Vault/mongodb`
+  (derived as `dirOf dataDir + /mongodb`; mongodb gets explicit `Vault.mount` ordering — the
+  host.services glue only orders `cfg.unit`). GraphIV's `data/` is a symlink to
+  `/Vault/graphiv/data` (repo-relative paths resolve through it; PG socket stays at `<repo>/.pg`).
 
 ### PostgreSQL
 `parts/services/postgresql.nix` reads `dataDir` + `storage` from the host's `host.services.postgresql` block — no host-name branching. metatron sets `/tank/services/postgresql` + `storage = "zfs"`; zaphkiel sets `/Vault/postgresql` + `storage = "vault"`. Each consumer service manages its own DB.

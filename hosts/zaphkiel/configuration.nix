@@ -64,17 +64,40 @@
         dataDir = "/Vault/radarr"; 
         storage = "vault";
       };
-      llama = { 
-        enable = true; 
-        port = 11434; 
-        storage = "vault"; 
-        unit = "llama-router"; 
+      llama = {
+        enable = true;
+        port = 11434;
+        storage = "vault";
+        unit = "llama-router";
+      };
+      librechat = {
+        enable = true;
+        port = 3080;
+        dataDir = "/Vault/librechat";
+        storage = "vault";
+      };
+      graphiv = {
+        enable = true;
+        port = 8756;
+        publicHost = "graphiv.kuroma.dev"; # public demo via cloudflared.zaphkiel below
+        publicAuto = false; # graphiv.nix emits its own READ-ONLY public vhost
+        dataDir = "/home/kuroma/Documents/projects/nlp/arxivkg"; # checkout; its data/ symlinks to /Vault/graphiv/data
+        storage = "vault";
+        unit = "graphiv-mcp";
       };
       postgresql = {
-        enable = true; 
-        dataDir = "/Vault/postgresql"; 
-        storage = "vault"; 
+        enable = true;
+        dataDir = "/Vault/postgresql";
+        storage = "vault";
       };
+    };
+
+    # Zaphkiel's public tunnel — every publicly exposed service on this host adds its
+    # hostname here (graphiv = read-only vhost, see graphiv.nix). Each hostname in the
+    # CF dashboard must point at http://localhost:80 (caddy).
+    cloudflared.zaphkiel = {
+      tokenSecret = "cloudflared/zaphkiel-token";
+      hostnames = [ "graphiv.kuroma.dev" ];
     };
   };
 

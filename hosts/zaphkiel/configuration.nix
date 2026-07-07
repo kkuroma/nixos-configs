@@ -25,6 +25,7 @@
       virtualization = true;
       codiumserver = true;
       yubikey = true;
+      controller = true;
     };
 
     services = {

@@ -22,6 +22,7 @@
       autofs = true;
       virtualization = true;
       yubikey = true;
+      controller = true;
     };
 
     services = {

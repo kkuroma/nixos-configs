@@ -24,6 +24,7 @@
       virtualization = lib.mkEnableOption "docker + libvirt + podman";
       codiumserver   = lib.mkEnableOption "VSCodium remote server";
       yubikey        = lib.mkEnableOption "YubiKey tooling (ykman, pcscd, udev rules)";
+      controller     = lib.mkEnableOption "AntiMicroX + generic USB game controller support";
     };
   };
 }

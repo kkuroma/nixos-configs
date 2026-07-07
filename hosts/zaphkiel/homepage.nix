@@ -68,7 +68,7 @@ in
       };
       layout = [
         { Infrastructure = { style = "row"; columns = 2; }; }
-        { AI = { style = "row"; columns = 4; }; }
+        { AI = { style = "row"; columns = 5; }; }
         { Tools  = { style = "column"; }; }
       ];
     };
@@ -246,6 +246,22 @@ in
               description = "Local LLM API";
               icon = "ollama.png";
               ping = "http://localhost:11434";
+            };
+          }
+          {
+            LibreChat = {
+              href = "https://librechat.zaphkiel";
+              description = "Chat UI + GraphIV deep research";
+              icon = "librechat.png";
+              ping = "https://librechat.zaphkiel";
+            };
+          }
+          {
+            GraphIV = {
+              href = "https://graphiv.zaphkiel";
+              description = "arXiv deep-research MCP";
+              icon = "arxiv.png";
+              ping = "https://graphiv.zaphkiel";
             };
           }
           {

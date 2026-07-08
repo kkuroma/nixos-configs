@@ -23,3 +23,5 @@ home/
 **Static files** → `config/`, pulled in via `.source` from the owning module (`base/` if headless-safe, else `programs/`/`desktop/`). Never write NF icons or ANSI escapes in Nix strings.
 
 **noctalia routing:** modules that *require* noctalia's runtime-generated files branch on `osConfig.host.home.noctalia` and carry a static fallback (nvim, starship). See `CLAUDE.md` for the full mutability story.
+
+Add/remove recipes live in the [top-level README](../README.md#adding--removing-things).

@@ -95,6 +95,8 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | File | Service | Port | Default hosts | Public domain |
 |------|---------|------|---------------|---------------|
 | `adguard.nix` | AdGuard Home | DNS :53, web :3000 | metatron, zaphkiel | — |
+| `beszel.nix` | Beszel hub (+ loopback agent) | :8090 | metatron, zaphkiel | — |
+| `uptime-kuma.nix` | Uptime Kuma + AutoKuma | :3001 | metatron | — |
 | `jellyfin.nix` | Jellyfin | :8096 | metatron | — |
 | `navidrome.nix` | Navidrome | :4533 | metatron | — |
 | `searxng.nix` | SearXNG | :8888 | metatron | searx.kuroma.dev |
@@ -158,6 +160,12 @@ zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-rout
   (derived as `dirOf dataDir + /mongodb`; mongodb gets explicit `Vault.mount` ordering — the
   host.services glue only orders `cfg.unit`). GraphIV's `data/` is a symlink to
   `/Vault/graphiv/data` (repo-relative paths resolve through it; PG socket stays at `<repo>/.pg`).
+
+### Monitoring — Beszel + Uptime Kuma
+- **Beszel** (`parts/services/beszel.nix`): independent hub per host (metatron + zaphkiel), each monitoring only its own machine. First admin is seeded from sops `beszel/{email,password}` via `USER_EMAIL`/`USER_PASSWORD` in the hub env file (ignored once the account exists). State in `/var/lib/beszel-hub` (StateDirectory) — deliberately off tank/Vault so monitoring survives pool trouble.
+- **Beszel agent pairing** (one-time, per host): log into `https://beszel.<host>`, open Add System, copy the hub's SSH public key into `host.beszelAgentKey` in the host's `configuration.nix` (public value — safe in the repo), rebuild, then finish Add System with `localhost:45876`. The loopback agent unit only exists while `beszelAgentKey != null`.
+- **Uptime Kuma** (`parts/services/uptime-kuma.nix`): metatron, :3001. Admin account is created in the web setup wizard on first visit — use the creds already in sops `uptime-kuma/{admin-username,admin-password}`, since AutoKuma logs in with those. Until the account exists, `autokuma.service` fails and retries every 30s (expected, not a bug).
+- **AutoKuma**: syncs monitors declaratively — one http monitor per enabled `host.services` entry with a port (probed at `http://localhost:<port>`, accepts 200–399). Monitor set is generated at build time into a store dir (`AUTOKUMA__STATIC_MONITORS`); a service disappearing from `host.services` deletes its monitor on next sync. **Don't hand-edit AutoKuma-tagged monitors in the Kuma UI** — the next sync reverts them; UI-created monitors without the tag are left alone.
 
 ### PostgreSQL
 `parts/services/postgresql.nix` reads `dataDir` + `storage` from the host's `host.services.postgresql` block — no host-name branching. metatron sets `/tank/services/postgresql` + `storage = "zfs"`; zaphkiel sets `/Vault/postgresql` + `storage = "vault"`. Each consumer service manages its own DB.

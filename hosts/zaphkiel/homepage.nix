@@ -229,6 +229,14 @@ in
             };
           }
           {
+            Beszel = {
+              href = "https://beszel.zaphkiel";
+              description = "Server monitoring";
+              icon = "beszel.png";
+              ping = "https://beszel.zaphkiel";
+            };
+          }
+          {
             Syncthing = {
               href = "https://syncthing.zaphkiel";
               description = "File sync";

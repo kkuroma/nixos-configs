@@ -4,14 +4,12 @@ The **option declarations** — this is where every `host.*` flag is born. Files
 
 | File | Declares | Read by |
 |---|---|---|
-| `system.nix` | `host.gpu` / `host.desktop` / `host.profile` / `host.features` / `host.home.*` | `parts/modules/*` + HM via `osConfig` |
-| `services.nix` | `host.services.<name>` (port, dataDir, publicHost, storage, unit, caddyExtra, publicAuto) | `parts/services/*` + emits caddy vhosts + storage deps |
-| `home.nix` | `host.home.*` HM tickboxes (bundles default to `host.profile`) | HM modules via `osConfig` |
-| `filebrowser.nix` | `host.filebrowsers.<name>` | multi-instance: emits sops + systemd + caddy per instance |
-| `cloudflared.nix` | `host.cloudflared.<name>` | multi-instance: one tunnel unit + sops + yaml per instance |
+| `system.nix` | `host.gpu` / `host.desktop` / `host.profile` / `host.features` | `parts/modules/*` |
+| `services.nix` | `host.services.<name>` (port, dataDir, publicHost, storage, unit, caddyExtra, publicAuto, tailscalePorts) + `host.knownServices` | `parts/services/*` + emits caddy vhosts + storage deps + tailscale0 ports |
+| `home.nix` | `host.home.*` HM tickboxes (bundles default to `host.profile`) | HM modules via `osConfig` + system halves via `config` |
 
 **Flow:** declare the option here → flip/parameterize it in `hosts/<name>/configuration.nix` → a `modules/` or `services/` file reads it and emits config.
 
-**Multi-instance** templates (`filebrowser`, `cloudflared`) both *declare* the option **and** *generate* per-instance resources, including `host.services.<unit>` entries so caddy + storage glue come along automatically.
+**Multi-instance services** (`filebrowser`, `cloudflared`) are the exception: their files live in `parts/services/` and *declare their own* `host.<name>` option there, generating per-instance resources (sops + systemd + caddy) — including `host.services.<instance>` entries so the caddy/storage glue comes along automatically.
 
 **`host.home.*` is dual-read:** system modules see it via `config`, HM sees it via `osConfig` — that's how the gaming bundle's system + HM halves stay in sync.

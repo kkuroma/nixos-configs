@@ -27,6 +27,14 @@
         enable = true;
         port = 3000;
       };
+      beszel = {
+        enable = true;
+        port = 8090;
+      };
+      uptime-kuma = {
+        enable = true;
+        port = 3001;
+      };
       jellyfin = {
          enable = true;
          port = 8096;

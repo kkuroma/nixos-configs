@@ -33,7 +33,11 @@
         enable = true;
         port = 3000;
       };
-      syncthing = { 
+      beszel = {
+        enable = true;
+        port = 8090;
+      };
+      syncthing = {
         enable = true;
         port = 8384;
       };

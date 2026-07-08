@@ -276,6 +276,22 @@ in
               ping = "https://matrix.metatron";
             };
           }
+          {
+            Beszel = {
+              href = "https://beszel.metatron";
+              description = "Server monitoring";
+              icon = "beszel.png";
+              ping = "https://beszel.metatron";
+            };
+          }
+          {
+            "Uptime Kuma" = {
+              href = "https://uptime-kuma.metatron";
+              description = "Uptime monitoring";
+              icon = "uptime-kuma.png";
+              ping = "https://uptime-kuma.metatron";
+            };
+          }
         ];
       }
       # Media (column — sits alongside Productivity and Tools)

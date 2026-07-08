@@ -1,16 +1,7 @@
 { config, lib, ... }:
 
-# Shared declarative shape for the small services in services/*.nix.
-#
-# Each service declares one entry under `host.services.<name>` describing
-# its port, where its data lives, what storage it depends on, and whether it
-# is exposed publicly. The generator below emits the Caddy vhosts and the
-# systemd ordering edges, so the per-service file only needs the actual
-# upstream config (services.jellyfin = { ... } etc.).
-#
-# `dataDir` is informational — the service file passes it into the upstream
-# module itself (services.jellyfin.dataDir = cfg.dataDir). That way the host
-# picks one path (/tank/... vs /Vault/...) and the service inherits it.
+# Schema + glue for host.services.<name>: emits caddy vhosts, systemd storage deps, and
+# tailscale0 firewall ports. dataDir is informational — each service file passes cfg.dataDir upstream.
 
 let
   cfg = config.host.services;
@@ -22,11 +13,13 @@ let
     none  = [];
   };
 
-  enabledWithStorage = lib.filterAttrs
-    (_: s: s.enable && s.storage != "none")
-    cfg;
+  enabled = lib.filterAttrs (_: s: s.enable) cfg;
 
-  enabledWithCaddy = lib.filterAttrs (_: s: s.enable && s.port != null) cfg;
+  enabledWithStorage = lib.filterAttrs (_: s: s.storage != "none") enabled;
+
+  enabledWithCaddy = lib.filterAttrs (_: s: s.port != null) enabled;
+
+  unknownServices = lib.subtractLists config.host.knownServices (lib.attrNames cfg);
 
   mkInternalVhost = name: s: {
     name = "${name}.${hostName}";
@@ -50,6 +43,15 @@ let
   };
 in
 {
+  # Valid host.services keys, registered from parts/services/*.nix filenames (+ filebrowser
+  # instances); the assertion below turns a typoed key from a silent no-op into an eval error.
+  options.host.knownServices = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [];
+    internal = true;
+    description = "Valid host.services keys.";
+  };
+
   options.host.services = lib.mkOption {
     default = {};
     description = "Declarative glue for caddy vhosts + systemd storage deps.";
@@ -111,11 +113,25 @@ in
           default = "";
           description = "Extra Caddy directives appended to the internal vhost.";
         };
+
+        tailscalePorts = lib.mkOption {
+          type = lib.types.listOf lib.types.port;
+          default = [];
+          description = "TCP ports opened on tailscale0 for clients that bypass Caddy.";
+        };
       };
     }));
   };
 
   config = {
+    assertions = [{
+      assertion = unknownServices == [];
+      message = "host.services declares unknown service(s): ${toString unknownServices} — no matching parts/services/<name>.nix (typo?).";
+    }];
+
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts =
+      lib.concatMap (s: s.tailscalePorts) (lib.attrValues enabled);
+
     services.caddy.virtualHosts =
       (lib.mapAttrs' mkInternalVhost
         (lib.filterAttrs (_: s: s.internal) enabledWithCaddy))

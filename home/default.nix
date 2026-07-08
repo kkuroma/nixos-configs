@@ -1,8 +1,6 @@
 { lib, osConfig, ... }:
-# Single HM entry point for the `kuroma` user on every host. `base/` is always imported.
-# `dev/` (headless-safe dev tooling) loads whenever host.home.dev — including on servers,
-# with noctalia-free fallbacks. The graphical layers load only when host.profile = "desktop".
-# The machine's whole tickbox lives in its configuration.nix `host = {…}` block.
+# Single HM entry point for every host: base/ always, dev/ whenever host.home.dev (servers too),
+# graphical layers only on desktop profile. The machine's tickbox is the host = {…} block.
 let
   home = osConfig.host.home;
   isDesktop = osConfig.host.profile == "desktop";

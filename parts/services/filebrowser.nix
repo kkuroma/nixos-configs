@@ -1,17 +1,7 @@
 { config, lib, pkgs, ... }:
 
-# Multi-instance filebrowser template.
-#
-# Declare instances in the host:
-#   host.filebrowsers.ct-dump = {
-#     port = 8200;
-#     root = "/tank/nas/ct/dump";
-#     user = "ct";
-#     group = "family";
-#   };
-#
-# Each instance emits sops secrets, a hardened systemd unit, plus a
-# host.services.<name> entry so caddy + storage glue come along for free.
+# Multi-instance filebrowser: host.filebrowsers.<name> = { port, root, user, group };
+# Each instance emits sops secrets, a hardened unit, and a host.services entry (caddy + storage glue).
 
 let
   cfg = config.host.filebrowsers;
@@ -85,6 +75,9 @@ in
   };
 
   config = lib.mkIf (cfg != {}) {
+    # instance names land in host.services below — register them as valid keys
+    host.knownServices = lib.attrNames cfg;
+
     sops.secrets = lib.concatMapAttrs (name: i: {
       "filebrowser/${name}/username" = { owner = i.user; };
       "filebrowser/${name}/password" = { owner = i.user; };

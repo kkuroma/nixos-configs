@@ -44,7 +44,5 @@
     "resume=/dev/mapper/cryptroot"
   ];
 
-  services.envfs.enable = true;
-
   system.stateVersion = "25.11";
 }

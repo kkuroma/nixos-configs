@@ -1,6 +1,13 @@
 { pkgs, config, lib, username, zaphkielIP, razielIP, ... }:
-lib.mkIf (config.host.services.syncthing or { enable = false; }).enable {
+let
+  cfg = config.host.services.syncthing or null;
+in
+lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."syncthing/password" = { owner = username; };
+
+  # sync protocol + local discovery — global, peers roam outside tailscale
+  networking.firewall.allowedTCPPorts = [ 22000 ];
+  networking.firewall.allowedUDPPorts = [ 22000 21027 ];
 
   services.syncthing = {
     enable = true;

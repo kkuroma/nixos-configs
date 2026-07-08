@@ -1,15 +1,11 @@
 { lib, ... }:
 
-# Blind-import every services/*.nix. Each service file is gated on
-# `host.services.<name>.enable`, so files for disabled services emit nothing.
-# Add a service: drop a file here + flip its switch in the host.
-
+# Tier 3: blind-import every services/*.nix (each self-gates on host.services.<name>.enable).
+# Filenames register the valid host.services keys — the file name IS the option key.
 let
-  here = builtins.readDir ./.;
-  isNixFile = name: type:
-    type == "regular" && name != "default.nix" && lib.hasSuffix ".nix" name;
-  nixFiles = lib.filterAttrs isNixFile here;
+  files = import ../../lib/import-dir.nix ./.;
 in
 {
-  imports = lib.mapAttrsToList (name: _: ./. + "/${name}") nixFiles;
+  imports = files;
+  host.knownServices = map (f: lib.removeSuffix ".nix" (baseNameOf f)) files;
 }

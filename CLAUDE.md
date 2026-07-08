@@ -2,12 +2,13 @@
 
 ## Repository layout
 
-- `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { hasNiri = ...; extraModules = [...]; };`. Every host's HM entry is `./home` (single entry); `hasNiri` is threaded to HM as `isDesktop` (gates the graphical layers) and also gates the nixvim import. No inline HM blobs.
-- `parts/universal/` — Tier 1. Always-on, no gates, no options. Auto-imported by every host via `parts/universal/default.nix`. Includes `boot`, `locale`, `networking`, `nix`, `sops` (framework only — secrets live with their consumer), `users`, `packages` (base CLI/net/hw toolkit), `caddy`.
-- `parts/templates/` — Option declarations. `system.nix` (host.gpu/desktop/profile/features), `services.nix` (host.services.<name>), `filebrowser.nix` (host.filebrowsers), `parts/templates/cloudflared.nix` (host.cloudflared). Auto-imported.
-- `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix` (or `templates/home.nix`). Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (fonts, fcitx5, services), `gaming` (Steam stack — gated on `config.host.home.gaming`, the **system half of the HM gaming bundle**: `host.home.*` is read by both system modules via `config` and HM via `osConfig`), features (autofs, virtualization, codiumserver).
-- `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`.
-- `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, cloudflared instance, nut, etc., auto-imported via `extra/default.nix`).
+- `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { extraModules = [...]; };`. Every host's HM entry is `./home` (single entry); the graphical layers gate on `host.profile == "desktop"` read via `osConfig`. No inline HM blobs.
+- `lib/import-dir.nix` — blind-import helper (every `*.nix` in a dir except `default.nix`); all auto-importing `default.nix` files are one-liners calling it.
+- `parts/universal/` — Tier 1. Always-on, no gates, no options. Auto-imported by every host via `parts/universal/default.nix`. Includes `boot`, `locale`, `networking`, `nix`, `sops` (framework only — secrets live with their consumer), `ssh` (sshd for ALL hosts — port 22 tailscale0-only via networking.nix; host extras like metatron's GatewayPorts stay in the host), `users`, `packages` (base CLI/net/hw toolkit), `caddy`.
+- `parts/templates/` — Option declarations only (schemas, no daemons): `system.nix` (host.gpu/desktop/profile/features + assertion `profile == "desktop" → desktop != null`), `services.nix` (the `host.services.<name>` submodule + generated caddy vhosts / systemd storage deps / tailscale0 firewall ports / knownServices typo assertion), `home.nix` (host.home.* bundles). Auto-imported.
+- `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix` (or `templates/home.nix`). Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (fonts, fcitx5, desktop-daemons = bluetooth/pipewire/printing/power, snapper = btrfs /home snapshots), `gaming` (Steam stack — gated on `config.host.home.gaming`, the **system half of the HM gaming bundle**: `host.home.*` is read by both system modules via `config` and HM via `osConfig`; also owns `services.envfs`), features (autofs, virtualization, codiumserver).
+- `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`, which also registers **filenames as the valid `host.services` keys** (`host.knownServices`) — the file name IS the option key. Multi-instance services (`filebrowser.nix`, `cloudflared.nix`) live here too; they declare their own `host.<name>` option.
+- `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, wireguard, nut, etc., auto-imported via `extra/default.nix`).
 - `home/` — HM modules, one concern per file, with a tiered layout mirroring `parts/`. **The machine's HM tickbox is `host.home.*`** (declared in `parts/templates/home.nix`, set in each host's `configuration.nix`, read by HM modules via `osConfig`). Bundles default to follow `host.profile` (`server`|`desktop`); a host unticks what it doesn't want (e.g. `host.home.gaming = false`).
   - `default.nix` — the **single entry point** for every host (flake imports `./home` always — no `hmEntry`/`hasNiri`). Imports `./base` always; `./dev` when `host.home.dev` (**any profile** — works on servers); the graphical layers (`packages`/`fonts`/`scripts`/`programs`/`desktop`) only when `host.profile == "desktop"`. Declares home identity + gated `.face`.
   - `base/` — headless-safe modules imported by **every** host (git, zsh, nushell). Auto-imported (blind `default.nix`).
@@ -31,7 +32,7 @@
 - **Host-agnostic always-on system config** → `parts/universal/`.
 - **Host-specific system config** → `hosts/<name>/configuration.nix` or `hosts/<name>/extra/`.
 - **Service secrets** → declared inside the service file (gated on `cfg.enable`), NOT in `parts/universal/sops.nix`. The universal file holds only sops framework config (defaultSopsFile, age keys).
-- **Multi-instance services** (filebrowser, cloudflared) → declare the template under `parts/templates/`, host says `host.<name>.<instance> = {...}`; template emits per-instance sops + systemd + caddy. Internally also sets `host.services.<unit>` entries to inherit caddy/storage glue.
+- **Multi-instance services** (filebrowser, cloudflared) → one file in `parts/services/` that declares its own `host.<name>` option; host says `host.<name>.<instance> = {...}`; the file emits per-instance sops + systemd + caddy. Filebrowser also registers `host.services.<instance>` entries (and their names into `host.knownServices`) to inherit caddy/storage glue.
 - **Per-host HM extras** → `hosts/<name>/home.nix` (auto-imported by `mkHost` if present). Never inline in `flake.nix`.
 - **Machine hardware values** → `machines.<name>` in `flake.nix`, threaded to HM via `machineConfig` specialArg. Never HM options.
 - **Static files** → `config/`, `.source` from the owning HM module (`base/` if headless-safe, else `programs/`/`desktop/`); files needing Nix interpolation → `.text` in relevant module.
@@ -44,9 +45,9 @@
 | 1 — always-on | `parts/universal/` | none | nothing |
 | 2 — flag | `parts/modules/` | `host.{gpu,desktop,profile,features}.X` | one line in `host = {...}` |
 | 3 — parameterized | `parts/services/` | `host.services.<name>.enable` + dataDir/publicHost/etc | a struct in `host.services` |
-| Multi-instance | `parts/templates/<name>.nix` | `host.<name>.<instance>` declared | a struct per instance |
+| Multi-instance | `parts/services/<name>.nix` | `host.<name>.<instance>` declared | a struct per instance |
 
-**Typo-safety caveat:** `host.services.<name>` is a freeform attrsOf — `host.services.jelyfin = ...` (typo) silently no-ops with no error. Verify with `nix eval .#nixosConfigurations.<host>.config.services.<name>.enable` before deploying.
+**Typo-safety:** `host.services` keys are asserted against `host.knownServices` (auto-registered from `parts/services/*.nix` filenames + filebrowser instance names) — `host.services.jelyfin = ...` (typo) fails eval with "unknown service(s)". Corollary: a service's file name must equal its option key.
 
 ## Common commands
 
@@ -89,7 +90,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 
 ### Services
 
-`parts/universal/caddy.nix` enables caddy + base certs. `parts/templates/services.nix` defines `host.services.<name>` (port, dataDir, publicHost, storage, unit, caddyExtra, publicAuto) and emits the caddy vhosts + systemd storage deps. Each `parts/services/*.nix` is gated on `cfg.enable` and reads its parameters from the host's declaration.
+`parts/universal/caddy.nix` enables caddy + base certs. `parts/templates/services.nix` defines `host.services.<name>` (port, dataDir, publicHost, storage, unit, caddyExtra, publicAuto, tailscalePorts) and emits the caddy vhosts + systemd storage deps + tailscale0 firewall openings. Each `parts/services/*.nix` is gated on `cfg.enable` and reads its parameters from the host's declaration.
 
 | File | Service | Port | Default hosts | Public domain |
 |------|---------|------|---------------|---------------|
@@ -115,12 +116,12 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | `librechat.nix` | LibreChat | :3080 | zaphkiel | — |
 | `graphiv.nix` | GraphIV MCP | :8756 | zaphkiel | — |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | — |
-| **`parts/templates/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
-| **`parts/templates/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main) | — |
+| **`parts/services/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
+| **`parts/services/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main), zaphkiel | — |
 
 **Service access model:** Internal: `https://<service>.<hostname>` via AdGuard DNS + Caddy `tls internal`. Public: cloudflared → `localhost:80` → Caddy. DNS rewrites: `*.metatron → 100.107.220.115`, `*.zaphkiel → 100.91.235.104`, `*.raziel → 100.79.72.120`.
 
-**Enabling a service:** the host's `configuration.nix` declares `host.services.<name> = { enable = true; port = ...; dataDir = ...; publicHost = ...; storage = "zfs" | "vault" | "none"; unit = ...; };`. Most fields have sensible defaults; only port + (dataDir for stateful services) are mandatory. Service secrets are declared inside the gated `mkIf` of the service file, not in `parts/universal/sops.nix`.
+**Enabling a service:** the host's `configuration.nix` declares `host.services.<name> = { enable = true; port = ...; dataDir = ...; publicHost = ...; storage = "zfs" | "vault" | "none"; unit = ...; };`. Most fields have sensible defaults; only port + (dataDir for stateful services) are mandatory. `tailscalePorts = [ ... ]` opens raw ports on tailscale0 for clients that bypass caddy (zaphkiel: llama 11434, neo4j bolt 7687) — no hand-written firewall lines in host configs. Service secrets are declared inside the gated `mkIf` of the service file, not in `parts/universal/sops.nix`.
 
 ### AdGuard (`parts/services/adguard.nix`)
 - `bind_hosts = [ "0.0.0.0" ]` — firewall restricts DNS to `tailscale0` on all hosts, so `0.0.0.0` is safe and works regardless of which host is running the service.
@@ -164,7 +165,7 @@ zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-rout
 **NixOS 25.11:** `ensureUsers`/`ensureDatabases` run in `postgresql-setup.service`. Custom SQL and dependent services need `after = [ "postgresql-setup.service" ]`; custom SQL in `lib.mkAfter` on `postStart`. **Matrix DB:** omit `ensureDBOwnership`, use `WITH OWNER=` in `CREATE DATABASE` SQL instead (Synapse requires `LC_COLLATE=C`).
 
 ### FileBrowser (multi-instance)
-Declare instances in the host: `host.filebrowsers.<name> = { port = ...; root = ...; user = ...; group = ...; };`. `parts/templates/filebrowser.nix` generates a hardened systemd unit + sops secrets + a `host.services.<unit>` entry (so caddy + storage glue come along). Public hostname defaults to `<name>.kuroma.dev`; the corresponding cloudflared instance must include it in its `hostnames` list.
+Declare instances in the host: `host.filebrowsers.<name> = { port = ...; root = ...; user = ...; group = ...; };`. `parts/services/filebrowser.nix` generates a hardened systemd unit + sops secrets + a `host.services.<instance>` entry (so caddy + storage glue come along, and the host's cloudflared instance picks up the public hostname automatically). Public hostname defaults to `<name>.kuroma.dev`.
 
 - Per-instance sops secrets: `filebrowser/<name>/username`, `filebrowser/<name>/password`.
 - **Init is one-shot:** `ExecStartPre` runs only when the SQLite DB doesn't exist. Rotating the sops password does NOT update the DB. To rotate: `sudo -u <user> filebrowser users update <name> --password <new> -d /var/lib/filebrowser-<name>/database.db`.
@@ -211,7 +212,7 @@ Module namespace is `power.ups` (not `services.nut`). Hardware: generic MEC0003 
 `ExecStartPost` waits for the API, then PATCHes the GUI password from `sops:syncthing/password`. The JSON body is built with `jq -Rn --arg p` — passwords containing `"`/`\`/newlines are safe. The `syncthing/password` sops secret is declared inside the gated `mkIf` (so metatron, which doesn't enable syncthing, doesn't provision it). Device addresses use the `zaphkielIP`/`razielIP` specialArgs rather than literal IPs.
 
 ### Cloudflare tunnel
-Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cloudflared.<name> = { hostnames = [...]; tokenSecret = "cloudflared/<name>/token"; };` (or override `tokenSecret` to reuse an existing sops key — metatron's `main` instance uses `cloudflared/token`). Each instance gets its own systemd unit `cloudflared-<name>` + per-instance sops secret + yaml config; all forward to `http://localhost:80` (caddy). Currently: metatron's `main` → searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev + matrix.isomorphic.to. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix). Adding cloudflared to another host = one declaration block + a new sops secret.
+Multi-instance via `parts/services/cloudflared.nix`. Declare per host: `host.cloudflared.<name> = { tokenSecret = "..."; };` — `hostnames` **defaults to every enabled `host.services` publicHost on that host** (filebrowsers included), so making a service public = set its `publicHost` + point the hostname at `http://localhost:80` in the CF dashboard; override `hostnames` only for names served outside `host.services`. Each instance gets its own systemd unit `cloudflared-<name>` + per-instance sops secret + a `pkgs.formats.yaml`-generated config; token read via `--token-file`. Currently: metatron `main` (`cloudflared/metatron-token`) → searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev + matrix.isomorphic.to; zaphkiel `zaphkiel` (`cloudflared/zaphkiel-token`) → graphiv.kuroma.dev. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix). Adding cloudflared to another host = one declaration block + a new sops secret.
 
 **Public service notes:**
 - `ct-dump.kuroma.dev`: dumping ground, low-trust by design.
@@ -219,7 +220,7 @@ Multi-instance via `parts/templates/cloudflared.nix`. Declare per host: `host.cl
 - `pdf.kuroma.dev`: same model. Stirling is hardened (see above) but parses untrusted input — candidate for shutdown if usage is rare.
 
 ### Networking
-SSH on `tailscale0` only (open via `parts/universal/networking.nix`). Syncthing: TCP/UDP 22000 + UDP 21027 globally. zaphkiel extras: 11434 on tailscale0 (router binds 0.0.0.0; Caddy also reverse-proxies); neo4j bolt :7687 on tailscale0.
+SSH on `tailscale0` only: sshd config in `parts/universal/ssh.nix`, port opened in `parts/universal/networking.nix`. Syncthing ports (TCP/UDP 22000 + UDP 21027, global) are declared inside `parts/services/syncthing.nix` — only hosts running syncthing open them. Per-service tailscale0 ports come from `host.services.<name>.tailscalePorts` (zaphkiel: llama 11434 — router binds 0.0.0.0, Caddy also reverse-proxies; neo4j bolt 7687).
 
 ### WireGuard — Yggdrasil (`hosts/raziel/extra/wireguard.nix`)
 Split-tunnel WG into a friend's server "Yggdrasil" (co-hosted with haruto, UniFi WG server, public endpoint `68.187.65.48:51820`). Reaches the internal `10.10.0.0/16` (e.g. Proxmox `10.10.30.10:8006`) from away, while Tailscale + normal internet stay direct. **Currently only on raziel.**

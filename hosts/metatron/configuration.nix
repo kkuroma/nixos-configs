@@ -39,10 +39,10 @@
         dataDir = "/tank/services/navidrome";
         storage = "zfs";
       };
-      searx= { 
-        enable = true; 
-        port = 8888; 
-        publicHost = "searx.kuroma.dev"; 
+      searxng = {
+        enable = true;
+        port = 8888;
+        publicHost = "searx.kuroma.dev";
       };
       privatebin = { 
         enable = true; 
@@ -103,28 +103,9 @@
       };
     };
 
+    # hostnames auto-derived from the publicHosts above (+ ct-dump filebrowser)
     cloudflared.main = {
       tokenSecret = "cloudflared/metatron-token"; # split 2026-07-08: zaphkiel has its own tunnel
-      hostnames = [
-        "searx.kuroma.dev"
-        "pdf.kuroma.dev"
-        "pastebin.kuroma.dev"
-        "cloud.kuroma.dev"
-        "ct-dump.kuroma.dev"
-        "public-dump.kuroma.dev"
-        "vault.kuroma.dev"
-        "git.kuroma.dev"
-        "matrix.isomorphic.to"
-      ];
-    };
-  };
-
-  services.openssh = {
-    enable = true;
-    openFirewall = false; # tailscale0 only via networking.nix
-    settings = {
-      PasswordAuthentication = false;
-      PermitRootLogin = "no";
     };
   };
 
@@ -151,7 +132,8 @@
     emoji = [ "Noto Color Emoji" ];
   };
 
-  system.stateVersion = "25.11";
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 ];
+  # sshd itself is universal (parts/universal/ssh.nix); reverse-tunnel binds are metatron-only
   services.openssh.settings.GatewayPorts = "clientspecified";
+
+  system.stateVersion = "25.11";
 }

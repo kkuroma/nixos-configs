@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  cfg = config.host.services.searx or null;
+  cfg = config.host.services.searxng or null;
 in
 lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."searxng/secret-key" = {};

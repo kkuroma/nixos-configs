@@ -1,5 +1,11 @@
-{ lib, ... }:
+{ config, lib, ... }:
 {
+  # A "desktop" profile pulls in the graphical HM layers, which presume a session.
+  config.assertions = [{
+    assertion = config.host.profile == "desktop" -> config.host.desktop != null;
+    message = ''host.profile = "desktop" requires host.desktop to be set (niri/kde).'';
+  }];
+
   options.host = {
     gpu = {
       amd           = lib.mkEnableOption "AMD graphics + amd_pstate=active";

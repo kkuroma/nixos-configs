@@ -47,11 +47,12 @@
         dataDir = "/Vault/n8n";
         storage = "vault";
       };
-      neo4j = { 
-        enable = true; 
-        port = 7474; 
-        dataDir = "/Vault/neo4j"; 
+      neo4j = {
+        enable = true;
+        port = 7474;
+        dataDir = "/Vault/neo4j";
         storage = "vault";
+        tailscalePorts = [ 7687 ]; # bolt (http via caddy)
       };
       sonarr = { 
         enable = true; 
@@ -70,6 +71,7 @@
         port = 11434;
         storage = "vault";
         unit = "llama-router";
+        tailscalePorts = [ 11434 ]; # router binds 0.0.0.0; direct API access bypasses caddy
       };
       librechat = {
         enable = true;
@@ -93,12 +95,11 @@
       };
     };
 
-    # Zaphkiel's public tunnel — every publicly exposed service on this host adds its
-    # hostname here (graphiv = read-only vhost, see graphiv.nix). Each hostname in the
-    # CF dashboard must point at http://localhost:80 (caddy).
+    # Zaphkiel's public tunnel — hostnames auto-derived from publicHosts above
+    # (currently graphiv, whose read-only vhost lives in graphiv.nix). Each hostname
+    # in the CF dashboard must point at http://localhost:80 (caddy).
     cloudflared.zaphkiel = {
       tokenSecret = "cloudflared/zaphkiel-token";
-      hostnames = [ "graphiv.kuroma.dev" ];
     };
   };
 
@@ -126,9 +127,6 @@
   };
 
   # networking.firewall.allowedTCPPorts = [ add temporary ports here, was 3000 ];
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 11434 7687 ]; # llama API + neo4j bolt (n8n/neo4j-http via caddy)
-
-  services.envfs.enable = true;
 
   system.stateVersion = "25.11";
 }

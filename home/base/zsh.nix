@@ -1,6 +1,11 @@
 { config, lib, ... }:
 {
 
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
   programs.zsh = {
     enable = true;
     dotDir = config.home.homeDirectory; # lock legacy (home-dir) location; stateVersion < 26.05

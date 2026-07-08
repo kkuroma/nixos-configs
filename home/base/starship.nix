@@ -136,6 +136,10 @@ let
     lavender = "bright-purple"
     green = "bright-green"
   '';
+  # Written to a store file and cat'd (not printf'd) so the quoted TOML values
+  # survive — interpolating this quote-containing string into a double-quoted
+  # shell literal would strip the quotes (`overlay1 = white` → parse error).
+  fallbackFile = pkgs.writeText "starship-fallback.toml" fallbackPalette;
 in
 {
   home.packages = [ pkgs.starship ];
@@ -162,11 +166,11 @@ in
     dest="$HOME/.config/starship.toml"
     sentinel="$HOME/.config/.starship-nix-src"
     mkdir -p "$(dirname "$dest")"
-    if [ "$(cat "$sentinel" 2>/dev/null)" != "${configFile}" ]; then
+    if [ "$(cat "$sentinel" 2>/dev/null)" != "${configFile}${fallbackFile}" ]; then
       # no noctalia -> fully static ANSI palette (nothing rewrites this file afterward)
-      { printf 'palette = "fallback"\n'; cat "${configFile}"; printf '\n%s\n' "${fallbackPalette}"; } > "$dest"
+      { printf 'palette = "fallback"\n'; cat "${configFile}"; printf '\n'; cat "${fallbackFile}"; } > "$dest"
       chmod u+w "$dest"
-      printf '%s' "${configFile}" > "$sentinel"
+      printf '%s' "${configFile}${fallbackFile}" > "$sentinel"
     fi
   '');
 

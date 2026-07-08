@@ -50,6 +50,7 @@ in
       # desktop shell / theming
       papirus-icon-theme
       kdePackages.breeze
+      bibata-cursors
       qt6Packages.qt6ct
       libsForQt5.qt5ct
       adwaita-qt6

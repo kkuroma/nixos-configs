@@ -43,7 +43,7 @@ in
   config = {
     xdg.configFile."niri/config.kdl".text = ''
       cursor {
-          xcursor-theme "breeze_cursors"
+          xcursor-theme "Bibata-Modern-Classic"
           xcursor-size 24
       }
       input {
@@ -76,7 +76,7 @@ in
     ''
     + config.rice.niri.extraConfig;
     xdg.configFile."Xresources".text = ''
-      Xcursor.theme: breeze_cursors
+      Xcursor.theme: Bibata-Modern-Classic
       Xcursor.size: 24
     '';
 

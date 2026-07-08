@@ -8,7 +8,7 @@
 
   programs.zsh = {
     enable = true;
-    dotDir = config.home.homeDirectory; # lock legacy (home-dir) location; stateVersion < 26.05
+    dotDir = config.home.homeDirectory; 
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     defaultKeymap = "emacs";

@@ -1,10 +1,9 @@
 { config, inputs, lib, osConfig, pkgs, ... }:
 # Declarative user flatpaks from Flathub. Runtime enabled in parts/modules/flatpak.nix.
 let
-  # glycin (GTK4 image loader) decodes icons in a nested `flatpak-spawn --sandbox` that
-  # inherits the launch PATH and runs `prlimit` bare — on NixOS that PATH lacks /usr/bin
-  # so it fails and BambuStudio crashes. This wrapper prepends /usr/bin at launch (the one
-  # spot the shell/systemd don't rebuild). `@@u "$@" @@` keeps flatpak file-forwarding.
+  # glycin (GTK4 image loader) decodes icons in a nested `flatpak-spawn --sandbox` that inherits the launch PATH and runs `prlimit` bare
+  # on NixOS that PATH lacks /usr/bin so it fails and BambuStudio crashes. 
+  # this wrapper prepends /usr/bin at launch (the one spot the shell/systemd don't rebuild). `@@u "$@" @@` keeps flatpak file-forwarding.
   bambuLauncher = pkgs.writeShellScript "bambustudio-launch" ''
     export PATH=/usr/bin:$PATH
     exec flatpak run --branch=stable --arch=x86_64 --command=entrypoint --file-forwarding com.bambulab.BambuStudio @@u "$@" @@
@@ -24,9 +23,7 @@ in
       "${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:\${XDG_DATA_DIRS}";
 
     # Override the flatpak-exported entry so the launcher runs the /usr/bin wrapper above.
-    # Written into XDG_DATA_HOME (~/.local/share), which is always resolved before any
-    # XDG_DATA_DIRS entry — including the flatpak exports dir prepended above. (xdg.desktop-
-    # Entries lands in the profile, which loses to the flatpak export, so it's not used.)
+    # Written into XDG_DATA_HOME (~/.local/share), which is always resolved before any XDG_DATA_DIRS entry
     xdg.dataFile."applications/com.bambulab.BambuStudio.desktop".text = ''
       [Desktop Entry]
       Name=BambuStudio

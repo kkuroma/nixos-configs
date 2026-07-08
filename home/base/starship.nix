@@ -136,16 +136,12 @@ let
     lavender = "bright-purple"
     green = "bright-green"
   '';
-  # Written to a store file and cat'd (not printf'd) so the quoted TOML values
-  # survive — interpolating this quote-containing string into a double-quoted
-  # shell literal would strip the quotes (`overlay1 = white` → parse error).
   fallbackFile = pkgs.writeText "starship-fallback.toml" fallbackPalette;
 in
 {
   home.packages = [ pkgs.starship ];
 
-  # starship.toml stays mutable: noctalia rewrites everything from its ">>> NOCTALIA STARSHIP
-  # PALETTE >>>" marker onward, so the nix-owned base config must sit before the marker.
+  # starship.toml stays mutable: noctalia rewrites everything from its ">>> NOCTALIA STARSHIP PALETTE >>>" marker onward
   home.activation.starshipConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (if noct then ''
     dest="$HOME/.config/starship.toml"
     sentinel="$HOME/.config/.starship-nix-src"

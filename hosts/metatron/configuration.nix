@@ -34,6 +34,7 @@
       uptime-kuma = {
         enable = true;
         port = 3001;
+        publicHost = "uptime.kuroma.dev";
       };
       jellyfin = {
          enable = true;

@@ -26,6 +26,10 @@ lib.mkIf (cfg != null && cfg.enable) {
     # by the two oneshots below — no GUI steps
     agent = {
       enable = true;
+      # smartctl + disk group + CAP_SYS_{RAWIO,ADMIN}; also drops the unit's
+      # PrivateDevices sandbox, which is what lets nvidia-smi (auto-added to
+      # the agent path via services.xserver.videoDrivers) reach /dev/nvidia*
+      smartmon.enable = true;
       environment = {
         LISTEN = "127.0.0.1:45876";
         KEY_FILE = agentKey;
@@ -56,10 +60,9 @@ lib.mkIf (cfg != null && cfg.enable) {
     '';
   };
 
-  # The hub UI's "Add System" is just a record in the PocketBase systems
-  # collection — create it via the REST API instead. Idempotent; coupled to
-  # beszel's collection schema (name/host/port text, users relation, status
-  # select), so a major beszel upgrade may need this revisited
+  # "Add System" in the hub UI is just a PocketBase record — create it via the
+  # REST API instead. Idempotent, but tied to beszel's collection schema, so
+  # recheck after major beszel upgrades.
   systemd.services.beszel-register-localhost = {
     description = "Register the localhost agent in the beszel hub";
     wantedBy = [ "multi-user.target" ];

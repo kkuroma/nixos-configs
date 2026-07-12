@@ -13,15 +13,9 @@
     package = null;
     systemd.enable = false;
 
-    # ── Declarative BASE layer → ~/.config/noctalia/config.toml ──────────────────
-    # v5 merges config PER-KEY: built-in defaults → config.toml (this) → state
-    # (~/.local/state/noctalia/settings.toml, GUI/IPC, wins). So everything here is a
-    # host-agnostic default that the GUI can still override. Intentionally NOT declared
-    # (left fully mutable in state): [theme] (palette/mode), [wallpaper], and the
-    # monitor-coupled layouts [desktop_widgets] + [lockscreen_widgets] (they embed
-    # connector names like HDMI-A-1 and would be wrong on raziel's eDP-1). [bar.*] and
-    # [widget.*] ARE declared here — they carry no monitor names, so they're portable;
-    # the trade-off is that bar/widget tweaks now need a rebuild instead of a live GUI drag.
+    # Declarative base for ~/.config/noctalia/config.toml. v5 merges per-key
+    # (defaults → this file → GUI state, state wins). [theme], [wallpaper], and the
+    # monitor-coupled widget layouts stay in state — connector names break on raziel.
     settings = {
       backdrop = {
         enabled = true;
@@ -169,11 +163,9 @@
     };
   };
 
-  # Static inputs noctalia reads from ~/.config/noctalia (not generated at runtime):
-  #   palettes/ — custom color schemes, whole dir; v5 picks <Name>.json via
-  #               `noctalia msg color-scheme-set custom <name>`. Each file is dark-only
-  #               (a `dark` block of mPrimary… roles + terminal); v5 derives light at runtime.
-  #   templates/fcitx5-theme.conf — input for the inline [theme.templates.user.fcitx5] above.
+  # Static inputs noctalia reads from ~/.config/noctalia: custom palettes (dark-only,
+  # v5 derives light; pick via `noctalia msg color-scheme-set custom <name>`) and the
+  # fcitx5 theme consumed by the inline user template above.
   xdg.configFile."noctalia/palettes".source = ../../config/noctalia/palettes;
   xdg.configFile."noctalia/templates/fcitx5-theme.conf".source =
     ../../config/noctalia/templates/fcitx5-theme.conf;

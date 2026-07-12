@@ -29,11 +29,9 @@
         endpoint = "68.187.65.48:51820";
         preshared-key = "$WG_PSK";
         preshared-key-flags = "0";
-        # Split tunnel over the whole internal 10.10.0.0/16 range (proxmox 10.10.30.10,
-        # plus .20/.60/.91) — NOT 0.0.0.0/0, so internet stays direct and tailscale's
-        # 100.64.0.0/10 is untouched. Local LAN subnets win by longest-prefix, so toggling
-        # this up while on a 10.10.x wifi doesn't tunnel your own gateway. The wg endpoint
-        # (68.187.65.48) is carved out of the tailscale exit node by the dispatcher below.
+        # Split tunnel: only 10.10.0.0/16 goes through; internet + tailscale stay
+        # direct, and a local 10.10.x wifi wins by longest prefix. The dispatcher
+        # below carves the endpoint out of any tailscale exit node.
         allowed-ips = "10.10.0.0/16;";
       };
 

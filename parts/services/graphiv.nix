@@ -1,10 +1,8 @@
 { config, lib, pkgs, ... }:
 
-# GraphIV MCP server (git.kuroma.dev/kkuroma/GraphIV) — deep-research tools on
-# loopback streamable-http. Runs inside the repo's `nix develop` env as the repo
-# owner: project venv, CUDA LD_LIBRARY_PATH, and the project-local Postgres
-# (peer auth, socket at <dataDir>/.pg) all come from the dev shell.
-# dataDir = the repo checkout; the dev shellHook exports PG* + ARXIVKG_PG_DSN.
+# GraphIV MCP server (git.kuroma.dev/kkuroma/GraphIV): deep-research tools over
+# loopback streamable-http, run inside the repo's `nix develop` env as the repo
+# owner. dataDir = the checkout; venv/CUDA/project Postgres come from the shellHook.
 let
   cfg = config.host.services.graphiv or null;
 in
@@ -40,12 +38,10 @@ lib.mkIf (cfg != null && cfg.enable) {
     };
   };
 
-  # Public (cloudflared) vhost — READ-ONLY. Destructive run actions, pdf compiles,
-  # and the MCP transport (deep_research = hours of GPU) answer 403 here; the tailnet
-  # vhost graphiv.<host> keeps full access (caddy :80/:443 are tailscale0-only, so
-  # reaching that vhost proves VPN-or-local origin). The host entry must set
-  # publicAuto = false — this block replaces the glue's plain public vhost.
-  # X-GraphIV-Public tells the dashboard to hide the gated UI (cosmetic only).
+  # Public (cloudflared) vhost is read-only: destructive actions and the MCP
+  # transport 403 here, full access stays on the tailnet vhost. Host must set
+  # publicAuto = false (this replaces the glue's plain public vhost);
+  # X-GraphIV-Public just tells the dashboard to hide the gated UI.
   services.caddy.virtualHosts = lib.optionalAttrs (cfg.publicHost != null) {
     "http://${cfg.publicHost}".extraConfig = ''
       @closed path /api/run/*/delete /api/run/*/purge-cache /api/run/*/compile-pdf /mcp /mcp/*

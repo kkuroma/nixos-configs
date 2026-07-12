@@ -53,12 +53,14 @@ lib.mkIf (cfg != null && cfg.enable) {
           name = "llama-router";
           apiKey = "sk-local"; # router does no auth; the field is mandatory
           baseURL = "http://localhost:${toString llama.port}/v1";
+          # -Code preset: parallel=1 -> full 131072 ctx (plain 26B is 32k/slot; two
+          # deep_research outputs overflow it). titleModel matches to avoid a swap.
           models = {
-            default = [ "Gemma-4-26B" ];
+            default = [ "Gemma-4-26B-Code" ];
             fetch = true;
           };
           titleConvo = true;
-          titleModel = "Gemma-4-26B";
+          titleModel = "Gemma-4-26B-Code";
           modelDisplayLabel = "llama-router";
         }
       ];

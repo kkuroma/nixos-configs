@@ -73,7 +73,7 @@
             # defaultColumnWidth = "proportion 1.0";
           }
           {
-            output = "HDMI-A-2";
+            output = "DP-3";
             mode = "2560x1440@143.972";
             x = 0;
             y = 0;

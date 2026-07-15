@@ -63,6 +63,30 @@ in
           DynamicUser = true;
         };
       }
-    ) cfg;
+    ) cfg // {
+      # bypass tailscale exit node for the CF tunnel edge (5261 < tailscale's 5270)
+      cloudflared-edge-carveout = {
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network-pre.target" ];
+        path = [ pkgs.iproute2 ];
+        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+        script = ''
+          for net in 198.41.192.0/24 198.41.200.0/24; do
+            ip rule del to "$net" priority 5261 2>/dev/null || true
+            ip rule add to "$net" lookup main priority 5261
+          done
+          for net in 2606:4700:a0::/48 2606:4700:a8::/48; do
+            ip -6 rule del to "$net" priority 5261 2>/dev/null || true
+            ip -6 rule add to "$net" lookup main priority 5261 || true
+          done
+        '';
+        preStop = ''
+          for net in 198.41.192.0/24 198.41.200.0/24 2606:4700:a0::/48 2606:4700:a8::/48; do
+            ip rule del to "$net" priority 5261 2>/dev/null || true
+            ip -6 rule del to "$net" priority 5261 2>/dev/null || true
+          done
+        '';
+      };
+    };
   };
 }

@@ -35,7 +35,7 @@
 
     vscodium-server = {
       url = "github:unicap/nixos-vscodium-server";
-      inputs.nixpkgs.follows = "nixpkgs";
+      flake = false; # its outputs eval x86_64-darwin, dropped in nixpkgs 26.11
     };
 
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";

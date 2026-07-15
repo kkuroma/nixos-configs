@@ -2,14 +2,6 @@
 let
   ovsx = inputs.nix-vscode-extensions.extensions.${pkgs.stdenv.hostPlatform.system}.open-vsx;
 
-  # latex workshop requires patch to work regardless of vscodium verion, so we fix it
-  latexWorkshop = (ovsx."james-yu".latex-workshop).overrideAttrs (old: {
-    postInstall = (old.postInstall or "") + ''
-      sed -i 's/"vscode": "\^[^"]*"/"vscode": "^1.0.0"/' \
-        $out/share/vscode/extensions/james-yu.latex-workshop/package.json
-    '';
-  });
-
   # noctalia path to ignore for extension manager HM modules
   noctaliaExt = ovsx.noctalia.noctaliatheme;
   noctaliaExtVersion = (lib.importJSON "${noctaliaExt}/share/vscode/extensions/noctalia.noctaliatheme/package.json").version;
@@ -28,8 +20,7 @@ let
     ovsx.franneck94.c-cpp-runner
     ovsx.franneck94.vscode-c-cpp-config
     ovsx.franneck94.vscode-c-cpp-dev-extension-pack
-    ovsx.hyunjin.pymap
-    latexWorkshop
+    ovsx."james-yu".latex-workshop
     ovsx."jeanp413".open-remote-ssh
     ovsx."jeff-hykin".better-cpp-syntax
     ovsx.kamikillerto.vscode-colorize
@@ -56,22 +47,6 @@ let
     ovsx.delgan.qml-format
     ovsx.pkief.material-icon-theme
   ];
-
-  # extensions json template
-  extensionsJsonTemplate = pkgs.writeText "vscodium-extensions.json" (builtins.toJSON (
-    (map (ext: {
-      identifier.id = ext.vscodeExtUniqueId;
-      version = ext.version;
-      location = { "$mid" = 1; path = "__EXT_DIR__/${ext.vscodeExtUniqueId}"; scheme = "file"; };
-      relativeLocation = ext.vscodeExtUniqueId;
-    }) extList)
-    ++ [{
-      identifier.id = noctaliaExt.vscodeExtUniqueId;
-      version = noctaliaExtVersion;
-      location = { "$mid" = 1; path = "__EXT_DIR__/${noctaliaExtDirName}"; scheme = "file"; };
-      relativeLocation = noctaliaExtDirName;
-    }]
-  ));
 
   # settings, exported from my old vscodium session, turned into nix
   settings = {
@@ -202,20 +177,7 @@ in
     fi
   '';
 
-  # Path 2 - extensions.json clear itself when rebuild
-  # generates extensions.json from nix so codium recognizes the above extensions
-  home.activation.vscodiumExtensionsJson = lib.hm.dag.entryAfter [ "writeBoundary" "noctaliaThemeExtension" ] ''
-    _ext_dir="$HOME/.vscode-oss/extensions"
-    _sentinel="$_ext_dir/.nix-extensions-gen"
-    if [ "$(cat "$_sentinel" 2>/dev/null)" != "${extensionsJsonTemplate}" ]; then
-      _content=$(< "${extensionsJsonTemplate}")
-      _content="''${_content//__EXT_DIR__/$_ext_dir}"
-      printf '%s' "$_content" > "$_ext_dir/extensions.json"
-      printf '%s' "${extensionsJsonTemplate}" > "$_sentinel"
-    fi
-  '';
-
-  # Patch 3 - noctalia color theme has to be mutable
+  # Patch 2 - noctalia color theme has to be mutable
   # this prevents $HOME/.vscode-oss/extensions/${noctaliaExtDirName} from being HM'ed
   # so noctalia is able to write the color and live-change codium's theme with the desktop
   home.activation.noctaliaThemeExtension = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

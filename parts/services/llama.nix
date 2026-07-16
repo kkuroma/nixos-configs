@@ -2,6 +2,9 @@
 
 # Thin wiring over the llama-router flake module (git.kuroma.dev/kkuroma/llama-router).
 # Caddy vhost + firewall come from host.services.llama as before.
+# Also runs llama-embed: a dedicated always-on llama.cpp embedding server (port 11435,
+# outside the router so it is never model-swapped) serving nomic-embed-text-v2-moe for
+# GraphIV's retrieval layer (/v1/embeddings + /tokenize).
 lib.mkIf (config.host.services.llama or { enable = false; }).enable {
   services.llama-router = {
     enable = true;
@@ -214,6 +217,38 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         top-p = "0.95";
         min-p = "0.01";
       };
+    };
+  };
+
+  # Standalone embedding endpoint: f16 GGUF (embeddings degrade under weight quantization),
+  # ~1.5 GB VRAM resident. c/parallel = 2048 ctx per slot covers the sym space's max_seq;
+  # ub 2048 because encoder inputs must fit one ubatch. GraphIV token-truncates client-side
+  # (asym space = 512) via /tokenize, so no truncation flags here.
+  systemd.services.llama-embed = {
+    description = "llama.cpp embedding server (nomic-embed-text-v2-moe)";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" "Vault.mount" ];
+    requires = [ "Vault.mount" ];
+    serviceConfig = {
+      ExecStart = lib.concatStringsSep " " [
+        (lib.getExe' config.services.llama-router.llamaCpp "llama-server")
+        "--embedding"
+        "-m /Vault/llm-models/nomic-embed-text-v2-moe.f16.gguf"
+        "--alias nomic-embed-text-v2-moe"
+        "--host 0.0.0.0" # firewall scopes 11435 to tailscale0; GraphIV uses loopback
+        "--port 11435"
+        "-ngl 99"
+        "-c 8192"
+        "-b 8192"
+        "-ub 2048"
+        "--parallel 4"
+        "--pooling mean"
+      ];
+      User = "llama";
+      Group = "llama";
+      Restart = "on-failure";
+      RestartSec = 5;
     };
   };
 }

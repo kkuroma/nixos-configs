@@ -18,7 +18,7 @@ in
     office = lib.mkOption {
       type = lib.types.bool;
       default = desk;
-      description = "office bundle: onlyoffice.";
+      description = "office bundle: onlyoffice + texlive.";
     };
     dev = lib.mkOption {
       type = lib.types.bool;
@@ -35,10 +35,10 @@ in
       default = desk;
       description = "kali linux networking tools like nmap, traceroute, wireshark.";
     };
-    flatpak = lib.mkOption {
+    "3d-printing" = lib.mkOption {
       type = lib.types.bool;
-      default = desk;
-      description = "flatpak runtime + declarative Flathub apps.";
+      default = false;
+      description = "3D-printing bundle: BambuStudio (flatpak runtime + app) + openscad.";
     };
   };
 }

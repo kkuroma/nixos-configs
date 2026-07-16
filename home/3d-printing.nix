@@ -1,5 +1,6 @@
 { config, inputs, lib, osConfig, pkgs, ... }:
-# Declarative user flatpaks from Flathub. Runtime enabled in parts/modules/flatpak.nix.
+# 3D-printing bundle: BambuStudio via flatpak (runtime enabled in parts/modules/flatpak.nix).
+# Plain-nixpkgs bundle packages (openscad) live in home/packages.nix under h."3d-printing".
 let
   # glycin (GTK4 image loader) decodes icons in a nested `flatpak-spawn --sandbox` that inherits the launch PATH and runs `prlimit` bare
   # on NixOS that PATH lacks /usr/bin so it fails and BambuStudio crashes. 
@@ -12,7 +13,7 @@ in
 {
   imports = [ inputs.nix-flatpak.homeManagerModules.nix-flatpak ];
 
-  config = lib.mkIf osConfig.host.home.flatpak {
+  config = lib.mkIf osConfig.host.home."3d-printing" {
     services.flatpak = {
       update.onActivation = true;
       packages = [ "com.bambulab.BambuStudio" ];

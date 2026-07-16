@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, metatronIP, ... }:
 
 # LibreChat via the nixpkgs module: local llama-router as the only model endpoint,
 # GraphIV MCP attached over streamable-http (the module's ProtectHome sandbox can't
@@ -16,17 +16,25 @@ lib.mkIf (cfg != null && cfg.enable) {
   sops.secrets."librechat/creds-iv" = { sopsFile = ../../secrets/librechat.yaml; };
   sops.secrets."librechat/jwt-secret" = { sopsFile = ../../secrets/librechat.yaml; };
   sops.secrets."librechat/jwt-refresh-secret" = { sopsFile = ../../secrets/librechat.yaml; };
+  sops.secrets."librechat/meili-master-key" = { sopsFile = ../../secrets/librechat.yaml; };
+  # Same zoho account the metatron mailers (vaultwarden, NUT) use; lives in the shared secrets.yaml.
+  sops.secrets."vaultwarden/smtp-password" = { };
 
   services.librechat = {
     enable = true;
     enableLocalDB = true;
     dataDir = lib.mkIf (cfg.dataDir != null) cfg.dataDir;
 
+    # Conversation/message search. The module wires SEARCH/MEILI_HOST/MEILI_MASTER_KEY
+    # + unit ordering itself; it only asks us for the master key file below.
+    meilisearch.enable = true;
+
     credentials = {
       CREDS_KEY = config.sops.secrets."librechat/creds-key".path;
       CREDS_IV = config.sops.secrets."librechat/creds-iv".path;
       JWT_SECRET = config.sops.secrets."librechat/jwt-secret".path;
       JWT_REFRESH_SECRET = config.sops.secrets."librechat/jwt-refresh-secret".path;
+      EMAIL_PASSWORD = config.sops.secrets."vaultwarden/smtp-password".path;
     };
 
     env = {
@@ -36,6 +44,19 @@ lib.mkIf (cfg != null && cfg.enable) {
       DOMAIN_SERVER = domain;
       ALLOW_REGISTRATION = true; # reachable via tailscale/caddy only; disable once accounts exist
       NO_INDEX = true;
+
+      # Password-reset mail via the shared zoho account (password in credentials above).
+      ALLOW_PASSWORD_RESET = true;
+      EMAIL_HOST = "smtp.zoho.com";
+      EMAIL_PORT = 587;
+      EMAIL_ENCRYPTION = "starttls";
+      EMAIL_USERNAME = "contact@kuroma.dev";
+      EMAIL_FROM = "contact@kuroma.dev";
+      EMAIL_FROM_NAME = "LibreChat";
+
+      # Web search: metatron's searxng over tailscale (json format + tailscalePorts
+      # opened in its service/host config). Non-secret, so a literal env value is fine.
+      SEARXNG_INSTANCE_URL = "http://${metatronIP}:8888";
     };
 
     settings = {
@@ -48,8 +69,16 @@ lib.mkIf (cfg != null && cfg.enable) {
         "http://127.0.0.1:${toString graphiv.port}"
       ];
 
+      # Provider comes from SEARXNG_INSTANCE_URL above. A scraper (firecrawl/tavily)
+      # is still required per search — no self-hosted one yet, so users paste their
+      # own key in the UI dialog until firecrawl is wired. Reranking off.
+      webSearch = {
+        searchProvider = "searxng";
+        rerankerType = "none";
+      };
+
       endpoints.custom = [
-        {
+      {
           name = "llama-router";
           apiKey = "sk-local"; # router does no auth; the field is mandatory
           baseURL = "http://localhost:${toString llama.port}/v1";
@@ -74,6 +103,35 @@ lib.mkIf (cfg != null && cfg.enable) {
         };
       };
     };
+  };
+
+  # Read via LoadCredential (root) by both meilisearch and librechat.
+  services.meilisearch.masterKeyFile = config.sops.secrets."librechat/meili-master-key".path;
+  # Keep the index next to librechat's state when the host moves it off /var
+  # (module default is /var/lib/meilisearch). Index is disposable — librechat
+  # re-syncs it from mongo on startup.
+  services.meilisearch.settings = lib.mkIf (cfg.dataDir != null) {
+    db_path = "${dirOf cfg.dataDir}/meilisearch";
+    dump_dir = "${dirOf cfg.dataDir}/meilisearch/dumps";
+    snapshot_dir = "${dirOf cfg.dataDir}/meilisearch/snapshots";
+  };
+  # The module's DynamicUser can't own dirs outside /var/lib — pin a static user.
+  users.users.meilisearch = lib.mkIf (cfg.dataDir != null) {
+    isSystemUser = true;
+    group = "meilisearch";
+  };
+  users.groups.meilisearch = lib.mkIf (cfg.dataDir != null) { };
+  systemd.tmpfiles.rules = lib.mkIf (cfg.dataDir != null) [
+    "d ${dirOf cfg.dataDir}/meilisearch 0700 meilisearch meilisearch -"
+  ];
+  systemd.services.meilisearch = {
+    serviceConfig = lib.mkIf (cfg.dataDir != null) {
+      DynamicUser = lib.mkForce false;
+      User = "meilisearch";
+      Group = "meilisearch";
+    };
+    after = lib.mkIf (cfg.storage == "vault") [ "Vault.mount" ];
+    requires = lib.mkIf (cfg.storage == "vault") [ "Vault.mount" ];
   };
 
   services.mongodb.package = pkgs.mongodb-ce;

@@ -52,6 +52,7 @@
         enable = true;
         port = 8888;
         publicHost = "searx.kuroma.dev";
+        tailscalePorts = [ 8888 ]; # librechat (zaphkiel) queries the JSON API directly
       };
       privatebin = { 
         enable = true; 

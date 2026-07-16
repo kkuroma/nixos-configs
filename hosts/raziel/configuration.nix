@@ -24,9 +24,10 @@
       yubikey = true;
       controller = true;
     };
+    home."3d-printing" = true;
 
     services = {
-      syncthing = { 
+      syncthing = {
         enable = true; 
         port = 8384;
       };

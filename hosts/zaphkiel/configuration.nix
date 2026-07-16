@@ -27,6 +27,7 @@
       yubikey = true;
       controller = true;
     };
+    home."3d-printing" = true;
 
     services = {
       adguard = {

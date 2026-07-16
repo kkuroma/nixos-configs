@@ -12,10 +12,10 @@
 - `home/` — HM modules, one concern per file, with a tiered layout mirroring `parts/`. **The machine's HM tickbox is `host.home.*`** (declared in `parts/templates/home.nix`, set in each host's `configuration.nix`, read by HM modules via `osConfig`). Bundles default to follow `host.profile` (`server`|`desktop`); a host unticks what it doesn't want (e.g. `host.home.gaming = false`).
   - `default.nix` — the **single entry point** for every host (flake imports `./home` always — no `hmEntry`/`hasNiri`). Imports `./base` always; `./dev` when `host.home.dev` (**any profile** — works on servers); the graphical layers (`packages`/`fonts`/`scripts`/`programs`/`desktop`) only when `host.profile == "desktop"`. Declares home identity + gated `.face`.
   - `base/` — headless-safe modules imported by **every** host (git, zsh, nushell). Auto-imported (blind `default.nix`).
-  - `dev/` — **headless-safe** dev tooling, imported whenever `host.home.dev` (servers included): `nvim.nix` + `packages.nix` (python/node/uv/formatters/claude-code). Must not require a graphical session; noctalia-routing modules here carry a static fallback (see below). The tier import is the dev gate, so files inside don't `mkIf dev`.
+  - `dev/` — **headless-safe** dev tooling, imported whenever `host.home.dev` (servers included): `nvim.nix` (the dev toolchain packages live in `packages.nix` under `h.dev`). Must not require a graphical session; noctalia-routing modules here carry a static fallback (see below). The tier import is the dev gate, so files inside don't `mkIf dev`.
   - `programs/` — one file per **configured graphical program** (`enable` + config; self-installs). Auto-imported, desktop-only. Bundle-specific ones self-gate with `config = lib.mkIf osConfig.host.home.<bundle> { … }` (mpv→media, vscodium→dev) — exactly like a `parts/services/*.nix` gates on its `enable`.
   - `desktop/` — session/DE integration (niri, noctalia, theming, mimeapps, kde, kde-servicemenus, vivaldi, cliphist). Auto-imported, desktop-only. `noctalia.nix` self-gates on `host.home.noctalia`.
-  - `packages.nix` — THE install-only package list (desktop-only); bundle apps gate via `lib.optionals osConfig.host.home.<bundle>`. `scripts/` — authored shell-script packages. `fonts.nix` — `rice.fonts` option + font deployment.
+  - `packages.nix` — THE single install-only package list, imported on **every** host; desktop core gates on profile, bundles (incl. the headless dev toolchain) via `lib.optionals h.<bundle>`. `3d-printing.nix` — BambuStudio flatpak + `.desktop` launcher hack, self-gates on `host.home."3d-printing"` (flatpak runtime in `parts/modules/flatpak.nix`; openscad comes via `packages.nix`). `scripts/` — authored shell-script packages. `fonts.nix` — `rice.fonts` option + font deployment.
   - `.source` refs live in the module that owns the concern (e.g. noctalia palettes/templates in `desktop/noctalia.nix`, fastfetch in `programs/fastfetch.nix`).
   - **noctalia routing:** modules that *require* noctalia's runtime-generated files branch on `osConfig.host.home.noctalia` and carry a static fallback for the off case — **nvim** (matugen.lua → builtin `habamax` colorscheme; base16-nvim + the matugen-placeholder activation only on the noctalia path) and **starship** (palette=noctalia + marker → a static `[palettes.fallback]`). Modules that only *optionally* theme via noctalia (ghostty/qt/fcitx5/kde) are desktop-only and still hardcode `theme = noctalia`; they'd only need a fallback on a noctalia-off *desktop*, which doesn't exist (metatron is a server, so they never load there).
 - `config/` — static config files, deployed via `.source` from the owning HM module.
@@ -139,7 +139,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-router (custom endpoint,
 `fetch: true`, default model `Gemma-4-26B`) and mounts the GraphIV MCP server for arXiv deep research.
 
-- **Secrets:** `secrets/librechat.yaml` — a separate sops file (CREDS_KEY/CREDS_IV/JWT_SECRET/JWT_REFRESH_SECRET).
+- **Secrets:** `secrets/librechat.yaml` — a separate sops file (CREDS_KEY/CREDS_IV/JWT_SECRET/JWT_REFRESH_SECRET/meili-master-key).
   Created by encrypting a fresh plaintext with the repo's public age keys (`nix run nixpkgs#sops -- -e -i`);
   no private key needed. Wired via `services.librechat.credentials` (systemd LoadCredential — root reads them).
 - **Mongo:** `enableLocalDB = true` + `services.mongodb.package = pkgs.mongodb-ce` (prebuilt; stock
@@ -153,6 +153,18 @@ zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-rout
   `kuroma` (project venv + CUDA + peer-auth Postgres come from the dev shellHook), starting the
   project PG first if down. librechat.yaml points at `http://127.0.0.1:8756/mcp` with
   `timeout = 7200000` ms — `deep_research` legitimately holds a tool call for minutes.
+- **Meilisearch** (conversation search): `services.librechat.meilisearch.enable` — the nixpkgs module
+  wires SEARCH/MEILI_HOST/MEILI_MASTER_KEY + ordering; we supply
+  `services.meilisearch.masterKeyFile` from sops `librechat/meili-master-key`. When the host sets a
+  dataDir, the index moves to `dirOf dataDir + /meilisearch` (`/Vault/meilisearch`) with a static
+  `meilisearch` user (module's DynamicUser can't own /Vault dirs) + Vault.mount ordering. Index is
+  disposable — librechat re-syncs it from mongo.
+- **Email** (password reset): zoho SMTP, same account/secret as vaultwarden+NUT
+  (`vaultwarden/smtp-password`, shared secrets.yaml) via LoadCredential; `ALLOW_PASSWORD_RESET=true`.
+- **Web search:** provider = metatron's searxng over tailscale (`SEARXNG_INSTANCE_URL=http://<metatronIP>:8888`;
+  searxng.nix binds 0.0.0.0 + enables `search.formats=[html json]`, metatron opens 8888 via `tailscalePorts`).
+  `rerankerType = "none"`. **No scraper is wired** (firecrawl/tavily required per search) — users paste their
+  own key in the UI web-search dialog until a self-hosted firecrawl exists.
 - **First-run:** register an account at `https://librechat.zaphkiel` (ALLOW_REGISTRATION=true — flip
   off once accounts exist), pick the llama-router endpoint, attach the `graphiv` MCP in the tools menu.
 - First `graphiv-mcp` start may realize the dev shell (TimeoutStartSec=15min).

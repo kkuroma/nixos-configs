@@ -14,9 +14,13 @@ lib.mkIf (cfg != null && cfg.enable) {
     settings = {
       server = {
         secret_key = "$SEARX_SECRET_KEY";
-        bind_address = "127.0.0.1";
+        # 0.0.0.0 so API consumers on other hosts (librechat web search) can reach it
+        # directly; firewall only opens the port on tailscale0 via tailscalePorts.
+        bind_address = "0.0.0.0";
         port = cfg.port;
       };
+      # json needed for API consumers (librechat) — searx 403s format=json otherwise
+      search.formats = [ "html" "json" ];
       ui.default_theme = "simple";
     };
   };

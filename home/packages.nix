@@ -1,12 +1,14 @@
 { pkgs, lib, osConfig, ... }:
-# Install user-level packages plus gated specific packages
+# THE single entry point for install-only user packages: desktop core + gated bundles
+# + the headless dev toolchain (h.dev works on any profile, servers included).
 let
   h = osConfig.host.home;
+  desk = osConfig.host.profile == "desktop";
 in
 {
   home.packages = with pkgs;
-    [
-      # ── core desktop (always present on a graphical host) ──
+    # ── core desktop (always present on a graphical host) ──
+    lib.optionals desk [
       # GUI
       vesktop
       (vivaldi.override { proprietaryCodecs = true; enableWidevine = true; })
@@ -64,6 +66,19 @@ in
       gnome-disk-utility
       libnotify
     ]
+    # ── dev bundle: headless toolchain (any profile) ──
+    ++ lib.optionals h.dev [
+      (python3.withPackages (ps: with ps; [ tqdm numpy pandas scipy matplotlib requests ipython ]))
+      uv
+      nodejs
+      claude-code
+      distrobox
+      # nvim formatters (conform-nvim)
+      nixfmt
+      black
+      stylua
+      prettier
+    ]
     # ── media bundle (mpv itself is home/programs/mpv.nix) ──
     ++ lib.optionals h.media [
       feishin
@@ -72,13 +87,10 @@ in
       kdePackages.kdenlive
       pwvucontrol
     ]
-    # ── dev bundle (desktop-only bits; headless toolchain is home/dev/packages.nix) ──
-    ++ lib.optionals h.dev [
-      texliveFull # LaTeX for vscodium latex-workshop + nvim vimtex (desktop)
-    ]
     # ── office bundle ──
     ++ lib.optionals h.office [
       onlyoffice-desktopeditors
+      texliveFull # LaTeX for vscodium latex-workshop + nvim vimtex
     ]
     # ── gaming bundle ──
     ++ lib.optionals h.gaming [
@@ -90,5 +102,9 @@ in
     ++ lib.optionals h.networking [
       wireshark
       iperf
+    ]
+    # ── 3d-printing bundle (BambuStudio flatpak is home/3d-printing.nix) ──
+    ++ lib.optionals h."3d-printing" [
+      openscad
     ];
 }

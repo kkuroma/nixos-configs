@@ -68,14 +68,14 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      "DiffusionGemma-4-26B" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/diffusiongemma-26B-A4B-it-Q4_K_M.gguf";
-        c = 131072;
-        b = 16384;
-        ub = 512;
-        parallel = 4;
-      };
+      # "DiffusionGemma-4-26B" = {
+      #   num_instance = 1;
+      #   model = "/Vault/llm-models/diffusiongemma-26B-A4B-it-Q4_K_M.gguf";
+      #   c = 131072;
+      #   b = 16384;
+      #   ub = 512;
+      #   parallel = 4;
+      # };
 
       "Gemma-4-26B" = {
         num_instance = 1;

@@ -12,7 +12,7 @@ lib.mkIf (cfg != null && cfg.enable) {
     description = "GraphIV MCP server (deep research over arXiv)";
     wantedBy = [ "multi-user.target" ];
     wants = [ "network-online.target" ];
-    after = [ "network-online.target" "llama-router.service" ];
+    after = [ "network-online.target" "llama-router.service" "llama-embed.service" ];
     path = with pkgs; [ nix git bash coreutils ];
     environment.GRAPHIV_MCP_PORT = toString cfg.port;
     # Public base for run assets (figures/graph.html) in MCP-returned markdown + the

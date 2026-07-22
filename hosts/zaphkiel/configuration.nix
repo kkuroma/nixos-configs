@@ -76,7 +76,7 @@
         port = 11434;
         storage = "vault";
         unit = "llama-router";
-        tailscalePorts = [ 11434 ]; # router binds 0.0.0.0; direct API access bypasses caddy
+        tailscalePorts = [ 11434 11435 ]; # router + llama-embed bind 0.0.0.0; direct API access bypasses caddy
       };
       librechat = {
         enable = true;

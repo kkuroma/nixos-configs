@@ -1,0 +1,18 @@
+// loads noctalia.kdl generated at runtime
+include "noctalia.kdl"
+
+window-rule {
+    geometry-corner-radius 6
+    clip-to-geometry true
+    default-column-width { proportion 0.5; }
+}
+
+debug {
+    honor-xdg-activation-with-invalid-serial
+}
+
+// v5 blurred overview wallpaer: tell the backdrop layer to be placed in the correct layer
+layer-rule {
+    match namespace="^noctalia-backdrop"
+    place-within-backdrop true
+}

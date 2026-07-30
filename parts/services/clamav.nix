@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 # Scheduled ClamAV scanning with quarantine
+let
   cfg = config.host.clamav;
 
   logDir = "/var/log/clamav";

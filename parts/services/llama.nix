@@ -1,20 +1,19 @@
 { lib, config, ... }:
 
-# Thin wiring over the llama-router flake module (git.kuroma.dev/kkuroma/llama-router).
-# Caddy vhost + firewall come from host.services.llama as before.
-# Also runs llama-embed: a dedicated always-on llama.cpp embedding server (port 11435,
-# outside the router so it is never model-swapped) serving nomic-embed-text-v2-moe for
-# GraphIV's retrieval layer (/v1/embeddings + /tokenize).
+let
+  root = "/Vault/llm-models";
+  mdl = name: file: "${root}/models/${name}/${file}";
+  emb = name: file: "${root}/embeddings/${name}/${file}";
+in
 lib.mkIf (config.host.services.llama or { enable = false; }).enable {
   services.llama-router = {
     enable = true;
-    host = "0.0.0.0"; # firewall scopes 11434 to tailscale0
+    host = "0.0.0.0";
     port = config.host.services.llama.port;
     user = "llama";
     group = "llama";
-    modelDirs = [ "/Vault/llm-models" ];
+    modelDirs = [ "${root}/models" ];
 
-    # Global llama.cpp settings applied to every preset (the "[*]" wildcard section).
     presetGlobals = {
       jinja = true;
       fa = true;
@@ -25,12 +24,11 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       ctv = "q4_0";
     };
 
-    # This is where all model configs are declared. Populates both the llama.cpp presets.ini and the router's config.json
     models = {
 
       "GPT-OSS-20B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gpt-oss-20b-F16.gguf";
+        model = mdl "GPT-OSS-20B" "model_f16.gguf";
         c = 131072;
         b = 16384;
         ub = 1024;
@@ -42,7 +40,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "GPT-OSS-20B-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gpt-oss-20b-F16.gguf";
+        model = mdl "GPT-OSS-20B" "model_f16.gguf";
         c = 131072;
         b = 16384;
         ub = 1024;
@@ -51,7 +49,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "GLM-4.7-Flash" = {
         num_instance = 1;
-        model = "/Vault/llm-models/GLM-4.7-Flash-IQ4_XS.gguf";
+        model = mdl "GLM-4.7-Flash" "model_iq4_xs.gguf";
         c = 131072;
         b = 16384;
         ub = 512;
@@ -62,7 +60,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "GLM-4.7-Flash-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/GLM-4.7-Flash-IQ4_XS.gguf";
+        model = mdl "GLM-4.7-Flash" "model_iq4_xs.gguf";
         c = 131072;
         b = 16384;
         ub = 512;
@@ -71,8 +69,8 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-26B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
-        model-draft = "/Vault/llm-models/gemma-4-26B-A4B-it-mtp.gguf";
+        model = mdl "Gemma-4-26B-A4B" "model_mxfp4.gguf";
+        model-draft = mdl "Gemma-4-26B-A4B" "mtp.gguf";
         spec-type = "draft-mtp";
         spec-draft-n-max = 4;
         c = 131072;
@@ -86,7 +84,10 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-26B-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
+        model = mdl "Gemma-4-26B-A4B" "model_mxfp4.gguf";
+        model-draft = mdl "Gemma-4-26B-A4B" "mtp.gguf";
+        spec-type = "draft-mtp";
+        spec-draft-n-max = 4;
         c = 131072;
         b = 16384;
         ub = 512;
@@ -95,9 +96,9 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-26B-Vision" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
-        mmproj = "/Vault/llm-models/gemma-4-26B-A4B-it-mmproj-BF16.gguf";
-        model-draft = "/Vault/llm-models/gemma-4-26B-A4B-it-mtp.gguf";
+        model = mdl "Gemma-4-26B-A4B" "model_mxfp4.gguf";
+        mmproj = mdl "Gemma-4-26B-A4B" "mmproj.gguf";
+        model-draft = mdl "Gemma-4-26B-A4B" "mtp.gguf";
         spec-type = "draft-mtp";
         spec-draft-n-max = 4;
         c = 65536;
@@ -108,8 +109,8 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-12B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
-        model-draft = "/Vault/llm-models/gemma-4-12b-it-mtp.gguf";
+        model = mdl "Gemma-4-12B" "model_q8_0.gguf";
+        model-draft = mdl "Gemma-4-12B" "mtp.gguf";
         spec-type = "draft-mtp";
         spec-draft-n-max = 4;
         c = 262144;
@@ -123,7 +124,10 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-12B-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
+        model = mdl "Gemma-4-12B" "model_q8_0.gguf";
+        model-draft = mdl "Gemma-4-12B" "mtp.gguf";
+        spec-type = "draft-mtp";
+        spec-draft-n-max = 4;
         c = 262144;
         b = 8192;
         ub = 512;
@@ -132,9 +136,9 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Gemma-4-12B-Vision" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
-        mmproj = "/Vault/llm-models/gemma-4-12b-it-mmproj-BF16.gguf";
-        model-draft = "/Vault/llm-models/gemma-4-12b-it-mtp.gguf";
+        model = mdl "Gemma-4-12B" "model_q8_0.gguf";
+        mmproj = mdl "Gemma-4-12B" "mmproj.gguf";
+        model-draft = mdl "Gemma-4-12B" "mtp.gguf";
         spec-type = "draft-mtp";
         spec-draft-n-max = 4;
         c = 262144;
@@ -145,7 +149,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Qwen3.6-35B-A3B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf";
+        model = mdl "Qwen-3.6-35B-A3B" "model_iq4_xs.gguf";
         c = 131072;
         b = 16384;
         ub = 512;
@@ -157,7 +161,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Qwen3.6-35B-Uncensored" = {
         num_instance = 1;
-        model = "/Vault/llm-models/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS.gguf";
+        model = mdl "Qwen-3.6-35B-A3B-Uncensored" "model_iq4_xs.gguf";
         c = 131072;
         b = 16384;
         ub = 512;
@@ -169,7 +173,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Ornith1.0-35B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/ornith-1.0-35b-Q4_K_M.gguf";
+        model = mdl "Ornith-1.0-35B-A3B" "model_q4_k_m.gguf";
         c = 16384;
         b = 8192;
         ub = 512;
@@ -179,9 +183,23 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
+      "ThinkingCap-Qwen3.6-27B" = {
+        num_instance = 1;
+        model = mdl "ThinkingCap-Qwen-3.6-27B" "model_q4_k_m.gguf";
+        c = 131072;
+        b = 16384;
+        ub = 512;
+        parallel = 1;
+        temp = "1.0";
+        top-p = "0.95";
+        min-p = "0.01";
+      };
+
       "Wordslop-Qwen3.6-27B" = {
         num_instance = 1;
-        model = "/Vault/llm-models/Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-MTP-IQ3_M.gguf";
+        model = mdl "Wordslop-Qwen-3.6-27B" "model_iq3_m.gguf";
+        model-draft = mdl "Wordslop-Qwen-3.6-27B" "mtp.gguf";
+        spec-type = "draft-mtp";
         c = 262144;
         b = 16384;
         ub = 512;
@@ -193,7 +211,6 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
     };
   };
 
-  # Standalone embedding endpoint at f16 GGUF
   systemd.services.llama-embed = {
     description = "llama.cpp embedding server (nomic-embed-text-v2-moe)";
     wantedBy = [ "multi-user.target" ];
@@ -204,9 +221,9 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       ExecStart = lib.concatStringsSep " " [
         (lib.getExe' config.services.llama-router.llamaCpp "llama-server")
         "--embedding"
-        "-m /Vault/llm-models/nomic-embed-text-v2-moe.f16.gguf"
+        "-m ${emb "Nomic-Embed-Text-v2-MoE" "model_f16.gguf"}"
         "--alias nomic-embed-text-v2-moe"
-        "--host 0.0.0.0" # firewall scopes 11435 to tailscale0; GraphIV uses loopback
+        "--host 0.0.0.0"
         "--port 11435"
         "-ngl 99"
         "-c 8192"

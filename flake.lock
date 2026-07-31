@@ -68,11 +68,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785395561,
-        "narHash": "sha256-oG8QC9/ecYVrMdXMpXJQvyaUDUicnx2o1KqZeh7zqMw=",
+        "lastModified": 1785399382,
+        "narHash": "sha256-lww4IM3JHgsIjgQmite1zngi2/xSueTOE9pbCvjfWss=",
         "ref": "refs/heads/main",
-        "rev": "25c9fc1ae36e76366231bfe3d6befe2feccf8057",
-        "revCount": 41,
+        "rev": "9a380a095d2d94c3ab14621e107a862e6cb3938e",
+        "revCount": 42,
         "type": "git",
         "url": "https://git.kuroma.dev/kkuroma/llama-router"
       },

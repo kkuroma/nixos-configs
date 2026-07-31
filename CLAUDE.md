@@ -162,10 +162,10 @@ zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-rout
   disposable — librechat re-syncs it from mongo.
 - **Email** (password reset): zoho SMTP, same account/secret as vaultwarden+NUT
   (`vaultwarden/smtp-password`, shared secrets.yaml) via LoadCredential; `ALLOW_PASSWORD_RESET=true`.
-- **Web search:** provider = metatron's searxng over tailscale (`SEARXNG_INSTANCE_URL=http://<metatronIP>:8888`;
-  searxng.nix binds 0.0.0.0 + enables `search.formats=[html json]`, metatron opens 8888 via `tailscalePorts`).
-  `rerankerType = "none"`. **No scraper is wired** (firecrawl/tavily required per search) — users paste their
-  own key in the UI web-search dialog until a self-hosted firecrawl exists.
+- **Web search:** provider = metatron's searxng over tailscale (`SEARXNG_INSTANCE_URL=http://metatron:8888` —
+  MagicDNS name, not the raw IP; searxng.nix binds 0.0.0.0 + enables `search.formats=[html json]`, metatron
+  opens 8888 via `tailscalePorts`). `rerankerType = "none"`. Scraper = self-hosted firecrawl at
+  `http://uriel:3002` (`firecrawlApiKey` is a dummy — schema requires it, self-hosted ignores it).
 - **First-run:** register an account at `https://librechat.zaphkiel` (ALLOW_REGISTRATION=true — flip
   off once accounts exist), pick the llama-router endpoint, attach the `graphiv` MCP in the tools menu.
 - First `graphiv-mcp` start may realize the dev shell (TimeoutStartSec=15min).

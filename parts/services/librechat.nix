@@ -1,4 +1,4 @@
-{ config, lib, pkgs, metatronIP, ... }:
+{ config, lib, pkgs, ... }:
 
 # LibreChat via the nixpkgs module: local llama-router as the only model endpoint
 let
@@ -48,7 +48,7 @@ lib.mkIf (cfg != null && cfg.enable) {
       EMAIL_FROM_NAME = "LibreChat";
 
       # Web search: metatron's searxng over tailscale 
-      SEARXNG_INSTANCE_URL = "http://${metatronIP}:8888";
+      SEARXNG_INSTANCE_URL = "http://metatron:8888";
     };
 
     settings = {
@@ -63,6 +63,10 @@ lib.mkIf (cfg != null && cfg.enable) {
       webSearch = {
         searchProvider = "searxng";
         rerankerType = "none";
+        # self-hosted firecrawl on uriel; key unused but required by the schema
+        scraperType = "firecrawl";
+        firecrawlApiUrl = "http://uriel:3002";
+        firecrawlApiKey = "sk-ibidi-toilet";
       };
 
       endpoints.custom = [
@@ -71,11 +75,11 @@ lib.mkIf (cfg != null && cfg.enable) {
           apiKey = "sk-ibidi-toilet"; # haha imagine needing key
           baseURL = "http://localhost:${toString llama.port}/v1";
           models = {
-            default = [ "Gemma-4-26B-Code" ];
+            default = [ "Gemma-4-26B" ];
             fetch = true;
           };
           titleConvo = true;
-          titleModel = "Gemma-4-26B-Code";
+          titleModel = "Gemma-4-26B";
           modelDisplayLabel = "llama-router";
         }
       ];

@@ -27,16 +27,8 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
     # This is where all model configs are declared. Populates both the llama.cpp presets.ini and the router's config.json
     models = {
-      "GPT-OSS-20B" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/gpt-oss-20b-F16.gguf";
-        c = 131072;
-        b = 16384;
-        ub = 1024;
-        parallel = 4;
-      };
 
-      "GPT-OSS-20B-Code" = {
+      "GPT-OSS-20B" = {
         num_instance = 1;
         model = "/Vault/llm-models/gpt-oss-20b-F16.gguf";
         c = 131072;
@@ -48,16 +40,16 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      "GLM-4.7-Flash" = {
+      "GPT-OSS-20B-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/GLM-4.7-Flash-IQ4_XS.gguf";
-        c = 65536;
+        model = "/Vault/llm-models/gpt-oss-20b-F16.gguf";
+        c = 131072;
         b = 16384;
-        ub = 512;
+        ub = 1024;
         parallel = 4;
       };
 
-      "GLM-4.7-Flash-Code" = {
+      "GLM-4.7-Flash" = {
         num_instance = 1;
         model = "/Vault/llm-models/GLM-4.7-Flash-IQ4_XS.gguf";
         c = 131072;
@@ -68,25 +60,16 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      # "DiffusionGemma-4-26B" = {
-      #   num_instance = 1;
-      #   model = "/Vault/llm-models/diffusiongemma-26B-A4B-it-Q4_K_M.gguf";
-      #   c = 131072;
-      #   b = 16384;
-      #   ub = 512;
-      #   parallel = 4;
-      # };
-
-      "Gemma-4-26B" = {
+      "GLM-4.7-Flash-Batched" = {
         num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
+        model = "/Vault/llm-models/GLM-4.7-Flash-IQ4_XS.gguf";
         c = 131072;
         b = 16384;
         ub = 512;
         parallel = 4;
       };
 
-      "Gemma-4-26B-Code" = {
+      "Gemma-4-26B" = {
         num_instance = 1;
         model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
         model-draft = "/Vault/llm-models/gemma-4-26B-A4B-it-mtp.gguf";
@@ -99,6 +82,15 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         temp = "1.0";
         top-p = "0.95";
         min-p = "0.01";
+      };
+
+      "Gemma-4-26B-Batched" = {
+        num_instance = 1;
+        model = "/Vault/llm-models/gemma-4-26B-A4B-it-MXFP4_MOE.gguf";
+        c = 131072;
+        b = 16384;
+        ub = 512;
+        parallel = 4;
       };
 
       "Gemma-4-26B-Vision" = {
@@ -117,15 +109,6 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       "Gemma-4-12B" = {
         num_instance = 1;
         model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
-        c = 262144;
-        b = 8192;
-        ub = 512;
-        parallel = 4;
-      };
-
-      "Gemma-4-12B-Code" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
         model-draft = "/Vault/llm-models/gemma-4-12b-it-mtp.gguf";
         spec-type = "draft-mtp";
         spec-draft-n-max = 4;
@@ -136,6 +119,15 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         temp = "1.0";
         top-p = "0.95";
         min-p = "0.01";
+      };
+
+      "Gemma-4-12B-Batched" = {
+        num_instance = 1;
+        model = "/Vault/llm-models/gemma-4-12b-it-Q8_0.gguf";
+        c = 262144;
+        b = 8192;
+        ub = 512;
+        parallel = 4;
       };
 
       "Gemma-4-12B-Vision" = {
@@ -151,47 +143,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         parallel = 1;
       };
 
-      "Qwen3-4B-Instruct" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/Qwen3-4B-Instruct-2507-Q8_0.gguf";
-        c = 65536;
-        b = 4096;
-        ub = 512;
-        parallel = 4;
-      };
-
-      "Qwen3-4B-Instruct-Swarm" = {
-        num_instance = 2;
-        model = "/Vault/llm-models/Qwen3-4B-Instruct-2507-Q8_0.gguf";
-        c = 32768;
-        b = 4096;
-        ub = 512;
-        parallel = 8;
-      };
-
-      "Qwen3.5-9B" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/Qwen3.5-9B-Q4_0.gguf";
-        c = 262144;
-        b = 4096;
-        ub = 512;
-        parallel = 1;
-        chat-template-kwargs = ''{"enable_thinking": true}'';
-      };
-
-      "Qwen3-30B-Coder" = {
-        num_instance = 1;
-        model = "/Vault/llm-models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf";
-        c = 16384;
-        b = 16384;
-        ub = 512;
-        parallel = 2;
-        temp = "0.7";
-        top-p = "1.0";
-        min-p = "0.01";
-      };
-
-      "Qwen3.6-35B-A3B-Code" = {
+      "Qwen3.6-35B-A3B" = {
         num_instance = 1;
         model = "/Vault/llm-models/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf";
         c = 131072;
@@ -203,7 +155,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      "Qwen3.6-35B-A3B-Code-Uncen" = {
+      "Qwen3.6-35B-Uncensored" = {
         num_instance = 1;
         model = "/Vault/llm-models/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive-IQ4_XS.gguf";
         c = 131072;
@@ -220,6 +172,18 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         model = "/Vault/llm-models/ornith-1.0-35b-Q4_K_M.gguf";
         c = 16384;
         b = 8192;
+        ub = 512;
+        parallel = 1;
+        temp = "1.0";
+        top-p = "0.95";
+        min-p = "0.01";
+      };
+
+      "Wordslop-Qwen3.6-27B" = {
+        num_instance = 1;
+        model = "/Vault/llm-models/Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-MTP-IQ3_M.gguf";
+        c = 262144;
+        b = 16384;
         ub = 512;
         parallel = 1;
         temp = "1.0";

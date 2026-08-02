@@ -186,6 +186,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       "ThinkingCap-Qwen3.6-27B" = {
         num_instance = 1;
         model = mdl "ThinkingCap-Qwen-3.6-27B" "model_q4_k_m.gguf";
+        spec-type = "draft-mtp";
         c = 131072;
         b = 16384;
         ub = 512;
@@ -197,8 +198,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
 
       "Wordslop-Qwen3.6-27B" = {
         num_instance = 1;
-        model = mdl "Wordslop-Qwen-3.6-27B" "model_iq3_m.gguf";
-        model-draft = mdl "Wordslop-Qwen-3.6-27B" "mtp.gguf";
+        model = mdl "Wordslop-Qwen-3.6-27B" "model_iq2_m.gguf";
         spec-type = "draft-mtp";
         c = 262144;
         b = 16384;

@@ -4,6 +4,17 @@
 let
   h = osConfig.host.home;
   desk = osConfig.host.profile == "desktop";
+  # pinned to snap 117: nixpkgs bumped to 118, which lacks symbols vivaldi 8.1 needs (won't launch)
+  vivaldiCodecs = pkgs.vivaldi-ffmpeg-codecs.overrideAttrs (_: rec {
+    version = "2026-05-18";
+    src = pkgs.fetchurl {
+      url = "https://api.snapcraft.io/api/v1/snaps/download/XXzVIXswXKHqlUATPqGCj2w2l7BxosS8_117.snap";
+      hash = "sha256-YEE7oF8NLGDCQ3gpY5z6B+7xDxcOumjOzwUztJUM+/s=";
+    };
+    installPhase = ''
+      install -vD chromium-ffmpeg-git-${version}/chromium-ffmpeg/libffmpeg.so $out/lib/libffmpeg.so
+    '';
+  });
 in
 {
   home.packages = with pkgs;
@@ -11,11 +22,11 @@ in
     lib.optionals desk [
       # GUI
       vesktop
-      ((vivaldi.override { enableWidevine = true; }).overrideAttrs (o: {
-        postFixup = (o.postFixup or "") + ''
-          ln -s libffmpeg.so "$out/opt/vivaldi/libffmpeg.so.${lib.versions.majorMinor o.version}"
-        '';
-      }))
+      (vivaldi.override {
+        enableWidevine = true;
+        proprietaryCodecs = true;
+        vivaldi-ffmpeg-codecs = vivaldiCodecs;
+      })
       networkmanagerapplet
       kdePackages.gwenview
       kdePackages.konsole

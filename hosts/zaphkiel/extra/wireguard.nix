@@ -1,19 +1,27 @@
 { config, pkgs, ... }:
-# Yggdrasil - external server co-hosted with haruto, imports keys from the following
-#   wireguard/yggdrasil/private-key
-#   wireguard/yggdrasil/preshared-key
-#   wireguard/yggdrasil/ip           (public endpoint address)
-# NetworkManager-ensure-profiles runs envsubst over the profile with this env file.
 {
   sops.secrets."wireguard/yggdrasil/private-key" = { };
   sops.secrets."wireguard/yggdrasil/preshared-key" = { };
-  # Root-only by default; the dispatcher script below reads it as root.
   sops.secrets."wireguard/yggdrasil/ip" = { };
 
   sops.templates."wg-yggdrasil.env".content = ''
     WG_PRIVKEY=${config.sops.placeholder."wireguard/yggdrasil/private-key"}
     WG_PSK=${config.sops.placeholder."wireguard/yggdrasil/preshared-key"}
     WG_ENDPOINT_IP=${config.sops.placeholder."wireguard/yggdrasil/ip"}
+  '';
+
+  # Allow wireguard access
+  networking.firewall.extraCommands = ''
+    iptables -I nixos-fw 1 -s 10.10.30.0/24 -m conntrack --ctstate NEW -j nixos-fw-refuse
+  '';
+  networking.firewall.extraStopCommands = ''
+    iptables -D nixos-fw -s 10.10.30.0/24 -m conntrack --ctstate NEW -j nixos-fw-refuse 2>/dev/null || true
+  '';
+
+  # Allow local traffic
+  networking.localCommands = ''
+    ip rule del to 10.10.0.0/16 lookup main priority 5200 2>/dev/null || true
+    ip rule add to 10.10.0.0/16 lookup main priority 5200
   '';
 
   networking.networkmanager.ensureProfiles = {
@@ -33,10 +41,7 @@
         endpoint = "$WG_ENDPOINT_IP:51820";
         preshared-key = "$WG_PSK";
         preshared-key-flags = "0";
-        # Split tunnel: only 10.10.0.0/16 goes through; internet + tailscale stay
-        # direct, and a local 10.10.x wifi wins by longest prefix. The dispatcher
-        # below carves the endpoint out of any tailscale exit node.
-        allowed-ips = "10.10.0.0/16;";
+        allowed-ips = "10.10.0.0/16;"; # split tunnel to allow for local access
       };
 
       ipv4 = {
@@ -49,12 +54,6 @@
     };
   };
 
-  # Carve the wg endpoint out of the tailscale exit node. When the mullvad exit node is
-  # active, table 52 holds `default dev tailscale0`, which would swallow the handshake
-  # packets to the endpoint. This rule (priority 5260, just below tailscale's `lookup 52`
-  # at 5270) forces the endpoint out the physical default route instead. Tied to ygg0
-  # up/down so it leaves no stray rule when the tunnel is off, and survives reboots +
-  # tailscale restarts (tailscale never touches a rule it didn't create).
   networking.networkmanager.dispatcherScripts = [{
     type = "basic";
     source = pkgs.writeShellScript "ygg0-wg-endpoint-carveout" ''

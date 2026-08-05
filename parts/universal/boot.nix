@@ -1,8 +1,15 @@
 { pkgs, machineConfig, ... }:
 {
-  boot.loader.systemd-boot = {
+  boot.loader.limine = {
     enable = true;
-    configurationLimit = 10;
+    efiSupport = true;
+    maxGenerations = 10;
+    additionalFiles."mt86plus.efi" = "${pkgs.memtest86plus}/mt86plus.efi";
+    extraEntries = ''
+      /Memtest86+
+          protocol: efi
+          path: boot():/mt86plus.efi
+    '';
   };
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = machineConfig.kernelPackages pkgs;

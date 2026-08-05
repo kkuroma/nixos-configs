@@ -4,6 +4,7 @@
     enable = true;
     efiSupport = true;
     maxGenerations = 10;
+    extraConfig = builtins.readFile ../../config/limine/catppuccin-mocha-mauve.conf;
     additionalFiles."mt86plus.efi" = "${pkgs.memtest86plus}/mt86plus.efi";
     extraEntries = ''
       /Memtest86+

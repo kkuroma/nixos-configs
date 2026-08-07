@@ -8,6 +8,7 @@ let
     );
 in
 {
+  boot.loader.systemd-boot.enable = false;
   boot.loader.limine = {
     enable = true;
     efiSupport = true;

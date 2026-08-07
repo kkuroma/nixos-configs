@@ -38,10 +38,37 @@
           thickness = 40;
 
           capsule_group = [
-            { id = "g1"; fill = "surface_variant"; members = [ "cpu" "temp" "ram" ]; opacity = 1.0; padding = 6.0; }
-            { id = "g2"; fill = "surface_variant"; members = [ "network" "bluetooth" "volume" ]; opacity = 1.0; padding = 6.0; }
-            { id = "g3"; fill = "surface_variant"; members = [ "clock" "notifications" ]; opacity = 1.0; padding = 6.0; }
-            { id = "g5"; fill = "surface_variant"; foreground = "primary"; border = ""; members = [ "media" "audio_visualizer" ]; opacity = 1.0; padding = 6.0; radius = 45.0; }
+            {
+              id = "g1";
+              fill = "surface_variant";
+              members = [ "cpu" "temp" "ram" ];
+              opacity = 1.0;
+              padding = 6.0;
+            }
+            {
+              id = "g2";
+              fill = "surface_variant";
+              members = [ "network" "bluetooth" "volume" ];
+              opacity = 1.0;
+              padding = 6.0;
+            }
+            {
+              id = "g3";
+              fill = "surface_variant";
+              members = [ "clock" "notifications" ];
+              opacity = 1.0;
+              padding = 6.0;
+            }
+            {
+              id = "g5";
+              fill = "surface_variant";
+              foreground = "primary";
+              border = "";
+              members = [ "media" "audio_visualizer" ];
+              opacity = 1.0;
+              padding = 6.0;
+              radius = 45.0;
+            }
           ];
         };
 
@@ -69,20 +96,38 @@
         battery.capsule = true;
         clock.format = "{:%Y/%m/%d-%H:%M:%S}";
         "control-center".capsule = true;
-        cpu = { capsule = true; show_value = true; };
-        media = { art_size = 20.0; max_length = 160; min_length = 160; title_scroll = "on_hover"; };
+        cpu.capsule = true;
+        media = {
+          art_size = 20.0;
+          max_length = 160;
+          min_length = 160;
+          title_scroll = "on_hover";
+        };
         network.show_label = false;
-        ram = { capsule = true; show_value = true; };
+        ram.capsule = true;
         recorder.type = "noctalia/screen_recorder:recorder";
         recorder_2.type = "noctalia/screen_recorder:recorder";
         screenshot.capsule = true;
         session.capsule = true;
         sysmon.stat = "net_tx";
-        temp = { capsule = true; show_value = true; };
-        tray = { capsule = true; drawer = true; };
-        volume = { capsule = true; show_label = true; };
+        temp.capsule = true;
+        tray = {
+          capsule = true;
+          drawer = false;
+        };
+        volume = {
+          capsule = true;
+          show_label = false;
+        };
         wallpaper.capsule = true;
-        workspaces = { anchor = true; capsule = true; display = "name"; labels_only_when_occupied = true; scale = 1.3; };
+        workspaces = {
+          anchor = true;
+          capsule = true;
+          label_source = "name";
+          show_labels = true;
+          labels_only_when_occupied = true;
+          scale = 1.3;
+        };
       };
 
       control_center.sidebar_section = "none";
@@ -105,8 +150,16 @@
       plugins = {
         enabled = [ "noctalia/screen_recorder" ];
         source = [
-          { kind = "git"; name = "official"; location = "https://github.com/noctalia-dev/official-plugins"; }
-          { kind = "git"; name = "community"; location = "https://github.com/noctalia-dev/community-plugins"; }
+          {
+            kind = "git";
+            name = "official";
+            location = "https://github.com/noctalia-dev/official-plugins";
+          }
+          {
+            kind = "git";
+            name = "community";
+            location = "https://github.com/noctalia-dev/community-plugins";
+          }
         ];
       };
 
@@ -118,21 +171,51 @@
         polkit_agent = true;
         screen_time_enabled = true;
         settings_show_advanced = true;
-        ui_scale = 1.2;
 
         panel = {
           clipboard_placement = "attached";
           open_near_click_control_center = true;
-          session_placement = "centered";
         };
 
         session.actions = [
-          { action = "lock"; enabled = true; shortcut = "1"; variant = "default"; }
-          { action = "logout"; enabled = true; shortcut = "2"; variant = "default"; }
-          { action = "lock_and_suspend"; enabled = true; shortcut = "3"; variant = "default"; }
-          { action = "reboot"; enabled = true; shortcut = "4"; variant = "default"; }
-          { action = "command"; enabled = true; command = "systemctl hibernate"; glyph = "zzz"; label = "Hibernate"; variant = "default"; }
-          { action = "shutdown"; enabled = true; shortcut = "5"; variant = "destructive"; }
+          {
+            action = "lock";
+            enabled = true;
+            shortcut = "1";
+            variant = "default";
+          }
+          {
+            action = "logout";
+            enabled = true;
+            shortcut = "2";
+            variant = "default";
+          }
+          {
+            action = "lock_and_suspend";
+            enabled = true;
+            shortcut = "3";
+            variant = "default";
+          }
+          {
+            action = "reboot";
+            enabled = true;
+            shortcut = "4";
+            variant = "default";
+          }
+          {
+            action = "command";
+            enabled = true;
+            command = "systemctl hibernate";
+            glyph = "zzz";
+            label = "Hibernate";
+            variant = "default";
+          }
+          {
+            action = "shutdown";
+            enabled = true;
+            shortcut = "5";
+            variant = "destructive";
+          }
         ];
       };
 

@@ -5,16 +5,10 @@
   config = lib.mkIf osConfig.host.home.noctalia {
   programs.noctalia = {
     enable = true;
-
-    # The binary stays a SYSTEM package (parts/modules/niri.nix) so
-    # /run/current-system/sw/bin/noctalia keeps existing for raziel's charge-limit udev
-    # rule + swayidle. package = null makes this module emit config.toml only, without
-    # also installing noctalia into the HM profile (no double install, no path churn).
     package = null;
     systemd.enable = false;
 
-    # Declarative base for ~/.config/noctalia/config.toml. v5 merges per-key (defaults, then this file, then GUI state, state wins).
-    # [theme], [wallpaper], and the monitor-coupled widget layouts stay in state, connector names break on raziel.
+    # Declarative base for ~/.config/noctalia/config.toml
     settings = {
       backdrop = {
         enabled = true;
@@ -22,8 +16,7 @@
         tint_intensity = 0.0;
       };
 
-      # Bar layout + appearance.
-      # Float vs int types mirror what noctalia's parser writes (e.g. border_width = 2.0 float, radius = 20 int), so keep them as-is.
+      # Bar layout + appearance
       bar = {
         order = [ "Top" "workspaces" ];
 
@@ -76,18 +69,18 @@
         battery.capsule = true;
         clock.format = "{:%Y/%m/%d-%H:%M:%S}";
         "control-center".capsule = true;
-        cpu = { capsule = true; show_label = false; };
+        cpu = { capsule = true; show_value = true; };
         media = { art_size = 20.0; max_length = 160; min_length = 160; title_scroll = "on_hover"; };
         network.show_label = false;
-        ram = { capsule = true; show_label = false; };
+        ram = { capsule = true; show_value = true; };
         recorder.type = "noctalia/screen_recorder:recorder";
         recorder_2.type = "noctalia/screen_recorder:recorder";
         screenshot.capsule = true;
         session.capsule = true;
         sysmon.stat = "net_tx";
-        temp = { capsule = true; show_label = false; };
+        temp = { capsule = true; show_value = true; };
         tray = { capsule = true; drawer = true; };
-        volume = { capsule = true; show_label = false; };
+        volume = { capsule = true; show_label = true; };
         wallpaper.capsule = true;
         workspaces = { anchor = true; capsule = true; display = "name"; labels_only_when_occupied = true; scale = 1.3; };
       };

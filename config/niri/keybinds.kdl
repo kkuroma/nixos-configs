@@ -18,7 +18,7 @@ binds {
     Shift+Mod+E         hotkey-overlay-title="File Manager Launcher"    { spawn "ghostty" "--class=ghostty.float" "--window-width=80" "--window-height=42" "-e" "file-launcher"; }
     Mod+Q               hotkey-overlay-title="Close Window"             { close-window; }
     Mod+Shift+Q         hotkey-overlay-title="Kill NiriWM"              { quit; }
-    Mod+R               hotkey-overlay-title="Reload Shell"             { spawn-sh "pkill -x noctalia; noctalia -d & disown"; }
+    Mod+R               hotkey-overlay-title="Reload Shell"             { spawn-sh "kill -9 $(pgrep noctalia); noctalia -d & disown"; }
     Mod+L               hotkey-overlay-title="Lock Screen"              { spawn-sh "noctalia msg session lock"; }
     Mod+period          hotkey-overlay-title="Color Picker"             { spawn-sh "color-picker"; }
     Ctrl+Shift+Escape   hotkey-overlay-title="Task Manager"             { spawn "ghostty" "--class=ghostty.float" "-e" "btop"; } 

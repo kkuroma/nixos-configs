@@ -219,9 +219,7 @@
         ];
       };
 
-      # Template engine. fcitx5 has no community template, so it is declared inline as a
-      # v5 user template (replaces the legacy config/noctalia/user-templates.toml + the
-      # GUI "User templates" toggle). nvim is handled by the community 'neovim' template.
+      # Template engine, only fcitx5 is my custom template
       theme.templates = {
         enable_builtin_templates = true;
         builtin_ids = [ "btop" "gtk3" "gtk4" "ghostty" "kcolorscheme" "niri" "qt" "starship" ];
@@ -238,9 +236,7 @@
     };
   };
 
-  # Static inputs noctalia reads from ~/.config/noctalia: custom palettes (dark-only,
-  # v5 derives light; pick via `noctalia msg color-scheme-set custom <name>`) and the
-  # fcitx5 theme consumed by the inline user template above.
+  # Symlink static palette
   xdg.configFile."noctalia/palettes".source = ../../config/noctalia/palettes;
   xdg.configFile."noctalia/templates/fcitx5-theme.conf".source =
     ../../config/noctalia/templates/fcitx5-theme.conf;

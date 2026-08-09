@@ -71,7 +71,10 @@ GPT + 1G ESP + LUKS + Btrfs (`root`, `home`, `nix`, `persist`, `swap`). systemd-
 - Per-host kernel: zaphkiel = zen, raziel = latest, metatron = LTS (latest breaks ZFS).
 
 ### GPU
-- **zaphkiel** (`parts/modules/nvidia.nix`): `open = true`, `cudaSupport = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate. `onnxruntime` is overlaid to `cudaSupport = false` — librewolf depends on it and the CUDA variant isn't cached, so without the overlay every rebuild compiles it from source (and fails).
+- **zaphkiel** (`parts/modules/nvidia.nix`): `open = true`. `powerManagement.enable = true` + `NVreg_PreserveVideoMemoryAllocations=1` required for display after hibernate.
+- **CUDA is opt-in per package — never set `nixpkgs.config.cudaSupport` globally.** The global flag rewrites every derivation with a `cudaSupport` knob, and cache.nixos.org only ever builds the `cudaSupport = false` variants, so the whole media stack falls off the cache: `opencv` → `frei0r` → `mlt` → `krita`/`kdenlive`, plus `ffmpeg-full` → `whisper-cpp`. ~3h of compiling, and **`frei0r` cannot build at all** (nixpkgs puts `cudaPackages.cuda_nvcc` in `buildInputs` under `strictDeps = true`, so `nvcc` never lands on `$PATH` and CMake's `FindCUDAToolkit` aborts — CUDA-opencv's cmake config forces that lookup on every consumer). Hydra never catches it because Hydra doesn't build CUDA variants.
+  - The only consumer that wants it is `parts/services/llama.nix`: `llamaCpp = pkgs.llama-cpp.override { cudaSupport = true; }`.
+  - **NVENC/NVDEC are not CUDA.** `withNvenc`/`withNvdec`/`withCuvid`/`withCuda`/`withCudaLLVM` are gated on `withNvcodec` (nv-codec-headers) and are on in the stock cached ffmpeg; they dlopen the driver at runtime. Only `cuda-nvcc` and `libnpp` follow `config.cudaSupport`, and `cuda-llvm` already compiles the CUDA filter kernels. So hardware encode (kde-servicemenus `h264_nvenc`), mpv `nvdec-copy`, OBS and kdenlive render profiles all work with CUDA off. Krita has no CUDA code at all — its acceleration is the OpenGL canvas.
 - **raziel + metatron** (`parts/modules/amd.nix`): `hardware.graphics`, `amd_pstate=active`.
 - **metatron** (`parts/modules/nvidia-compute.nix`): GTX 1650 headless CUDA. `modesetting.enable = false`, `open = false` (Turing TU117).
 

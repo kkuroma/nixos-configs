@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 
 let
   root = "/Vault/llm-models";
@@ -8,6 +8,7 @@ in
 lib.mkIf (config.host.services.llama or { enable = false; }).enable {
   services.llama-router = {
     enable = true;
+    llamaCpp = pkgs.llama-cpp.override { cudaSupport = true; };
     host = "0.0.0.0";
     port = config.host.services.llama.port;
     user = "llama";

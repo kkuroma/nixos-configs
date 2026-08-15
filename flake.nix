@@ -65,7 +65,7 @@
         hwdec = "nvdec-copy";
         displays = [ # get parsed to niri
           {
-            output = "HDMI-A-2";
+            output = "HDMI-A-3";
             mode = "1920x1080@144.001";
             y = 1000;
             x = 2560;
@@ -73,8 +73,8 @@
             # defaultColumnWidth = "proportion 1.0";
           }
           {
-            output = "DP-5";
-            mode = "2560x1440@143.972";
+            output = "DP-3";
+            mode = "2560x1440@180.001";
             x = 0;
             y = 0;
           }

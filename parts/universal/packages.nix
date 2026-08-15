@@ -1,4 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  btop-gpu = pkgs.btop.override {
+    cudaSupport = config.host.gpu.nvidia || config.host.gpu.nvidiaCompute;
+    rocmSupport = config.host.gpu.amd;
+  };
+in
 {
   # Base toolkit, every host gets these regardless of profile.
   environment.systemPackages = with pkgs; [
@@ -16,7 +22,7 @@
     fd
     duf
     dust
-    btop
+    btop-gpu
     procs
     ffmpeg
     killall

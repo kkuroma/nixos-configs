@@ -3,11 +3,11 @@
     "coding-style": {
       "flake": false,
       "locked": {
-        "lastModified": 1786838025,
-        "narHash": "sha256-1MmI/EJ1n53dNa859A/HM4cHbB+W8YCqU2LxYLYjLoc=",
+        "lastModified": 1786841078,
+        "narHash": "sha256-rHZlxgHJhUS+obtqjVZ/EhOWR/8ulsf0LzhEX7eZI5A=",
         "ref": "refs/heads/main",
-        "rev": "ba7e654f74228e8e0ee094955a73c2734cbe8df9",
-        "revCount": 4,
+        "rev": "d27b37cdbdddebe537dfbdc7a067ab22f3a8cca9",
+        "revCount": 5,
         "type": "git",
         "url": "https://git.kuroma.dev/kkuroma/coding-style"
       },

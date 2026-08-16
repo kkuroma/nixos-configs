@@ -1,7 +1,9 @@
-{ ... }:
+{ inputs, ... }:
 {
   home.file.".config/opencode/opencode.json".text = builtins.toJSON {
     "$schema" = "https://opencode.ai/config.json";
+    # The Kuroma manual: brevity rules into the system prompt, comment linter onto every edit
+    plugin = [ "${inputs.coding-style}/opencode/plugin.js" ];
     autoupdate = false;
     theme = "system";
     model = "llama-router/Gemma-4-26B-Code";

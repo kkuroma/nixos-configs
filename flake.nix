@@ -44,6 +44,11 @@
       url = "git+https://git.kuroma.dev/kkuroma/llama-router";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    coding-style = {
+      url = "git+https://git.kuroma.dev/kkuroma/coding-style";
+      flake = false; # plain files, both agents read them at run time
+    };
   };
 
   outputs = { self, nixpkgs, disko, home-manager, noctalia, sops-nix, nixos-hardware, ... }@inputs:

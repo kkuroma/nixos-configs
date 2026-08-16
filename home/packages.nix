@@ -86,7 +86,6 @@ in
       (python3.withPackages (ps: with ps; [ tqdm numpy pandas scipy matplotlib requests ipython ]))
       uv
       nodejs
-      claude-code
       opencode
       distrobox
       # nvim formatters (conform-nvim)

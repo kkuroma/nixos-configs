@@ -6,36 +6,43 @@
     plugin = [ "${inputs.coding-style}/opencode/plugin.js" ];
     autoupdate = false;
     theme = "system";
-    model = "llama-router/Gemma-4-26B-Code";
+    model = "llama-router-1/Gemma-4-26B";
     provider = {
       llama-router-1 = {
         npm = "@ai-sdk/openai-compatible";
         name = "zaphkiel";
         options.baseURL = "https://llama.zaphkiel/v1";
         models = {
-          "Gemma-4-26B-Code" = {
-            name = "Gemma-4-26B-Code";
+          "Wordslop-Qwen3.6-27B" = {
+            name = "Wordslop-Qwen3.6-27B";
+            limit = {
+              context = 262144;
+              output = 32768;
+            };
+          };
+          "Gemma-4-26B" = {
+            name = "Gemma-4-26B";
             limit = {
               context = 131072;
               output = 32768;
             };
           };
-          "Gemma-4-12B-Code" = {
-            name = "Gemma-4-12B-Code";
+          "Gemma-4-12B" = {
+            name = "Gemma-4-12B";
             limit = {
               context = 262144;
               output = 65536;
             };
           };
-          "Qwen3.6-35B-A3B-Code" = {
-            name = "Qwen3.6-35B-A3B-Code";
+          "Qwen3.6-35B-A3B" = {
+            name = "Qwen3.6-35B-A3B";
             limit = {
               context = 131072;
               output = 32768;
             };
           };
-          "Qwen3.6-35B-A3B-Code-Uncen" = {
-            name = "Qwen3.6-35B-A3B-Code-Uncen";
+          "Qwen3.6-35B-A3B-Uncensored" = {
+            name = "Qwen3.6-35B-A3B-Uncensored";
             limit = {
               context = 131072;
               output = 32768;
@@ -43,7 +50,7 @@
           };
         };
       };
-       llama-router-2 = {
+      llama-router-2 = {
         npm = "@ai-sdk/openai-compatible";
         name = "asgard";
         options.baseURL = "http://10.10.30.29:11434/v1";

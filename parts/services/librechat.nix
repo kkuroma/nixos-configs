@@ -55,6 +55,11 @@ lib.mkIf (cfg != null && cfg.enable) {
       version = "1.2.1";
       cache = true;
 
+      interface = {
+        contextUsage = true;
+        contextCost = false;
+      };
+
       # Allow extra MCP (i.e. GraphIV)
       mcpSettings.allowedDomains = lib.mkIf graphiv.enable [
         "http://127.0.0.1:${toString graphiv.port}"
@@ -74,6 +79,7 @@ lib.mkIf (cfg != null && cfg.enable) {
           name = "llama-router";
           apiKey = "sk-ibidi-toilet"; # haha imagine needing key
           baseURL = "http://localhost:${toString llama.port}/v1";
+          maxContextTokens = 131072;
           models = {
             default = [ "Gemma-4-26B" ];
             fetch = true;

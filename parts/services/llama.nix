@@ -3,6 +3,7 @@
 let
   root = "/Vault/llm-models";
   mdl = name: file: "${root}/models/${name}/${file}";
+  qwen36Template = ../../config/llama/qwen3.6-chat.jinja;
   emb = name: file: "${root}/embeddings/${name}/${file}";
 in
 lib.mkIf (config.host.services.llama or { enable = false; }).enable {
@@ -160,7 +161,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      "Qwen3.6-35B-Uncensored" = {
+      "Qwen3.6-35B-A3B-Uncensored" = {
         num_instance = 1;
         model = mdl "Qwen-3.6-35B-A3B-Uncensored" "model_iq4_xs.gguf";
         c = 131072;
@@ -172,7 +173,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
-      "Ornith1.0-35B" = {
+      "Ornith1.0-A3B-35B" = {
         num_instance = 1;
         model = mdl "Ornith-1.0-35B-A3B" "model_q4_k_m.gguf";
         c = 16384;
@@ -187,6 +188,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       "ThinkingCap-Qwen3.6-27B" = {
         num_instance = 1;
         model = mdl "ThinkingCap-Qwen-3.6-27B" "model_q4_k_m.gguf";
+        chat-template-file = "${qwen36Template}";
         spec-type = "draft-mtp";
         c = 131072;
         b = 16384;
@@ -200,6 +202,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       "Wordslop-Qwen3.6-27B" = {
         num_instance = 1;
         model = mdl "Wordslop-Qwen-3.6-27B" "model_iq2_m.gguf";
+        chat-template-file = "${qwen36Template}";
         spec-type = "draft-mtp";
         c = 262144;
         b = 16384;

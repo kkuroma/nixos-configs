@@ -59,6 +59,14 @@ nix flake check && nix flake update
 
 After rebuild: logout+login for env/session changes; reboot for kernel/GPU/initrd.
 
+**Never build a host's configuration.** Builds take too long. Validate with eval only:
+
+```
+nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath
+```
+
+The user runs `nixos-rebuild` themselves.
+
 ## Architecture
 
 ### Disk / Boot

@@ -1,7 +1,5 @@
-{ inputs, lib, osConfig, ... }:
+{ lib, osConfig, ... }:
 {
-  imports = [ inputs.noctalia.homeModules.default ];
-
   config = lib.mkIf osConfig.host.home.noctalia {
   programs.noctalia = {
     enable = true;

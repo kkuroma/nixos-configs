@@ -161,6 +161,18 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
         min-p = "0.01";
       };
 
+       "Qwen3.6-35B-A3B-Batched" = {
+        num_instance = 1;
+        model = mdl "Qwen-3.6-35B-A3B" "model_iq4_xs.gguf";
+        c = 131072;
+        b = 16384;
+        ub = 512;
+        parallel = 4;
+        temp = "1.0";
+        top-p = "0.95";
+        min-p = "0.01";
+      };
+
       "Qwen3.6-35B-A3B-Uncensored" = {
         num_instance = 1;
         model = mdl "Qwen-3.6-35B-A3B-Uncensored" "model_iq4_xs.gguf";

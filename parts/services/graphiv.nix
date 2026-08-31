@@ -26,7 +26,7 @@ lib.mkIf (cfg != null && cfg.enable) {
       cd ${cfg.dataDir}
       exec nix develop . --command bash -c '
         pg-console -c "SELECT 1" >/dev/null 2>&1 || pg-start
-        exec python phases/phase-6/serve_mcp.py --http
+        exec python scripts/serve.py --http
       '
     '';
     serviceConfig = {
@@ -53,7 +53,7 @@ lib.mkIf (cfg != null && cfg.enable) {
     environment.GRAPHIV_PUBLIC_URL = "https://${cfg.publicHost}";
     script = ''
       cd ${cfg.dataDir}
-      exec nix develop . --command python phases/phase-6/serve_mcp.py --http
+      exec nix develop . --command python scripts/serve.py --http
     '';
     serviceConfig = {
       User = "kuroma";

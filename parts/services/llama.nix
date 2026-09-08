@@ -20,7 +20,9 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       jinja = true;
       fa = true;
       ngl = 99;
-      cram = 4096;
+      # 16 GiB of prompt cache: 13 conversations of 16k tokens on Wordslop, 60 on Gemma
+      # Becomes promptCache.ramMiB once the router flake input carries that option
+      cram = 16384;
       models-max = 1;
       ctk = "q4_0";
       ctv = "q4_0";

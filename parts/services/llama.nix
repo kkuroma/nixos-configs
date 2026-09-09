@@ -20,7 +20,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       jinja = true;
       fa = true;
       ngl = 99;
-      # 16 GiB of prompt cache: 13 conversations of 16k tokens on Wordslop, 60 on Gemma
+      # 16 GiB of prompt cache, the default for every model: 18 Gemma conversations at 131k
       # Becomes promptCache.ramMiB once the router flake input carries that option
       cram = 16384;
       models-max = 1;
@@ -216,6 +216,9 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       "Wordslop-Qwen3.6-27B" = {
         num_instance = 1;
         model = mdl "Wordslop-Qwen-3.6-27B" "model_iq2_m.gguf";
+        # 8.5 GiB per conversation at its full 262k window, so 32 GiB holds 3
+        # Becomes promptCache.ramMiBPerModel once the router flake input carries it
+        cram = 32768;
         chat-template-file = "${qwen36Template}";
         spec-type = "draft-mtp";
         c = 262144;

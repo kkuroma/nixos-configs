@@ -16,7 +16,7 @@
 
       # Bar layout + appearance
       bar = {
-        order = [ "Top" "workspaces" ];
+        order = [ "Top" "workspaces-left" "workspaces-right"];
 
         Top = {
           border_width = 2.0;
@@ -70,11 +70,28 @@
           ];
         };
 
-        workspaces = {
+        workspaces-left = {
           enabled = true;
           auto_hide = true;
           border_width = 1.5;
           position = "left";
+          start = [ ];
+          center = [ "workspaces" ];
+          end = [ ];
+          margin_edge = 0;
+          margin_ends = 380;
+          radius = 20;
+          radius_bottom_left = 0;
+          radius_top_left = 0;
+          reserve_space = false;
+          thickness = 39;
+        };
+
+        workspaces-right = {
+          enabled = true;
+          auto_hide = true;
+          border_width = 1.5;
+          position = "right";
           start = [ ];
           center = [ "workspaces" ];
           end = [ ];

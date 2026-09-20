@@ -36,6 +36,14 @@
         port = 9090;
       };
     };
+
+    # Split-tunnel into Yggdrasil, up by hand: nmcli connection up yggdrasil
+    wireguard.yggdrasil = {
+      interface = "ygg0";
+      id = "YggdrasilWG";
+      localSubnets = [ "10.10.0.0/16" ];
+      refuseFrom = [ "10.10.30.0/24" ];
+    };
   };
 
   boot.kernelParams = [

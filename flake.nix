@@ -70,7 +70,7 @@
         hwdec = "nvdec-copy";
         displays = [ # get parsed to niri
           {
-            output = "HDMI-A-4";
+            output = "HDMI-A-3";
             mode = "1920x1080@120.017";
             y = 0;
             x = 0;

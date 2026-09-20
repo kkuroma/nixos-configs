@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+## Writing
+
+- Invoke the `kuroma-writing` skill **before** writing or editing any prose: comments, docstrings, markdown bodies, commit messages, findings reported in chat. Follow it. It is the authority on style and this file does not restate it.
+- It governs **new** text only. Do not sweep existing files to bring old comments into line unless that cleanup is the task you were given.
+- **Do not overcomment a targeted change.** A comment describes what the code does for the next reader, never what this edit changed, what it used to be, or why the author touched it. A workaround keeps its one-line reason (the upstream issue that makes the code look wrong); a diff narration does not.
+
 ## Repository layout
 
 - `flake.nix` — `machines` attrset (per-host `kernelPackages`, `fonts`, `displays`, `nvenc`, `hwdec`) + `mkHost` generator. Each `nixosConfigurations.<name>` is one line: `mkHost "name" { extraModules = [...]; };`. Every host's HM entry is `./home` (single entry); the graphical layers gate on `host.profile == "desktop"` read via `osConfig`. No inline HM blobs.
@@ -7,8 +13,8 @@
 - `parts/universal/` — Tier 1. Always-on, no gates, no options. Auto-imported by every host via `parts/universal/default.nix`. Includes `boot`, `locale`, `networking`, `nix`, `sops` (framework only — secrets live with their consumer), `ssh` (sshd for ALL hosts — port 22 tailscale0-only via networking.nix; host extras like metatron's GatewayPorts stay in the host), `users`, `packages` (base CLI/net/hw toolkit), `caddy`.
 - `parts/templates/` — Option declarations only (schemas, no daemons): `system.nix` (host.gpu/desktop/profile/features + assertion `profile == "desktop" → desktop != null`), `services.nix` (the `host.services.<name>` submodule + generated caddy vhosts / systemd storage deps / tailscale0 firewall ports / knownServices typo assertion), `home.nix` (host.home.* bundles). Auto-imported.
 - `parts/modules/` — Tier 2. Opt-in via a flag, no other parameters. Each file gates on an option from `templates/system.nix` (or `templates/home.nix`). Auto-imported; disabled = inert. GPU (amd, nvidia, nvidia-compute), desktop (niri, kde), profile bundles (fonts, fcitx5, desktop-daemons = bluetooth/pipewire/printing/power, snapper = btrfs /home snapshots), `gaming` (Steam stack — gated on `config.host.home.gaming`, the **system half of the HM gaming bundle**: `host.home.*` is read by both system modules via `config` and HM via `osConfig`; also owns `services.envfs`), features (autofs, virtualization, codiumserver).
-- `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`, which also registers **filenames as the valid `host.services` keys** (`host.knownServices`) — the file name IS the option key. Multi-instance services (`filebrowser.nix`, `cloudflared.nix`) live here too; they declare their own `host.<name>` option.
-- `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, wireguard, nut, etc., auto-imported via `extra/default.nix`).
+- `parts/services/` — Tier 3. Opt-in + parameterized. Each file uses `cfg = config.host.services.<name> or null` + `mkIf (cfg != null && cfg.enable)`. Host supplies port/dataDir/publicHost/storage/unit. Auto-imported via `parts/services/default.nix`, which also registers **filenames as the valid `host.services` keys** (`host.knownServices`) — the file name IS the option key. Multi-instance services (`filebrowser.nix`, `cloudflared.nix`, `wireguard.nix`) live here too; they declare their own `host.<name>` option.
+- `hosts/<name>/` — `configuration.nix` (imports the four `parts/` dirs + `./extra` + per-host overlays, then declares one `host = { ... }` block), `disko.nix`, `hardware-configuration.nix`, optional `homepage.nix` + `homepage.png`, optional `home.nix` (host-specific HM extras — auto-picked up by `mkHost`), `extra/` (host-specific .nix files: fstab, datasets, backup, laptop, nut, etc., auto-imported via `extra/default.nix`).
 - `home/` — HM modules, one concern per file, with a tiered layout mirroring `parts/`. **The machine's HM tickbox is `host.home.*`** (declared in `parts/templates/home.nix`, set in each host's `configuration.nix`, read by HM modules via `osConfig`). Bundles default to follow `host.profile` (`server`|`desktop`); a host unticks what it doesn't want (e.g. `host.home.gaming = false`).
   - `default.nix` — the **single entry point** for every host (flake imports `./home` always — no `hmEntry`/`hasNiri`). Imports `./base` always; `./dev` when `host.home.dev` (**any profile** — works on servers); the graphical layers (`packages`/`fonts`/`scripts`/`programs`/`desktop`) only when `host.profile == "desktop"`. Declares home identity + gated `.face`.
   - `base/` — headless-safe modules imported by **every** host (git, zsh, nushell). Auto-imported (blind `default.nix`).
@@ -132,6 +138,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | **`parts/services/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
 | **`parts/services/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main), zaphkiel | — |
 | **`parts/services/clamav.nix`** | ClamAV NAS scan (`host.clamav`) | — | metatron | — |
+| **`parts/services/wireguard.nix`** | WireGuard tunnels (`host.wireguard`, multi) | — | raziel, zaphkiel | — |
 
 **Service access model:** Internal: `https://<service>.<hostname>` via AdGuard DNS + Caddy `tls internal`. Public: cloudflared → `localhost:80` → Caddy. DNS rewrites: `*.metatron → 100.107.220.115`, `*.zaphkiel → 100.91.235.104`, `*.raziel → 100.79.72.120`.
 
@@ -272,31 +279,29 @@ Self-declaring `host.clamav` option (no port, no vhost, so it stays out of `host
 ### Networking
 SSH on `tailscale0` only: sshd config in `parts/universal/ssh.nix`, port opened in `parts/universal/networking.nix`. Syncthing ports (TCP/UDP 22000 + UDP 21027, global) are declared inside `parts/services/syncthing.nix` — only hosts running syncthing open them. Per-service tailscale0 ports come from `host.services.<name>.tailscalePorts` (zaphkiel: llama 11434 — router binds 0.0.0.0, Caddy also reverse-proxies; neo4j bolt 7687).
 
-### WireGuard — Yggdrasil (`hosts/raziel/extra/wireguard.nix`)
-Split-tunnel WG into a friend's server "Yggdrasil" (co-hosted with haruto, UniFi WG server; public endpoint IP is in sops as `wireguard/yggdrasil/ip`, port `51820`). Reaches the internal `10.10.0.0/16` (e.g. Proxmox `10.10.30.10:8006`) from away, while Tailscale + normal internet stay direct. **Currently only on raziel.**
+### WireGuard (`parts/services/wireguard.nix`)
+Multi-instance, NM-native, self-declaring `host.wireguard.<name>` (same pattern as cloudflared: no port, no vhost). Options: `interface`, `id`, `autoconnect`, `secretPrefix`, `localSubnets`, `refuseFrom`, `localPriority`, `endpointPriority`. **Every field of the peer's `.conf` lives in sops** under `<secretPrefix>/` (default `wireguard/<name>`): `private-key`, `address`, `dns`, `peer-public-key`, `preshared-key`, `allowed-ips`, `endpoint`. Nothing about the tunnel reaches the store or the public GitHub mirror.
+
+**Active: `yggdrasil` on raziel + zaphkiel** — `interface = "ygg0"`, `id = "YggdrasilWG"`, `localSubnets = [ "10.10.0.0/16" ]`, `refuseFrom = [ "10.10.30.0/24" ]`. Split tunnel into a friend's server (co-hosted with haruto, UniFi WG server) reaching the internal `10.10.0.0/16` (e.g. Proxmox `10.10.30.10:8006`), while Tailscale + normal internet stay direct. **Both hosts share one client config** (one keypair, one tunnel address): bring only one up at a time, or the server's peer entry flaps between the two endpoints. Give a host its own credentials by pointing its `secretPrefix` at a separate subtree.
 
 **Design:**
-- **NetworkManager-native**, not `networking.wireguard.*`. Declared via `networking.networkmanager.ensureProfiles.profiles.<attr>` — the profile is named after the **attribute key** (`yggdrasil`), NOT the connection `id` (`YggdrasilWG`).
+- **NetworkManager-native**, not `networking.wireguard.*`. The profile is named after the **attribute key** (`yggdrasil`), NOT the connection `id` (`YggdrasilWG`).
 - `autoconnect = false` — brought up manually with `nmcli connection up yggdrasil`.
-- **Split, not full:** `allowed-ips = "10.10.0.0/16;"` (trailing `;` required by NM keyfile format), NOT `0.0.0.0/0`. Internet stays direct, Tailscale's `100.64.0.0/10` untouched. Overlaps a host's own `10.10.x` LAN harmlessly — longest-prefix match keeps the local `/24` direct, only *other* subnets tunnel.
+- **Split, not full:** `allowed-ips` must be typed into sops in NM keyfile syntax (`10.10.0.0/16;`, trailing `;` required), not the comma syntax of a `.conf`; same for `dns`. Nix cannot rewrite a sops value, so what you type is what lands in the keyfile. Overlaps a host's own `10.10.x` LAN harmlessly — longest-prefix match keeps the local `/24` direct, only *other* subnets tunnel.
 - `ipv4.never-default = "true"`, `ipv6.method = "disabled"`.
 
-**Secrets (sops):** `wireguard/yggdrasil/{private-key,preshared-key,ip}` — the endpoint IP is a secret too, so it never lands in the store or the public GitHub mirror. `NetworkManager-ensure-profiles.service` runs `envsubst` over the store profile (which contains literal `$WG_PRIVKEY`/`$WG_PSK`/`$WG_ENDPOINT_IP`) using `environmentFiles`, then writes the final keyfile to **`/run/NetworkManager/system-connections/yggdrasil.nmconnection`** (root-only 0600) — NOT `/etc/NetworkManager/system-connections/`. The env file is a `sops.templates."wg-yggdrasil.env"` rendering both placeholders. Peer block needs both `preshared-key = "$WG_PSK"` and `preshared-key-flags = "0"`.
+**Secrets → keyfile:** `sops.templates."wg-<name>.env"` renders `WG_<NAME>_<FIELD>` (e.g. `WG_YGGDRASIL_PRIVATE_KEY`), instance-scoped so two tunnels can't collide in the one `EnvironmentFile` set. `NetworkManager-ensure-profiles.service` runs `envsubst` over the generated ini and writes **`/run/NetworkManager/system-connections/<attr>.nmconnection`** (0600 root) — NOT `/etc/NetworkManager/system-connections/`. The peer public key is substituted **in the section header** (`[wireguard-peer.$WG_YGGDRASIL_PEER_PUBLIC_KEY]`); envsubst rewrites the whole file, headers included. Peer block needs both `preshared-key` and `preshared-key-flags = "0"`.
 
-**Tailscale carve-out (`dispatcherScripts`):** when a Mullvad exit node is active, table 52 holds `default dev tailscale0` which would swallow the handshake packets to the endpoint. A dispatcher tied to `ygg0` up/down reads the endpoint IP from its sops secret and adds `ip rule add to <endpoint>/32 lookup main priority 5260` (just below tailscale's `lookup 52` at 5270) so handshakes leave via the physical route. Removed on down; survives reboots + tailscale restarts (tailscale never touches a rule it didn't create). Harmless on hosts with no exit node.
+**Tailscale carve-out (`dispatcherScripts`):** when a Mullvad exit node is active, table 52 holds `default dev tailscale0` which would swallow the handshake packets to the endpoint. A dispatcher tied to the tunnel's interface up/down reads the `endpoint` secret, strips the `:port` (so an **IPv4 literal is assumed** — a DNS-name endpoint would have to be resolved first), and adds `ip rule add to <endpoint>/32 lookup main priority 5260` (just below tailscale's `lookup 52` at 5270) so handshakes leave via the physical route. Removed on down; survives reboots + tailscale restarts (tailscale never touches a rule it didn't create). Harmless on hosts with no exit node.
 
 **Verifying a handshake:** `ip -s -h link show ygg0` (no sudo) — **RX > 0 == handshake completed**. RX=0 / TX>0 == our inits get no reply (server-side: port not forwarded, `wg` not listening, or pubkey not registered — check with `sudo wg show` / `sudo ss -ulpn | grep 51820` on Yggdrasil).
 
-**Adding to another host (e.g. zaphkiel):**
-1. Get a **separate client config** from haruto — its own keypair + tunnel IP (raziel is `10.10.91.67/32`) + PSK. **Never reuse another host's key/address** — two peers with the same pubkey flap.
-2. Add its keys to sops under a distinct path (`wireguard/yggdrasil-<host>/{private-key,preshared-key}`) so they don't collide in the shared `secrets.yaml`.
-3. Mirror `hosts/<host>/extra/wireguard.nix` off raziel's, swapping the sops paths + `ipv4.address1`.
-4. No firewall changes (client-initiated), no port to open.
+**Adding a tunnel (or a host):** one `host.wireguard.<name>` block in the host's `host = { ... }`, plus the seven fields under `wireguard/<name>/` in sops. No firewall changes (client-initiated), no port to open.
 
 **Gotchas:**
-- The `.conf` from haruto is plaintext (private key) — never paste it anywhere public; the repo is push-mirrored to GitHub, so the key lives in sops only.
-- After editing the source, a `build` is not a `switch` — verify the deployed keyfile with `sudo cat /run/NetworkManager/system-connections/yggdrasil.nmconnection` shows the substituted key + PSK (no literal `$WG_*`), not just that a fresh build is correct.
-- The generated store profile can be found via `nix-store -qR $(readlink -f result) | grep -- '-yggdrasil'`.
+- The `.conf` from haruto is plaintext (private key) — never paste it anywhere public; the repo is push-mirrored to GitHub, so it lives in sops only.
+- After editing the source, a `build` is not a `switch` — verify the deployed keyfile with `sudo cat /run/NetworkManager/system-connections/yggdrasil.nmconnection` shows substituted values (no literal `$WG_*`), not just that a fresh build is correct.
+- A missing or empty sops field renders an empty env var and `envsubst` writes it silently; the profile then fails to activate (or comes up with no peer) rather than erroring at build time.
 
 ### Autofs / Backups (zaphkiel)
 Autofs mounts `anime`, `music`, `kuroma`, `research` from metatron via CIFS. rsync timers in `hosts/zaphkiel/extra/backup.nix` push anime (6h), movies (6h), music (6h), research (weekly), home (6h → `metatron:/tank/nas/kuroma/home/` over SSH). All jobs rsync directly to metatron over SSH — no SMB intermediary.

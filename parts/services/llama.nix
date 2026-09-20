@@ -9,7 +9,10 @@ in
 lib.mkIf (config.host.services.llama or { enable = false; }).enable {
   services.llama-router = {
     enable = true;
-    llamaCpp = pkgs.llama-cpp.override { cudaSupport = true; };
+    llamaCpp = pkgs.llama-cpp.override { 
+      cudaSupport = true; 
+      nodejs_latest = pkgs.nodejs_24; # nodejs_latest (26.9.0) fails test-fs-cp-async-file-modes in the nix sandbox: nixpkgs#564449
+    };
     host = "0.0.0.0";
     port = config.host.services.llama.port;
     user = "llama";

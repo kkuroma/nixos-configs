@@ -23,9 +23,7 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
       jinja = true;
       fa = true;
       ngl = 99;
-      # 16 GiB of prompt cache, the default for every model: 18 Gemma conversations at 131k
-      # Becomes promptCache.ramMiB once the router flake input carries that option
-      cram = 16384;
+      cram = 16384; # 16 GB of ram for prompt cache
       models-max = 1;
       ctk = "q4_0";
       ctv = "q4_0";

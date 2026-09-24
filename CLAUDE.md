@@ -314,7 +314,7 @@ Fingerprint: `libfprint` native — do NOT add `libfprint-2-tod1-goodix` (corrup
 **Charge-limit udev rule (`hosts/raziel/extra/laptop.nix`):** picks 80% (left port) / 100% (right port). User-session calls (`noctalia msg caffeine-enable/disable`, `notify-send`) are wrapped in a `run_user` helper that no-ops when `/run/user/1000/bus` doesn't exist — safe during early boot / no-login. Uses the absolute `/run/current-system/sw/bin/noctalia` (system package — see Noctalia section for why the binary is not HM-installed).
 
 ### Desktop session — niri (zaphkiel + raziel)
-greetd + tuigreet → `niri-session`. xwayland-satellite: `After = graphical-session.target` (not pre — races WAYLAND_DISPLAY). Use `nohup ... &` not `systemd-run --user`. One global `layout {}` (noctalia owns it). No `is-only-window` in 26.04 — use `open-maximized true`.
+greetd + tuigreet → `niri-session`. niri 26.04 spawns `xwayland-satellite` itself off `$PATH` with its own listenfds, so the package stays in `parts/modules/niri.nix` but there is no HM unit; a hand-rolled one loses the race for `:0` and its `rm /tmp/.X11-unix/X0` unlinks the socket niri's Xwayland is serving. `XCURSOR_THEME`/`XCURSOR_SIZE` in the session env outrank Xresources, so no xrdb merge is needed. One global `layout {}` (noctalia owns it). No `is-only-window` in 26.04 — use `open-maximized true`.
 
 ### Noctalia (v5, native — `noctalia` binary, no Quickshell)
 On v5.0.0 (input `noctalia` = repo `noctalia-shell`, but binary renamed `noctalia-shell`→`noctalia`). Launched via niri `spawn-at-startup "noctalia"`; **binary is a SYSTEM package** (`parts/modules/niri.nix`) so `/run/current-system/sw/bin/noctalia` stays valid for raziel's udev charge-limit rule + swayidle `before-sleep`.

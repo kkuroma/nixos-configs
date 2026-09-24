@@ -101,6 +101,8 @@ in
       puddletag
       kdePackages.kdenlive
       pwvucontrol
+      vmpk
+      soundfont-fluid
     ]
     # ── office bundle ──
     ++ lib.optionals h.office [

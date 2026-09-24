@@ -33,6 +33,5 @@ lib.mkIf (config.host.desktop == "niri") {
   environment.systemPackages = [
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     pkgs.xwayland-satellite
-    pkgs.xrdb
   ];
 }

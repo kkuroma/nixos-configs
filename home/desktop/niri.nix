@@ -75,29 +75,8 @@ in
       }
     ''
     + config.rice.niri.extraConfig;
-    xdg.configFile."Xresources".text = ''
-      Xcursor.theme: Bibata-Modern-Classic
-      Xcursor.size: 24
-    '';
-
+    # niri spawns xwayland-satellite itself, so only the display name is ours to declare
     systemd.user.sessionVariables.DISPLAY = ":0";
-    systemd.user.services.xwayland-satellite = {
-      Unit = {
-        Description = "Xwayland rootless X display server";
-        BindsTo = [ "graphical-session.target" ];
-        After = [ "graphical-session.target" ];
-        PartOf = [ "graphical-session.target" ];
-      };
-      Service = {
-        Type = "notify";
-        NotifyAccess = "all";
-        ExecStartPre = "-${pkgs.coreutils}/bin/rm -f /tmp/.X0-lock /tmp/.X11-unix/X0";
-        ExecStart = "${pkgs.xwayland-satellite}/bin/xwayland-satellite :0";
-        ExecStartPost = "${pkgs.xrdb}/bin/xrdb -merge %h/.config/Xresources";
-        Restart = "on-failure";
-      };
-      Install.WantedBy = [ "graphical-session.target" ];
-    };
 
     systemd.user.services.polkit-gnome = {
       Unit = {

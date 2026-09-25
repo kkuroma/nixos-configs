@@ -20,11 +20,16 @@ in
       pull.rebase = false;
       core.autocrlf = "input";
       credential.helper = lib.mkIf isDesktop "${pkgs.gitFull}/bin/git-credential-libsecret";
-    };
-    extraConfig = {
       gpg.format = "ssh";
       commit.gpgsign = true;
       user.signingkey = "~/.ssh/id_ed25519.pub";
+      gpg.ssh.allowedSignersFile = "~/.config/git/allowed_signers";
     };
   };
+
+  home.file.".config/git/allowed_signers".text = ''
+    contact@kuroma.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHcf33fgUY81ov0I6i+6ZJGGURkRwITQDDr3fgjlMid0 kuroma@zaphkiel
+    contact@kuroma.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINofwHa5GuqtIg7RGhFnr+2HrGncuwEK5EHlFEIE8gQU kuroma@raziel
+    contact@kuroma.dev ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPdECqSc5BelDTphh9qJegx4eqwK32I9tTRn0RsorZ3i kuroma@metatron
+  '';
 }

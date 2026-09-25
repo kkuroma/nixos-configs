@@ -20,6 +20,8 @@ in
       pull.rebase = false;
       core.autocrlf = "input";
       credential.helper = lib.mkIf isDesktop "${pkgs.gitFull}/bin/git-credential-libsecret";
+
+      # signed git commits
       gpg.format = "ssh";
       commit.gpgsign = true;
       user.signingkey = "~/.ssh/id_ed25519.pub";

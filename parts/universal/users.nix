@@ -3,7 +3,6 @@
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
   users.mutableUsers = false;
-
   users.users.kuroma = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" "video" "audio" "docker" "libvirtd" "dialout"];
@@ -14,9 +13,6 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPdECqSc5BelDTphh9qJegx4eqwK32I9tTRn0RsorZ3i kuroma@metatron"
     ];
   };
-
   users.users.root.hashedPassword = "$y$j9T$8/khyVHG1ds2LT6WAJp4S0$p7cnlmIxez3mE2LJKv4Zfiw3Up534xVcHbMNTSvvVH2";
-
-
   security.sudo.wheelNeedsPassword = true;
 }

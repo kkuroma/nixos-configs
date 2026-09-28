@@ -57,6 +57,26 @@
         "type": "github"
       }
     },
+    "graphiv": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790465770,
+        "narHash": "sha256-8K8mMrFDNLVz7UzWeSP/CqceFbbT872Gf/SlCMBgHZg=",
+        "ref": "refs/heads/main",
+        "rev": "8c2ad46484d2f8fdc5544a82b6c6553dc400c79b",
+        "revCount": 30,
+        "type": "git",
+        "url": "https://git.kuroma.dev/kkuroma/graphiv"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.kuroma.dev/kkuroma/graphiv"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -240,6 +260,7 @@
       "inputs": {
         "coding-style": "coding-style",
         "disko": "disko",
+        "graphiv": "graphiv",
         "home-manager": "home-manager",
         "llama-router": "llama-router",
         "nix-flatpak": "nix-flatpak",

@@ -86,13 +86,13 @@
       };
       graphiv = {
         enable = true;
-        port = 8756;
+        port = 6767; # the tools; the dashboard is on 6969
         publicHost = "graphiv.kuroma.dev"; # public demo via cloudflared.zaphkiel below
-        publicAuto = false; # graphiv.nix emits its own READ-ONLY public vhost
-        internal = false; # graphiv.nix emits the internal vhost (needs Host rewrite for MCP)
-        dataDir = "/home/kuroma/Documents/projects/nlp/arxivkg"; # checkout; its data/ symlinks to /Vault/graphiv/data
+        publicAuto = false; # graphiv.nix points the public vhost at the dashboard
+        internal = false; # graphiv.nix emits the internal vhost
+        dataDir = "/Vault/graphiv"; # the service root: data/, cache/ and runs/ sit under it
         storage = "vault";
-        unit = "graphiv-mcp";
+        unit = "graphiv-api";
       };
       postgresql = {
         enable = true;

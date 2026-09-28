@@ -3,7 +3,7 @@
 # LibreChat via the nixpkgs module: local llama-router as the only model endpoint
 let
   cfg = config.host.services.librechat or null;
-  graphiv = config.host.services.graphiv or { enable = false; port = 8756; };
+  graphiv = config.host.services.graphiv or { enable = false; port = 6767; };
   llama = config.host.services.llama or { enable = false; port = 11434; };
   domain = "https://librechat.${config.networking.hostName}";
 in
@@ -94,7 +94,7 @@ lib.mkIf (cfg != null && cfg.enable) {
         graphiv = {
           type = "streamable-http";
           url = "http://127.0.0.1:${toString graphiv.port}/mcp";
-          timeout = 7200000; # ms, deep_research holds the tool call up to 2 h
+          timeout = 7200000; # ms, a deep run holds the tool call up to 2 h
           initTimeout = 30000;
         };
       };

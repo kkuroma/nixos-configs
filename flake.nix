@@ -45,6 +45,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    graphiv = {
+      url = "git+https://git.kuroma.dev/kkuroma/graphiv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     coding-style = {
       url = "git+https://git.kuroma.dev/kkuroma/coding-style";
       flake = false; # plain files, both agents read them at run time
@@ -128,6 +133,7 @@
         home-manager.nixosModules.home-manager
         sops-nix.nixosModules.sops
         inputs.llama-router.nixosModules.default
+        inputs.graphiv.nixosModules.default
         (./hosts + "/${name}/configuration.nix")
         {
           home-manager = {

@@ -30,18 +30,6 @@ lib.mkIf (config.host.services.llama or { enable = false; }).enable {
     };
 
     models = {
-
-      "LLaMa-2-7B" = {
-        num_instance = 1;
-        model = mdl "LLaMa-2-7B" "model_q8.gguf";
-        c = 131072;
-        b = 16384;
-        ub = 1024;
-        parallel = 1;
-        temp = "1.0";
-        top-p = "0.95";
-        min-p = "0.01";
-      };
       
       "GPT-OSS-20B" = {
         num_instance = 1;

@@ -64,11 +64,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790465770,
-        "narHash": "sha256-8K8mMrFDNLVz7UzWeSP/CqceFbbT872Gf/SlCMBgHZg=",
+        "lastModified": 1790762552,
+        "narHash": "sha256-U4ssHgITcv43tOhpUclfr6WZf8DabUrFspLycZyTMDI=",
         "ref": "refs/heads/main",
-        "rev": "8c2ad46484d2f8fdc5544a82b6c6553dc400c79b",
-        "revCount": 30,
+        "rev": "a02159fc2c55592a4ef0a3fc1111c52788ecd4dc",
+        "revCount": 34,
         "type": "git",
         "url": "https://git.kuroma.dev/kkuroma/graphiv"
       },

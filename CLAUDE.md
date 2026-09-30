@@ -28,7 +28,8 @@
 
 **Hosts:** `zaphkiel` — desktop, NVIDIA RTX, nixpkgs-unstable | `raziel` — Framework 13 AMD, nixpkgs-unstable | `metatron` — home server, r5 8500G + GTX 1650, nixpkgs-unstable
 
-**Inputs:** nixpkgs-unstable, disko, home-manager, noctalia, nix-vscode-extensions, nixvim, sops-nix, nixos-hardware, vscodium-server.
+**Inputs:** nixpkgs-unstable, disko, home-manager, noctalia, nix-vscode-extensions, nixvim, nix-flatpak, sops-nix, vscodium-server, nixos-hardware, plus three of the author's own on forgejo.
+`llama-router` and `graphiv` are NixOS modules imported in `mkHost`, both following nixpkgs, and `coding-style` is plain files.
 
 ## Decision rules
 
@@ -133,7 +134,7 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
 | `neo4j.nix` | Neo4j | :7474/:7687 | zaphkiel | — |
 | `llama.nix` | LLaMA router | :11434 | zaphkiel | — |
 | `librechat.nix` | LibreChat | :3080 | zaphkiel | — |
-| `graphiv.nix` | GraphIV MCP | :8756 | zaphkiel | — |
+| `graphiv.nix` | GraphIV api, dashboard, manager, own postgres | :6767, :6969, :6868 | zaphkiel | graphiv.kuroma.dev (dashboard only) |
 | `hosts/<name>/homepage.nix` | homepage-dashboard | :8083 | metatron, zaphkiel | — |
 | **`parts/services/filebrowser.nix`** | FileBrowser (multi) | :8200+ | metatron (ct-dump) | ct-dump.kuroma.dev |
 | **`parts/services/cloudflared.nix`** | cloudflared tunnel (multi) | — | metatron (main), zaphkiel | — |
@@ -162,24 +163,18 @@ Samba binds to `lo ${metatronIP}` only. Passwords in sops as `samba/{kuroma,ct,p
   - **The budget is per model: `cram = 16384` (16 GiB) in `presetGlobals` as the default, and `cram = 32768` (32 GiB) inside the `Wordslop-Qwen3.6-27B` model block.** 16 GiB holds 18 Gemma conversations at 131k but only 1 Wordslop at 262k, which would thrash to zero reuse the moment two long Wordslop chats alternate; 32 GiB holds 3. **The caps do not compound**, because `cram` is per llama-server process and `models-max = 1` keeps one model loaded, so only the loaded model's cap is ever live. Headroom check: 3 held Wordslop conversations measured 29.3 GiB steady with a 37.8 GiB peak during slot swaps, against 61 GiB of host RAM and about 6 GiB used by everything else on zaphkiel.
   - **Migration, two steps, after the router change is pushed and `nix flake update llama-router` runs.** The router repo gained `services.llama-router.promptCache = { enable, ramMiB, ramMiBPerModel, reuseChunk, checkpoints, checkpointMinStep }`, but this repo's flake input is pinned to a commit without it, so both values are currently spelled as raw INI keys that the pinned module already passes through. Once the input moves: `presetGlobals.cram = 16384` becomes `promptCache.ramMiB = 16384;`, and the `cram = 32768` line in the Wordslop model block becomes `promptCache.ramMiBPerModel = { "Wordslop-Qwen3.6-27B" = 32768; };`. Precedence in the new module is model key > `ramMiBPerModel` > `presetGlobals` > `promptCache`, and `ramMiBPerModel` writes `cram` into the model's own section rather than `[*]`, so every spelling produces the same INI and none breaks the others. An assertion rejects a `ramMiBPerModel` key that is not a real model name.
 
-### LibreChat + GraphIV MCP (`parts/services/librechat.nix`, `parts/services/graphiv.nix`)
+### LibreChat (`parts/services/librechat.nix`)
 zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-router (custom endpoint,
 `fetch: true`, default model `Gemma-4-26B`) and mounts the GraphIV MCP server for arXiv deep research.
 
-- **Secrets:** `secrets/librechat.yaml` — a separate sops file (CREDS_KEY/CREDS_IV/JWT_SECRET/JWT_REFRESH_SECRET/meili-master-key).
-  Created by encrypting a fresh plaintext with the repo's public age keys (`nix run nixpkgs#sops -- -e -i`);
-  no private key needed. Wired via `services.librechat.credentials` (systemd LoadCredential — root reads them).
+- **Secrets:** `librechat/{creds-key,creds-iv,jwt-secret,jwt-refresh-secret,meili-master-key}` in the shared `secrets/secrets.yaml`.
+  Wired via `services.librechat.credentials` (systemd LoadCredential, so root reads them).
 - **Mongo:** `enableLocalDB = true` + `services.mongodb.package = pkgs.mongodb-ce` (prebuilt; stock
   `pkgs.mongodb` is an hours-long unfree source build).
-- **MCP transport is streamable-http, not stdio** — the librechat unit runs with `ProtectHome=true`,
-  so it cannot spawn a server out of `/home`. GOTCHA: `Domain "…" is not allowed` at MCP init means
-  the SSRF guard — with no `mcpSettings.allowedDomains` in librechat.yaml, LibreChat fail-closes on
-  SSRF-prone targets **including loopback**; the settings block allowlists
-  `http://127.0.0.1:8756` explicitly. `graphiv-mcp` (unit in `graphiv.nix`) runs
-  `serve_mcp.py --http` on `127.0.0.1:8756` inside the GraphIV repo's `nix develop` env as user
-  `kuroma` (project venv + CUDA + peer-auth Postgres come from the dev shellHook), starting the
-  project PG first if down. librechat.yaml points at `http://127.0.0.1:8756/mcp` with
-  `timeout = 7200000` ms — `deep_research` legitimately holds a tool call for minutes.
+- **GraphIV is mounted over streamable-http, not stdio**, since the librechat unit runs with `ProtectHome=true` and cannot spawn a server out of `/home`.
+  `Domain "..." is not allowed` at MCP init is the SSRF guard, which refuses loopback unless `mcpSettings.allowedDomains` names it, so the settings block allowlists `http://127.0.0.1:<graphiv port>`.
+  The server entry is `http://127.0.0.1:6767/mcp` with `timeout = 7200000` ms, since a deep run holds one tool call for minutes.
+  **That url answers 421**, because the api accepts only the `Host` names in its `ALLOWED_HOSTS` and a loopback connect carries `127.0.0.1:6767`.
 - **Meilisearch** (conversation search): `services.librechat.meilisearch.enable` — the nixpkgs module
   wires SEARCH/MEILI_HOST/MEILI_MASTER_KEY + ordering; we supply
   `services.meilisearch.masterKeyFile` from sops `librechat/meili-master-key`. When the host sets a
@@ -194,11 +189,58 @@ zaphkiel-only demo stack: LibreChat (nixpkgs module) fronts the local llama-rout
   `http://uriel:3002` (`firecrawlApiKey` is a dummy — schema requires it, self-hosted ignores it).
 - **First-run:** register an account at `https://librechat.zaphkiel` (ALLOW_REGISTRATION=true — flip
   off once accounts exist), pick the llama-router endpoint, attach the `graphiv` MCP in the tools menu.
-- First `graphiv-mcp` start may realize the dev shell (TimeoutStartSec=15min).
 - **State on /Vault:** librechat `dataDir = /Vault/librechat`, mongo `dbpath = /Vault/mongodb`
   (derived as `dirOf dataDir + /mongodb`; mongodb gets explicit `Vault.mount` ordering — the
-  host.services glue only orders `cfg.unit`). GraphIV's `data/` is a symlink to
-  `/Vault/graphiv/data` (repo-relative paths resolve through it; PG socket stays at `<repo>/.pg`).
+  host.services glue only orders `cfg.unit`).
+
+### GraphIV (`parts/services/graphiv.nix`)
+The code, the package and the NixOS module live in the `graphiv` input, whose checkout is `~/Documents/projects/nlp/arxivkg` and whose `nix/README.md` documents the module.
+`mkHost` imports `inputs.graphiv.nixosModules.default`, which also adds the overlay providing `pkgs.graphiv`.
+The package carries no Python package: nix supplies `python313`, `uv` and the native libraries, and every Python dependency comes from the repo's `uv.lock`.
+`parts/services/graphiv.nix` carries no logic: one `services.graphiv` block naming every module option and every `config.toml` key with its value, defaults included, then the user and group, then the caddy vhosts.
+Its comments are one-line section breakers and nothing more.
+The module renders `settings` into a `config.toml` in the store and hands it to every unit through `GRAPHIV_CONFIG`, so a config change is an edit here and a switch.
+
+| unit | port | vhost | holds |
+|------|------|-------|-------|
+| `graphiv-pg` | socket `/run/graphiv`, 5433 | | the project's own postgres + pgvector cluster, apart from the system `postgresql.service` |
+| `graphiv-venv` | | | a oneshot running `uv sync --frozen` into `/Vault/graphiv/venv`, which the three below require |
+| `graphiv-api` | :6767 | `graphiv.zaphkiel`, tailnet | the nine MCP tools, the store and the graph export |
+| `graphiv-frontend` | :6969 | `graphiv.kuroma.dev`, cloudflared | the dashboard, from a server registering no tools |
+| `graphiv-manager` | :6868 | `graphiv-manager.zaphkiel`, tailnet | the snapshot fetch and every preprocess stage, on the GPU |
+| `graphiv-graph` | | | a path unit and a root oneshot restarting the api when the graph export is rewritten |
+
+`host.services.graphiv` supplies `port = 6767`, `dataDir = "/Vault/graphiv"`, `storage = "vault"` and `unit = "graphiv-api"`.
+It sets `publicAuto = false` and `internal = false`, since `graphiv.nix` writes all three vhosts itself.
+The dashboard and manager ports are `port + 202` and `port + 101`.
+opencode reaches the tools at `https://graphiv.zaphkiel/mcp` (`home/dev/opencode.nix`).
+
+```
+/Vault/graphiv/data        pg/ (0700), arxiv.json, the graph export, umap_50.joblib, the two classifiers
+/Vault/graphiv/venv        the venv synced from uv.lock, torch and its CUDA wheels included
+/Vault/graphiv/cache       model replies keyed by prompt, the manager's huggingface and numba caches, uv's cache
+/Vault/graphiv/runs        one directory per report written
+/Vault/graphiv/manager     the manager unit's jobs, logs and cached charts
+/mnt/Vault-Storage/research/arxiv/{html,pdfs}    the full text, on a different mount
+```
+
+- **Deploying a change:** commit and push the graphiv repo, `nix flake update graphiv` here, then switch.
+  Unpushed work is invisible to the host.
+  Evaluate the working tree first with `--override-input graphiv "git+file:///home/kuroma/Documents/projects/nlp/arxivkg?dirty=1"`.
+- **The input follows this repo's nixpkgs**, so the pin in graphiv's own flake does not apply here.
+  Python versions come from graphiv's `uv.lock`, not from nixpkgs, so a bump here only moves the interpreter, and `graphiv-venv` rebuilds the venv onto it on the next switch.
+  The first sync downloads the lock's wheels from PyPI, torch and its CUDA wheels included, into `/Vault/graphiv/cache/uv`, and nothing CUDA is built or unpacked by nix.
+- **Database roles:** the api and frontend connect as `graphiv`, which holds only `SELECT`.
+  The tables belong to `kuroma`, so `manager.databaseUser = "kuroma"` gives the stages `PGUSER=kuroma` over the trust socket.
+- **Users:** the daemons run as the system user `graphiv`, and `kuroma` is in the `graphiv` group.
+  Everything under `/Vault/graphiv` is 2775 graphiv:graphiv, so a stage run by hand writes the same tree.
+- **Host check:** the api and frontend accept only the names in `settings.serve.ALLOWED_HOSTS`, `graphiv.zaphkiel` and `graphiv.kuroma.dev`.
+  A direct loopback request answers 421 by design, which is why LibreChat's loopback MCP entry fails.
+- **Switch effects:** a change under `postgres` restarts `graphiv-pg`, and the api restarts with it since it requires the cluster.
+  A stage running against the store at that moment fails.
+- **Corpus paths:** `settings.dataset.HTML_PATH` and `PDF_PATH` name `/mnt/Vault-Storage/research/arxiv/{html,pdfs}` directly, not the `data/arxiv` symlink, because each unit's `RequiresMountsFor` is derived from them.
+- **Checking:** `systemctl is-active graphiv-pg graphiv-venv graphiv-api graphiv-frontend graphiv-manager`.
+  Never `pkill -f serve`, which takes the production units down with a scratch server; kill by PID.
 
 ### Monitoring — Beszel + Uptime Kuma
 - **Beszel** (`parts/services/beszel.nix`): independent hub per host (metatron + zaphkiel), each monitoring only its own machine. First admin is seeded from sops `beszel/{email,password}` via `USER_EMAIL`/`USER_PASSWORD` in the hub env file (ignored once the account exists). State in `/var/lib/beszel-hub` (StateDirectory) — deliberately off tank/Vault so monitoring survives pool trouble.
@@ -258,7 +300,7 @@ Module namespace is `power.ups` (not `services.nut`). Hardware: generic MEC0003 
 `ExecStartPost` waits for the API, then PATCHes the GUI password from `sops:syncthing/password`. The JSON body is built with `jq -Rn --arg p` — passwords containing `"`/`\`/newlines are safe. The `syncthing/password` sops secret is declared inside the gated `mkIf` (so metatron, which doesn't enable syncthing, doesn't provision it). Device addresses use the `zaphkielIP`/`razielIP` specialArgs rather than literal IPs.
 
 ### Cloudflare tunnel
-Multi-instance via `parts/services/cloudflared.nix`. Declare per host: `host.cloudflared.<name> = { tokenSecret = "..."; };` — `hostnames` **defaults to every enabled `host.services` publicHost on that host** (filebrowsers included), so making a service public = set its `publicHost` + point the hostname at `http://localhost:80` in the CF dashboard; override `hostnames` only for names served outside `host.services`. Each instance gets its own systemd unit `cloudflared-<name>` + per-instance sops secret + a `pkgs.formats.yaml`-generated config; token read via `--token-file`. Currently: metatron `main` (`cloudflared/metatron-token`) → searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev + matrix.isomorphic.to; zaphkiel `zaphkiel` (`cloudflared/zaphkiel-token`) → graphiv.kuroma.dev. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix). Adding cloudflared to another host = one declaration block + a new sops secret.
+Multi-instance via `parts/services/cloudflared.nix`. Declare per host: `host.cloudflared.<name> = { tokenSecret = "..."; };` — `hostnames` **defaults to every enabled `host.services` publicHost on that host** (filebrowsers included), so making a service public = set its `publicHost` + point the hostname at `http://localhost:80` in the CF dashboard; override `hostnames` only for names served outside `host.services`. Each instance gets its own systemd unit `cloudflared-<name>` + per-instance sops secret + a `pkgs.formats.yaml`-generated config; token read via `--token-file`. Currently: metatron `main` (`cloudflared/metatron-token`) → searx/pdf/pastebin/cloud/ct-dump/vault/git.kuroma.dev + matrix.isomorphic.to; zaphkiel `zaphkiel` (`cloudflared/zaphkiel-token`) → graphiv.kuroma.dev, which is the GraphIV dashboard alone. Domains: `kuroma.dev` (services), `isomorphic.to` (Matrix). Adding cloudflared to another host = one declaration block + a new sops secret.
 
 **Public service notes:**
 - `ct-dump.kuroma.dev`: dumping ground, low-trust by design.
@@ -363,43 +405,6 @@ On v5.0.0 (input `noctalia` = repo `noctalia-shell`, but binary renamed `noctali
 ## Pending work
 - **Vault-Storage ext4 → btrfs migration:** plan documented in `PLAN.md`. Waiting on current arxiv rsync to metatron to finish before starting.
 - **`hashedPasswordFile` migration** for kuroma/root in `parts/universal/users.nix` (if/when convenient).
-- **Post-refactor switch on zaphkiel** still pending (host offline as of 2026-06-01). See verification procedure below; delete this bullet once switched.
-
-## Post-refactor verification (temporary)
-
-The big tier/options refactor (commit range `62bee79..HEAD`) landed without changing any package — only generated configs/units differ. Procedure for cutover on a host that wasn't switched yet:
-
-1. **Build, don't switch:**
-   ```
-   cd ~/System/nixos-configs
-   sudo nixos-rebuild build --flake .#<host>
-   ```
-2. **Diff the closure** (should list small text-substitution drvs only; no new packages):
-   ```
-   nix store diff-closures /run/current-system $(readlink -f result)
-   ```
-   Expected on **zaphkiel**: caddy config, llama-router unit, polkit, dbus-broker, generated `etc`/`system-path`/`system-units`/`user-units`/`activate` aggregators. No CUDA / OBS / cc1plus compiles. If you see source builds, stop and investigate.
-
-3. **Dry-activate** to see exactly what would stop/restart/reload:
-   ```
-   sudo result/bin/switch-to-configuration dry-activate
-   ```
-   Expected on **zaphkiel**:
-   - **Reload (no traffic interruption):** caddy, dbus-broker
-   - **Restart (~1s gap):** polkit, llama-router (llama-embedding is removed — it should stop, not restart)
-   - **Untouched:** sshd, jellyfin, navidrome, postgresql, syncthing, n8n, neo4j, sonarr, radarr
-   - `syncthing/password` secret is **kept** on zaphkiel (it's enabled there — only removed from metatron, which never used it)
-
-4. **Switch:**
-   ```
-   sudo nixos-rebuild switch --flake .#<host>
-   ```
-5. **Spot-check:**
-   - `systemctl status caddy` (active, reloaded)
-   - `systemctl status llama-router` (active)
-   - For metatron only: `systemctl status cloudflared-main` (the rename — new unit must come up; old `cloudflared` is gone). `wantedBy=multi-user.target` triggers it via target re-evaluation; if it doesn't start, `sudo systemctl start cloudflared-main`.
-
-**Metatron switched on 2026-06-01.** Verified: cloudflared rename was the only behavior change; CF-fronted sites stayed reachable across the switch.
 
 ## Misc gotchas
 - **Vaultwarden `ProtectSystem=strict`:** add `ReadWritePaths = [ "/tank/services/vaultwarden" ]` or exits with EROFS.

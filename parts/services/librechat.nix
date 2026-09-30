@@ -8,11 +8,11 @@ let
   domain = "https://librechat.${config.networking.hostName}";
 in
 lib.mkIf (cfg != null && cfg.enable) {
-  sops.secrets."librechat/creds-key" = { sopsFile = ../../secrets/librechat.yaml; };
-  sops.secrets."librechat/creds-iv" = { sopsFile = ../../secrets/librechat.yaml; };
-  sops.secrets."librechat/jwt-secret" = { sopsFile = ../../secrets/librechat.yaml; };
-  sops.secrets."librechat/jwt-refresh-secret" = { sopsFile = ../../secrets/librechat.yaml; };
-  sops.secrets."librechat/meili-master-key" = { sopsFile = ../../secrets/librechat.yaml; };
+  sops.secrets."librechat/creds-key" = { };
+  sops.secrets."librechat/creds-iv" = { };
+  sops.secrets."librechat/jwt-secret" = { };
+  sops.secrets."librechat/jwt-refresh-secret" = { };
+  sops.secrets."librechat/meili-master-key" = { };
   sops.secrets."vaultwarden/smtp-password" = { };
 
   services.librechat = {

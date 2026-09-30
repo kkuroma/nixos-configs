@@ -98,8 +98,8 @@
           margin_edge = 0;
           margin_ends = 380;
           radius = 20;
-          radius_bottom_left = 0;
-          radius_top_left = 0;
+          radius_bottom_right = 0;
+          radius_top_right = 0;
           reserve_space = false;
           thickness = 39;
         };

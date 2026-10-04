@@ -55,8 +55,22 @@
         name = "asgard";
         options.baseURL = "http://10.10.30.29:11434/v1";
         models = {
-          "wordslop-qwen-3-6-27b" = {
-            name = "wordslop-qwen-3-6-27b";
+          "wordslop-v1-27b" = {
+            name = "wordslop-v1-27b";
+            limit = {
+              context = 262144;
+              output = 65536;
+            };
+          };
+          "wordslop-v2-27b" = {
+            name = "wordslop-v2-27b";
+            limit = {
+              context = 262144;
+              output = 65536;
+            };
+          };
+          "qwen3.8-27b-uncensored" = {
+            name = "qwen3.8-27b-uncensored";
             limit = {
               context = 262144;
               output = 65536;
